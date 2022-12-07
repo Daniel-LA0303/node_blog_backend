@@ -1,7 +1,7 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
-const postSchema = new Schema({
+const postSchema = Schema({
     user: {
         type: Schema.ObjectId,
         ref: 'User'
@@ -35,4 +35,6 @@ const postSchema = new Schema({
     {timestamps: true}
 );
 
-module.exports = mongoose.model('Post', postSchema);
+const Post = mongoose.model('Post', postSchema);
+
+export default Post;
