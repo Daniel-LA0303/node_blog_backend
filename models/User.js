@@ -29,6 +29,14 @@ const usersSchema = mongoose.Schema({
     profilePicture:{
         type: String,
         default: ""
+    },
+    numberPost:{
+        type: Number,
+        default:0
+    },
+    info: {
+        type: Object,
+        default: ""
     }
 
 }, {

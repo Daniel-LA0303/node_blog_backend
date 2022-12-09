@@ -7,6 +7,7 @@ import {
     forgetPassword,
     checkToken,
     newPassword,
+    newInfoUser,
     profile
 } from "../controllers/usersController.js";
 
@@ -25,6 +26,8 @@ router.post('/new-password', forgetPassword);
 router.route('/new-password/:token')
     .get(checkToken) //comprueba el token que se manda cuando se ejecuta olvidePassword
     .post(newPassword) //redirije a una pestaña para nuevo password
+
+router.post('/new-info/:id', newInfoUser);
 
 router.get('/profile', checkAuth, profile);
 

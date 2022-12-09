@@ -22,7 +22,7 @@ export const emailRegister = async (datos) => {
         html:`
             <p>Hola: ${name}, comprueba tu cuenta en UpTask</p>
             <p>Tu cuenta ya esta casi lista, solo compruebala con el siguiente enlace</p>
-            <a href="${process.env.FRONTEND_URL}/confirmar/${token}">Comprueba tu cuenta</a>
+            <a href="http://127.0.0.1:5173/user-confirmed/${token}">Comprueba tu cuenta</a>
             <p>Si no has creado esta cuenta, por favor ignora este mensaje</p>
         `
     })
@@ -50,7 +50,7 @@ export const emailNewPassword = async (datos) => {
         html:`
             <p>Hola: ${name}, Reestablece tu Password en UpTask</p>
             <p>Sigue el siguiente enlace para generar un nuevo password</p>
-            <a href="${process.env.FRONTEND_URL}/olvide-password/${token}">Reestablecer Password</a>
+            <a href="http://127.0.0.1:5173/forget-password/${token}">Reestablecer Password</a>
             <p>Si no has creado esta cuenta, por favor ignora este mensaje</p>
         `
     })

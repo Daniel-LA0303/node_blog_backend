@@ -1,6 +1,8 @@
 import express  from "express";
 import connectDB from "./config/db.js";
 import dotenv from "dotenv"; 
+import cors from "cors"
+
 import usersRoutes from './routes/usersRoutes.js'
 import postsRoutes from './routes/postsRoutes.js'
 import categoriesRoutes from './routes/categoriesRoutes.js'
@@ -12,6 +14,8 @@ dotenv.config();
 
 //2.
 connectDB();
+
+app.use(cors());
 
 
 const PORT = process.env.PORT || 4000;

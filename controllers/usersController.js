@@ -56,7 +56,6 @@ const authUser = async (req, res) => {
             email: user.email,
             token: generateJWT(user._id) //<-- genera un JWT
         })
-        console.log('xd');
     }else{
         const error = new Error("La contraseña es incorrecta");
         return res.status(404).json({msg: error.message});
@@ -75,7 +74,7 @@ const confirm = async (req, res) => {
     try {
         userConfirm.confirm = true;
         userConfirm.token = '';
-        await   userConfirm.save();
+        await userConfirm.save();
         res.json({msg: "Usuario confirmado correctamente"});
     } catch (error) {
         console.log(error);
@@ -133,11 +132,32 @@ const newPassword = async (req, res) => {
         } catch (error) {
             console.log(error);
         }
-
     }else{
         const error = new Error('Token no valido');
         return res.status(400).json({msg: error.message});
     }
+}
+
+const newInfoUser = async (req, res) => {
+    const{profilePicture, info} = req.body
+    console.log(req.body);
+    const{id} = req.params;
+    const user = await User.findOne({id});
+    
+    if(user){
+        user.info = req.body.info //se asigna el nuevo password
+        user.profilePicture = req.body.profilePicture //se reinicia el token
+        try {
+            await user.save();
+            res.json({msg: "User modified"}) 
+        } catch (error) {
+            console.log(error);
+        }
+    }else{
+        const error = new Error('Token no valido');
+        return res.status(400).json({msg: error.message});
+    }
+    // res.json({msg: "Password Modificado Correctamente"}) 
 }
 
 const profile = async (req, res) => {
@@ -153,5 +173,6 @@ export {
     forgetPassword,
     checkToken,
     newPassword,
+    newInfoUser,
     profile
 }
