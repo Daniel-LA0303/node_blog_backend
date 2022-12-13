@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
 import mongoose from "mongoose";
 
+const Schema = mongoose.Schema;
+
 //modelo de usuarios
 const usersSchema = mongoose.Schema({
     name: {
@@ -36,8 +38,18 @@ const usersSchema = mongoose.Schema({
     },
     info: {
         type: Object,
-        default: ""
-    }
+        default: {}
+    },
+    postsSaved:{
+        saved:{
+            type: Number,
+            default: 0
+        },
+        posts:[{
+            type: Schema.ObjectId,
+            ref: 'Post'
+        }]
+    },
 
 }, {
     timestamps: true
@@ -57,6 +69,6 @@ usersSchema.methods.checkPassword = async function(passwordForm){
     return await bcrypt.compare(passwordForm, this.password)
 }
 
-const User = mongoose.model("User", usersSchema);
+const User = mongoose.model('User', usersSchema);
 
 export default User;

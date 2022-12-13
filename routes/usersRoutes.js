@@ -8,6 +8,7 @@ import {
     checkToken,
     newPassword,
     newInfoUser,
+    getOneUser,
     profile
 } from "../controllers/usersController.js";
 
@@ -29,6 +30,10 @@ router.route('/new-password/:token')
 
 router.post('/new-info/:id', newInfoUser);
 
-router.get('/profile', checkAuth, profile);
+router.get('/get-profile/:id', getOneUser);
+
+router.get('/profile', 
+checkAuth, 
+profile);
 
 export default router

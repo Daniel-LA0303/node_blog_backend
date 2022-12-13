@@ -2,6 +2,9 @@ import User from '../models/User.js'
 import generateID from '../helpers/generateID.js'
 import generateJWT from '../helpers/generateJWT.js'
 import { emailRegister, emailNewPassword } from '../helpers/email.js'
+import { fileURLToPath } from "url";
+import path from "path"
+import fs from "fs"
 
 
 //registra un user
@@ -142,12 +145,27 @@ const newInfoUser = async (req, res) => {
     const{profilePicture, info} = req.body
     console.log(req.body);
     const{id} = req.params;
-    const user = await User.findOne({id});
-    
+    const user = await User.findById(id);
+    console.log(id);
     if(user){
-        user.info = req.body.info //se asigna el nuevo password
-        user.profilePicture = req.body.profilePicture //se reinicia el token
+        console.log('encontrado');
+    }
+    console.log(user);
+    if(user){
+
         try {
+            if(req.body.previousName){
+                if((req.body.previousName !== "")){
+                    const __filename = fileURLToPath(import.meta.url);
+                    const __dirname = path.dirname(__filename);
+                    console.log(__dirname);
+                    fs.unlinkSync(__dirname+`/../uploads-profile/${req.body.previousName}`);
+                    console.log('archivo eliminado');
+                }
+            }
+
+            user.info = req.body.info //se asigna el nuevo password
+            user.profilePicture = req.body.profilePicture //se reinicia el token
             await user.save();
             res.json({msg: "User modified"}) 
         } catch (error) {
@@ -157,9 +175,34 @@ const newInfoUser = async (req, res) => {
         const error = new Error('Token no valido');
         return res.status(400).json({msg: error.message});
     }
-    // res.json({msg: "Password Modificado Correctamente"}) 
+    
 }
 
+const getOneUser = async (req, res, next) =>{
+    try {
+        const user = await User.findById(req.params.id);
+        res.json(user);            
+    } catch (error) {
+        console.log(error);
+        res.json({msg: 'This post does not exist'});
+        next();
+    }    
+}
+
+
+// exports.getOnePost = async (req, res, next) =>{
+
+//     try {
+//         const post = await Post.findById(req.params.id);
+//         res.json(post);
+        
+//     } catch (error) {
+//         console.log(error);
+//         res.json({msg: 'This post does not exist'});
+//         next();
+//     }
+
+// }
 const profile = async (req, res) => {
     const {user} = req;
     res.json(user);
@@ -174,5 +217,6 @@ export {
     checkToken,
     newPassword,
     newInfoUser,
+    getOneUser,
     profile
 }
