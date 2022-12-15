@@ -9,6 +9,8 @@ import {
     newPassword,
     newInfoUser,
     getOneUser,
+    saveFollowTag,
+    // getOneUserWPS,
     profile
 } from "../controllers/usersController.js";
 
@@ -32,8 +34,11 @@ router.post('/new-info/:id', newInfoUser);
 
 router.get('/get-profile/:id', getOneUser);
 
+router.post('/save-follow/:id', saveFollowTag);
+// router.get('/get-users-save/:id', getOneUserWPS);
+
 router.get('/profile', 
-checkAuth, 
-profile);
+        checkAuth, 
+        profile);
 
 export default router

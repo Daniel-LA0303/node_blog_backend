@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+const Schema = mongoose.Schema;
 
 const CategoriesSchema = new mongoose.Schema({
     name: {
@@ -15,6 +16,22 @@ const CategoriesSchema = new mongoose.Schema({
         type: String,
         required : true,
         unique: true
+    },
+    color:{
+        type: String
+    },
+    desc: {
+        type: String
+    },
+    follows:{
+        countFollows:{
+            type: Number,
+            default: 0
+        },
+        users:[{
+                type: Schema.ObjectId,
+                ref: 'User'
+        }]
     }
 },
     {timestamps: true}

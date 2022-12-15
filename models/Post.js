@@ -60,6 +60,16 @@ const postSchema = Schema({
                 type: String
             }
         }]
+    },
+    usersSavedPost:{
+        numberUsersSavedPost:{
+            type: Number,
+            default: 0
+        },
+        users:[{
+            type: Schema.ObjectId,
+            ref: 'User'
+        }]
     }
 },
     {timestamps: true}

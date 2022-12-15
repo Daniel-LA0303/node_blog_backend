@@ -5,6 +5,7 @@ import { emailRegister, emailNewPassword } from '../helpers/email.js'
 import { fileURLToPath } from "url";
 import path from "path"
 import fs from "fs"
+import Categories from '../models/Categories.js';
 
 
 //registra un user
@@ -180,7 +181,27 @@ const newInfoUser = async (req, res) => {
 
 const getOneUser = async (req, res, next) =>{
     try {
-        const user = await User.findById(req.params.id);
+        const user = await User.findById(req.params.id).populate({
+            path: "postsSaved",
+            populate: {
+                path: "posts",
+                populate:{
+                    path: "user"
+                }
+            }
+        })
+        // .populate({
+        //     path: "postsSaved",
+        //     populate: {
+        //         path: "posts",
+        //         populate:{
+        //             path: "usersSavedPost",
+        //             populate:{
+        //                 path: "users"
+        //             }
+        //         }
+        //     } 
+        // })
         res.json(user);            
     } catch (error) {
         console.log(error);
@@ -189,20 +210,79 @@ const getOneUser = async (req, res, next) =>{
     }    
 }
 
-
-// exports.getOnePost = async (req, res, next) =>{
-
+// const getOneUserWPS = async () => {
 //     try {
-//         const post = await Post.findById(req.params.id);
-//         res.json(post);
-        
+//         const user = await User.findById(req.params.id).populate('postsSaved.posts').populate({
+//             path: "postsSaved",
+//             populate: {
+//                 path: "posts",
+//                 populate:{
+//                     path: "user"
+//                 }
+//             }
+//         }).populate({
+//             path: "postsSaved",
+//             populate: {
+//                 path: "posts",
+//                 populate:{
+//                     path: "user"
+//                 }
+//             } 
+//         })
+//         res.json(user);            
 //     } catch (error) {
 //         console.log(error);
 //         res.json({msg: 'This post does not exist'});
 //         next();
-//     }
-
+//     }  
 // }
+
+const saveFollowTag = async  (req, res) => {
+    // console.log(req.body);
+    // console.log(req.params);
+    const category = await Categories.findById(req.body._id)
+    const user = await User.findById(req.params.id)
+    // console.log(category);
+    // console.log(user);
+
+    const userFound = category.follows.users.includes(user._id);
+    const categoryFound = user.followsTags.tags.includes(category._id);
+    if(userFound && categoryFound){
+        console.log('encrontado');
+
+        const arrayC = category.follows.users;
+        const indexCat = arrayC.indexOf(user._id);
+        arrayC.splice(indexCat, 1);
+        category.follows.users = arrayC;
+        category.follows.countFollows = category.follows.countFollows -1
+        
+        const arrayU = user.followsTags.tags;
+        const indexU = arrayU.indexOf(category._id);
+        arrayU.splice(indexU, 1);
+        user.followsTags.tags = arrayU;
+        user.followsTags.countTags = user.followsTags.countTags -1
+
+        await user.save();
+        await category.save();
+
+
+    }else{
+        const newUserOnCategory = [...category.follows.users, user._id]
+        console.log(newUserOnCategory);
+        category.follows.users = newUserOnCategory;
+        category.follows.countFollows = category.follows.countFollows + 1;
+
+        const newCategoryOnUser = [...user.followsTags.tags, category._id];
+        console.log(newCategoryOnUser);
+        user.followsTags.tags = newCategoryOnUser;
+        user.followsTags.countTags = user.followsTags.countTags +1
+
+        await user.save();
+        await category.save();
+        console.log('no encontrado');
+    }
+}
+
 const profile = async (req, res) => {
     const {user} = req;
     res.json(user);
@@ -218,5 +298,7 @@ export {
     newPassword,
     newInfoUser,
     getOneUser,
+    saveFollowTag,
+    // getOneUserWPS,
     profile
 }

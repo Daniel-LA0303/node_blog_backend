@@ -94,11 +94,11 @@ const deletePost = async (req, res, next) =>{
     
     //search info about
     const post = await Post.findById(req.params.id)
-
     const user = await User.findById(post.user)
     //first delete the image
     console.log(post.user);
     console.log(user);
+
     if(post.linkImage !== ''){
         try {
             const __filename = fileURLToPath(import.meta.url);
@@ -110,7 +110,7 @@ const deletePost = async (req, res, next) =>{
         }
     }
 
-    //delete info from db
+    // delete info from db
     try {
         user.numberPost = user.numberPost - 1;
         await user.save();
@@ -159,32 +159,41 @@ const savePost = async (req, res, next) =>{
     
     console.log(req.params.id); //post id
     console.log(req.body._id); //user id
-    const post = await Post.findById(req.params.id)
 
+    const post = await Post.findById(req.params.id)
     const user = await User.findById(req.body._id)
 
-    // console.log('post', post);
-    // console.log('user', user);
-
     const postFound = user.postsSaved.posts.includes(post._id);
-    if(postFound){
+    const userFound = post.usersSavedPost.users.includes(user._id);
+    if(postFound && userFound){
 
         const arrayP = user.postsSaved.posts;
         const indexPost = arrayP.indexOf(post._id)
-        arrayP.splice(indexPost, 1)
-        
+        arrayP.splice(indexPost, 1)        
         user.postsSaved.posts = arrayP;
-        user.postsSaved.saved = user.postsSaved.saved -1
-        post.saved = post.saved -1
+        // user.postsSaved.saved = user.postsSaved.saved -1
+        
+        const arrayU = post.usersSavedPost.users;
+        const indexUser = arrayU.indexOf(user._id);
+        arrayU.splice(indexUser, 1);
+        post.usersSavedPost.users = arrayU;
+        // post.usersSavedPost.numberUsersSavedPost = post.usersSavedPost.numberUsersSavedPost -1
+
         await post.save();
         await user.save();
+        console.log('encontradi');
     }else{
         console.log('no encontrado');
-        const newUser = [...user.postsSaved.posts, post._id];
-        console.log(newUser);
-        user.postsSaved.posts = newUser;
-        user.postsSaved.saved = user.postsSaved.saved +1
-        post.saved = post.saved +1
+        const newPostOnUser = [...user.postsSaved.posts, post._id];
+        console.log('array user on post', newPostOnUser);
+        user.postsSaved.posts = newPostOnUser;
+        // user.postsSaved.saved = user.postsSaved.saved +1
+
+        const newUserOnPost = [...post.usersSavedPost.users, user._id]
+        console.log('array post on user', newUserOnPost);
+        post.usersSavedPost.users = newUserOnPost;
+        // post.usersSavedPost.numberUsersSavedPost = post.usersSavedPost.numberUsersSavedPost + 1
+
         await post.save();
         await user.save();
     }

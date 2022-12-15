@@ -50,7 +50,16 @@ const usersSchema = mongoose.Schema({
             ref: 'Post'
         }]
     },
-
+    followsTags:{
+        countTags:{
+            type: Number,
+            default: 0
+        },
+        tags:[{
+            type: Schema.ObjectId,
+            ref: 'Categories'
+        }]
+    }
 }, {
     timestamps: true
 });
