@@ -8,7 +8,7 @@ import fs from "fs"
 const registerPost = async (req, res) => {
 
     // console.log(req.body.user);
-    const user = await User.findById(req.body.user)
+    const user = await User.findById(req.body.user);
     // if(user){
     //     console.log(user);
     // }
@@ -127,31 +127,38 @@ const likePost = async (req, res, next) =>{
     
     //search info about
     const post = await Post.findById(req.params.id)
-    const user = await User.findById(post.user)
+    const user = await User.findById(req.body._id)
 
-    // console.log(req.body._id);
-    // console.log(post.likePost.users);
+    // console.log(user);
+    // console.log(post);
 
-    //search user
-    const userFound = post.likePost.users.includes(req.body._id)
+    //search user ans post
+    const userFound = post.likePost.users.includes(user._id);
+    const postFound = user.likePost.posts.includes(post._id);
 
-    try {
 
-        if(userFound){
-            const newLikes = post.likePost.users.filter(user => user !== req.body._id);
-            post.likePost.users = newLikes
-            post.likePost.reactions = post.likePost.reactions -1;
-            await post.save();
-        }else{
-            const newPost = [...post.likePost.users, req.body._id]
-            post.likePost.users = newPost
-            post.likePost.reactions = post.likePost.reactions +1;
-            await post.save();
-        }
-        // await Post.findByIdAndDelete({_id: req.params.id});
-    } catch (error) {
-        console.log(error);
-        next();
+    if(userFound && postFound){
+        const arrayP = post.likePost.users;
+        const indexP = arrayP.indexOf(user._id);
+        arrayP.splice(indexP, 1);
+        post.likePost.users = arrayP;
+
+        const arrayU = user.likePost.posts;
+        const indexU = arrayU.indexOf(post._id);
+        arrayU.splice(indexU, 1);
+        user.likePost.post = arrayU;
+
+        await post.save();
+        await user.save();
+    }else{
+        const newLikeOnPost = [...post.likePost.users, user._id]
+        post.likePost.users = newLikeOnPost;
+
+        const newLikeOnUser = [...user.likePost.posts, post._id]
+        user.likePost.posts = newLikeOnUser;
+
+        await post.save();
+        await user.save();
     }
 }
 

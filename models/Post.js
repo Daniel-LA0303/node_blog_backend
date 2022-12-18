@@ -36,11 +36,10 @@ const postSchema = Schema({
             type: Number,
             default: 0
         },
-        users : []
-    },
-    saved:{
-        type: Number,
-        default: 0
+        users : [{
+            type: Schema.ObjectId,
+            ref: 'User'
+        }]
     },
     commenstOnPost:{
         numberComments:{

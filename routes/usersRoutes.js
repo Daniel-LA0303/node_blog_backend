@@ -9,7 +9,9 @@ import {
     newPassword,
     newInfoUser,
     getOneUser,
+    getOneUserFollow,
     saveFollowTag,
+    followAndFollowed,
     // getOneUserWPS,
     profile
 } from "../controllers/usersController.js";
@@ -34,7 +36,11 @@ router.post('/new-info/:id', newInfoUser);
 
 router.get('/get-profile/:id', getOneUser);
 
+router.get('/get-profile-follows/:id', getOneUserFollow);
+
 router.post('/save-follow/:id', saveFollowTag);
+
+router.post('/user-follow/:id', followAndFollowed);
 // router.get('/get-users-save/:id', getOneUserWPS);
 
 router.get('/profile', 

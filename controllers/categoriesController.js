@@ -22,6 +22,16 @@ const getCategories = async(req, res) => {
     }
 }
 
+const getOneCategory = async(req, res) => {
+
+    try {
+        const category = await Categories.findOne({name : req.params.id}).populate('follows');
+        res.status(200).json(category);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+}
+
 const updateCategories = async(req, res) => {  
     console.log(req.params.id); 
     const category = await Categories.findById(req.params.id);
@@ -40,5 +50,6 @@ const updateCategories = async(req, res) => {
 export {
     addCategory,
     getCategories,
+    getOneCategory,
     updateCategories
 }

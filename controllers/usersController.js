@@ -189,19 +189,19 @@ const getOneUser = async (req, res, next) =>{
                     path: "user"
                 }
             }
+        }).populate({
+            path: "followsTags",
+            populate: {
+                path: "tags",
+
+            }
+        }).populate({
+            path: "likePost",
+            populate: {
+                path: "posts",
+
+            }
         })
-        // .populate({
-        //     path: "postsSaved",
-        //     populate: {
-        //         path: "posts",
-        //         populate:{
-        //             path: "usersSavedPost",
-        //             populate:{
-        //                 path: "users"
-        //             }
-        //         }
-        //     } 
-        // })
         res.json(user);            
     } catch (error) {
         console.log(error);
@@ -210,32 +210,27 @@ const getOneUser = async (req, res, next) =>{
     }    
 }
 
-// const getOneUserWPS = async () => {
-//     try {
-//         const user = await User.findById(req.params.id).populate('postsSaved.posts').populate({
-//             path: "postsSaved",
-//             populate: {
-//                 path: "posts",
-//                 populate:{
-//                     path: "user"
-//                 }
-//             }
-//         }).populate({
-//             path: "postsSaved",
-//             populate: {
-//                 path: "posts",
-//                 populate:{
-//                     path: "user"
-//                 }
-//             } 
-//         })
-//         res.json(user);            
-//     } catch (error) {
-//         console.log(error);
-//         res.json({msg: 'This post does not exist'});
-//         next();
-//     }  
-// }
+const getOneUserFollow = async (req, res, next) =>{
+    try {
+        const user = await User.findById(req.params.id).populate({
+            path: "followersUsers",
+            populate: {
+                path: "followers",
+            }
+        }).populate({
+            path: "followedUsers",
+            populate: {
+                path: "followed",
+            }
+        })
+        res.json(user);            
+    } catch (error) {
+        console.log(error);
+        res.json({msg: 'This post does not exist'});
+        next();
+    }    
+}
+
 
 const saveFollowTag = async  (req, res) => {
     // console.log(req.body);
@@ -283,6 +278,47 @@ const saveFollowTag = async  (req, res) => {
     }
 }
 
+const followAndFollowed = async (req, res) => {
+// console.log(req.params); //usuario para seguir
+// console.log(req.body); //useraio que solicita seguir
+    const userFollowed =  await User.findById(req.params.id); //usuario para seguir
+    const userProfile =  await User.findById(req.body._id); //usuario que solicita seguir
+
+    const userFollowedFound = userFollowed.followersUsers.followers.includes(userProfile._id);
+    const userProfileFound = userProfile.followedUsers.followed.includes(userFollowed._id);
+
+    if(userFollowedFound && userProfileFound){
+        console.log('encontrado');
+        const arrayUF = userFollowed.followersUsers.followers;
+        const indexUP = arrayUF.indexOf(userProfile._id);
+        arrayUF.splice(indexUP, 1);
+        userFollowed.followersUsers.followers = arrayUF;
+        userFollowed.followersUsers.conutFollowers = userFollowed.followersUsers.conutFollowers - 1;
+
+        const arrayUP = userProfile.followedUsers.followed;
+        const indexUF = arrayUP.indexOf(userFollowed._id);
+        arrayUP.splice(indexUF, 1);
+        userProfile.followedUsers.followed = arrayUP;
+        userProfile.followedUsers.conutFollowed =  userProfile.followedUsers.conutFollowed - 1
+
+        await userFollowed.save();
+        await userProfile.save();
+    }else{
+        console.log('no encontrado');
+        const newUserFollowed = [...userFollowed.followersUsers.followers, userProfile._id]
+        userFollowed.followersUsers.followers = newUserFollowed;
+        userFollowed.followersUsers.conutFollowers = userFollowed.followersUsers.conutFollowers + 1
+
+        const newUserProfile = [...userProfile.followedUsers.followed, userFollowed._id]
+        userProfile.followedUsers.followed = newUserProfile;
+        userProfile.followedUsers.conutFollowed =  userProfile.followedUsers.conutFollowed + 1
+
+        await userFollowed.save();
+        await userProfile.save();
+    }
+
+}
+
 const profile = async (req, res) => {
     const {user} = req;
     res.json(user);
@@ -298,7 +334,9 @@ export {
     newPassword,
     newInfoUser,
     getOneUser,
+    getOneUserFollow,
     saveFollowTag,
+    followAndFollowed,
     // getOneUserWPS,
     profile
 }

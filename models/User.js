@@ -40,6 +40,16 @@ const usersSchema = mongoose.Schema({
         type: Object,
         default: {}
     },
+    likePost: {
+        reactions:{
+            type: Number,
+            default: 0
+        },
+        posts:[{
+            type: Schema.ObjectId,
+            ref: 'Post'
+        }]
+    },
     postsSaved:{
         saved:{
             type: Number,
@@ -58,6 +68,26 @@ const usersSchema = mongoose.Schema({
         tags:[{
             type: Schema.ObjectId,
             ref: 'Categories'
+        }]
+    },
+    followersUsers:{
+        conutFollowers:{
+            type: Number,
+            default: 0
+        },
+        followers:[{
+            type: Schema.ObjectId,
+            ref: 'User'
+        }]
+    },
+    followedUsers:{
+        conutFollowed:{
+            type: Number,
+            default: 0
+        },
+        followed:[{
+            type: Schema.ObjectId,
+            ref: 'User'
         }]
     }
 }, {
