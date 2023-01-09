@@ -13,6 +13,7 @@ import {
     saveFollowTag,
     followAndFollowed,
     // getOneUserWPS,
+    getAllUsers,
     profile
 } from "../controllers/usersController.js";
 
@@ -42,6 +43,8 @@ router.post('/save-follow/:id', saveFollowTag);
 
 router.post('/user-follow/:id', followAndFollowed);
 // router.get('/get-users-save/:id', getOneUserWPS);
+
+router.get('/all-users', getAllUsers);
 
 router.get('/profile', 
         checkAuth, 

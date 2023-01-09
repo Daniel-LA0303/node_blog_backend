@@ -319,6 +319,15 @@ const followAndFollowed = async (req, res) => {
 
 }
 
+const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find();
+        res.status(200).json(users);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+}
+
 const profile = async (req, res) => {
     const {user} = req;
     res.json(user);
@@ -337,6 +346,7 @@ export {
     getOneUserFollow,
     saveFollowTag,
     followAndFollowed,
+    getAllUsers,
     // getOneUserWPS,
     profile
 }
