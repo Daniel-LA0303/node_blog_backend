@@ -227,6 +227,14 @@ const saveComment = async (req, res, next) =>{
     }
 }
 
+const getUserPost = async (req, res, next) =>{
+    console.log(req.params.id);
+    // res.json({msg: 'hi'});
+    const post = await Post.find({user:req.params.id})
+    res.json(post)
+}
+
+
 
 export {
     registerPost,
@@ -236,5 +244,6 @@ export {
     deletePost,
     likePost,
     savePost,
-    saveComment
+    saveComment,
+    getUserPost
 }

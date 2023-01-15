@@ -7,7 +7,8 @@ import {
     deletePost,
     likePost,
     savePost,
-    saveComment
+    saveComment,
+    getUserPost
 } from "../controllers/postController.js";
 
 
@@ -19,6 +20,7 @@ router.get('/', getAllPosts);
 router.get('/:id', getOnePost); 
 router.put('/:id', updatePost);
 router.delete('/:id', deletePost);
+router.get('/get-user-posts/:id', getUserPost);
 
 
 router.post('/like-post/:id', likePost);
