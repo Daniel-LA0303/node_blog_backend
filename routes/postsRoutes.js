@@ -8,7 +8,9 @@ import {
     likePost,
     savePost,
     saveComment,
-    getUserPost
+    deleteComment,
+    editComment,
+    getUserPost,
 } from "../controllers/postController.js";
 
 
@@ -25,6 +27,9 @@ router.get('/get-user-posts/:id', getUserPost);
 
 router.post('/like-post/:id', likePost);
 router.post('/save-post/:id', savePost);
+
 router.post('/save-comment/:id', saveComment);
+router.post('/delete-post-comment/:id', deleteComment);
+router.post('/edit-post-comment/:id', editComment);
 
 export default router

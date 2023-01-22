@@ -60,10 +60,10 @@ const getOnePost = async (req, res, next) =>{
 //update a post
 const updatePost = async(req, res, next) => {
 
-    console.log(req.params);
-    console.log(req.body);
+    // console.log(req.params);
+    // console.log(req.body);
     
-    let post = req.body;
+    // let post = req.body;
     try {
         if(req.body.previousName){
             if((req.body.previousName !== "")){
@@ -96,8 +96,8 @@ const deletePost = async (req, res, next) =>{
     const post = await Post.findById(req.params.id)
     const user = await User.findById(post.user)
     //first delete the image
-    console.log(post.user);
-    console.log(user);
+    // console.log(post.user);
+    // console.log(user);
 
     if(post.linkImage !== ''){
         try {
@@ -164,8 +164,8 @@ const likePost = async (req, res, next) =>{
 
 const savePost = async (req, res, next) =>{
     
-    console.log(req.params.id); //post id
-    console.log(req.body._id); //user id
+    // console.log(req.params.id); //post id
+    // console.log(req.body._id); //user id
 
     const post = await Post.findById(req.params.id)
     const user = await User.findById(req.body._id)
@@ -206,13 +206,14 @@ const savePost = async (req, res, next) =>{
     }
 }
 
+
 const saveComment = async (req, res, next) =>{
     console.log(req.params.id);
     // console.log(req.body);
     const {user, comment} = req.body
     const post = await Post.findById(req.params.id)
     // console.log(post)
-    console.log(user, comment);
+    // console.log(user, comment);
     try {
         post.commenstOnPost.numberComments = post.commenstOnPost.numberComments +1;
         const newComments = [...post.commenstOnPost.comments, req.body]
@@ -226,6 +227,56 @@ const saveComment = async (req, res, next) =>{
         next();
     }
 }
+
+const deleteComment = async (req, res, next) =>{
+    // console.log(req.params.id);
+    // console.log(req.body);
+    const post = await Post.findById(req.params.id)
+
+    // posts: state.posts.filter(post => post._id !== action.payload)
+
+    try {
+        const newComments = post.commenstOnPost.comments.filter(comment => comment._id != req.body.id)
+        post.commenstOnPost.comments = newComments;
+        await post.save();
+    } catch (error) {
+        
+    }
+    
+    // console.log(newComments);
+} 
+
+const editComment = async (req, res, next) =>{
+    // console.log(req.params.id);
+    // console.log(req.body);
+    // const post = await Post.findById(req.params.id)
+
+    //solution 2
+    Post.findOneAndUpdate(
+        {"_id" : req.params.id, "commenstOnPost.comments._id" : req.body._id},
+        {
+            "$set" : {
+                "commenstOnPost.comments.$": req.body
+            }
+        },
+        function(error, doc){
+            // console.log(error);
+        }
+        
+    )
+    
+    //solution 1
+    // try {
+    //     const newComments = post.commenstOnPost.comments.map(comment => comment.dateComment === req.body.dateComment ? req.body : comment );
+    //     console.log(newComments);
+    //     post.commenstOnPost.comments = newComments;
+    //     await post.save()
+    // } catch (error) {
+    //     console.log(error);
+    // }
+    
+    // console.log(newComments);
+} 
 
 const getUserPost = async (req, res, next) =>{
     console.log(req.params.id);
@@ -245,5 +296,7 @@ export {
     likePost,
     savePost,
     saveComment,
+    deleteComment,
+    editComment,
     getUserPost
 }

@@ -57,7 +57,7 @@ const postSchema = Schema({
             },
             dateComment: {
                 type: String
-            }
+            },
         }]
     },
     usersSavedPost:{
