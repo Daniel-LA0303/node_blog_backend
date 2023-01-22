@@ -236,6 +236,7 @@ const deleteComment = async (req, res, next) =>{
     // posts: state.posts.filter(post => post._id !== action.payload)
 
     try {
+        post.commenstOnPost.numberComments = post.commenstOnPost.numberComments -1;
         const newComments = post.commenstOnPost.comments.filter(comment => comment._id != req.body.id)
         post.commenstOnPost.comments = newComments;
         await post.save();
