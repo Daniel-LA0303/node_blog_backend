@@ -15,15 +15,15 @@ export const emailRegister = async (datos) => {
 
     //Informacion del email
     const info = await transport.sendMail({
-        from: '"UpTask - Administrador de Proyectos"  <cuentas@uptask.com>',
+        from: 'Daniel-LA Blog',
         to: email,
-        subject: "UpTask - Comprueba tu cuenta",
-        text: "Comprueba tu cuenta en UpTask",
+        subject: "Blog Daniel-LA, Check your account",
+        text: "Check your account at Daniel-LA Blog",
         html:`
-            <p>Hola: ${name}, comprueba tu cuenta en UpTask</p>
-            <p>Tu cuenta ya esta casi lista, solo compruebala con el siguiente enlace</p>
-            <a href="http://127.0.0.1:5173/user-confirmed/${token}">Comprueba tu cuenta</a>
-            <p>Si no has creado esta cuenta, por favor ignora este mensaje</p>
+            <p>Hi: ${name}, check your account at Daniel-LA Blog</p>
+            <p>TYour account is almost ready, just check with the following link</p>
+            <a href="http://127.0.0.1:5173/user-confirmed/${token}">Check your account</a>
+            <p>If you have not created this account, please ignore this message</p>
         `
     })
 }
@@ -43,15 +43,15 @@ export const emailNewPassword = async (datos) => {
 
     //Informacion del email
     const info = await transport.sendMail({
-        from: '"UpTask - Administrador de Proyectos"  <cuentas@uptask.com>',
+        from: 'Daniel-LA Blog',
         to: email,
-        subject: "UpTask - Reestablece tu Password",
-        text: "Reestablece tu Password en UpTask",
+        subject: "Daniel-LA Blog - Reset your Password",
+        text: "Reset your Password in Daniel-LA Blog",
         html:`
-            <p>Hola: ${name}, Reestablece tu Password en UpTask</p>
-            <p>Sigue el siguiente enlace para generar un nuevo password</p>
-            <a href="http://127.0.0.1:5173/forget-password/${token}">Reestablecer Password</a>
-            <p>Si no has creado esta cuenta, por favor ignora este mensaje</p>
+            <p>Hola: ${name}, Reset your Password in Daniel-LA Blog</p>
+            <p>Follow the link below to generate a new password</p>
+            <a href="http://127.0.0.1:5173/forget-password/${token}">Reset your Password</a>
+            <p>If you have not created this account, please ignore this message</p>
         `
     })
 }

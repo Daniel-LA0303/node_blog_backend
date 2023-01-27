@@ -16,7 +16,7 @@ const registerUser = async (req, res) => {
     const existUser = await User.findOne({email: email});
     
     if(existUser){
-        const error = new Error('Este Email ya esta registrado');
+        const error = new Error('This email is already registered');
         return res.status(400).json({msg: error.message});
     }
     try {
@@ -30,7 +30,7 @@ const registerUser = async (req, res) => {
             token: user.token
         })
 
-        res.json({ msg: "Usuario creado correctamente, revisa tu email para confrimarlo."})
+        res.json({ msg: "User created correctly, check your email to confirm."})
     } catch (error) {
         console.log(error);
     }
@@ -42,13 +42,13 @@ const authUser = async (req, res) => {
     //comprobar si el user existe
     const user = await User.findOne({email : email});
     if(!user){
-        const error = new Error("Este user no exite");
+        const error = new Error("This user does not exist");
         return res.status(404).json({msg: error.message});
     }
 
     //comprobar si el user esta confirmado
     if(!user.confirm){
-        const error = new Error("Esta cuanta no ha sido confirmada");
+        const error = new Error("This account has not been confirmed");
         return res.status(403).json({msg: error.message});
     }
 
@@ -61,7 +61,7 @@ const authUser = async (req, res) => {
             token: generateJWT(user._id) //<-- genera un JWT
         })
     }else{
-        const error = new Error("La contraseña es incorrecta");
+        const error = new Error("Your password is incorrect");
         return res.status(404).json({msg: error.message});
     }
 }
@@ -72,14 +72,14 @@ const confirm = async (req, res) => {
     const userConfirm = await User.findOne({token: token});
 
     if(!userConfirm){
-        const error = new Error("Token no valido");
+        const error = new Error("Invalid token");
         return res.status(403).json({msg: error.message});
     }
     try {
         userConfirm.confirm = true;
         userConfirm.token = '';
         await userConfirm.save();
-        res.json({msg: "Usuario confirmado correctamente"});
+        res.json({msg: "User confirmed correctly"});
     } catch (error) {
         console.log(error);
     }
@@ -90,7 +90,7 @@ const forgetPassword = async(req, res) => {
     const user = await User.findOne({email: email});
     
     if(!user){
-        const error = new Error('Este user no existe');
+        const error = new Error('This user does not exist');
         return res.status(400).json({msg: error.message});
     }
 
@@ -102,7 +102,7 @@ const forgetPassword = async(req, res) => {
             name: user.name,
             token: user.token
         })
-        res.json({msg: "Hemos enviado un email con las instruccioes"});
+        res.json({msg: "We have sent an email with instructions"});
     } catch (error) {
         console.log(error);
     }
@@ -132,26 +132,19 @@ const newPassword = async (req, res) => {
         user.token = '' //se reinicia el token
         try {
             await user.save();
-            res.json({msg: "Password Modificado Correctamente"}) 
+            res.json({msg: "Password Modified Correctly"}) 
         } catch (error) {
             console.log(error);
         }
     }else{
-        const error = new Error('Token no valido');
+        const error = new Error('Invalid token');
         return res.status(400).json({msg: error.message});
     }
 }
 
 const newInfoUser = async (req, res) => {
-    const{profilePicture, info} = req.body
-    console.log(req.body);
     const{id} = req.params;
     const user = await User.findById(id);
-    console.log(id);
-    if(user){
-        console.log('encontrado');
-    }
-    console.log(user);
     if(user){
 
         try {
@@ -161,7 +154,6 @@ const newInfoUser = async (req, res) => {
                     const __dirname = path.dirname(__filename);
                     console.log(__dirname);
                     fs.unlinkSync(__dirname+`/../uploads-profile/${req.body.previousName}`);
-                    console.log('archivo eliminado');
                 }
             }
 
@@ -173,7 +165,7 @@ const newInfoUser = async (req, res) => {
             console.log(error);
         }
     }else{
-        const error = new Error('Token no valido');
+        const error = new Error('Invalid token');
         return res.status(400).json({msg: error.message});
     }
     
@@ -233,17 +225,13 @@ const getOneUserFollow = async (req, res, next) =>{
 
 
 const saveFollowTag = async  (req, res) => {
-    // console.log(req.body);
-    // console.log(req.params);
     const category = await Categories.findById(req.body._id)
     const user = await User.findById(req.params.id)
-    // console.log(category);
-    // console.log(user);
+
 
     const userFound = category.follows.users.includes(user._id);
     const categoryFound = user.followsTags.tags.includes(category._id);
     if(userFound && categoryFound){
-        console.log('encrontado');
 
         const arrayC = category.follows.users;
         const indexCat = arrayC.indexOf(user._id);
@@ -259,28 +247,23 @@ const saveFollowTag = async  (req, res) => {
 
         await user.save();
         await category.save();
-
-
     }else{
         const newUserOnCategory = [...category.follows.users, user._id]
-        console.log(newUserOnCategory);
         category.follows.users = newUserOnCategory;
         category.follows.countFollows = category.follows.countFollows + 1;
 
         const newCategoryOnUser = [...user.followsTags.tags, category._id];
-        console.log(newCategoryOnUser);
         user.followsTags.tags = newCategoryOnUser;
         user.followsTags.countTags = user.followsTags.countTags +1
 
         await user.save();
         await category.save();
-        console.log('no encontrado');
+
     }
 }
 
 const followAndFollowed = async (req, res) => {
-// console.log(req.params); //usuario para seguir
-// console.log(req.body); //useraio que solicita seguir
+
     const userFollowed =  await User.findById(req.params.id); //usuario para seguir
     const userProfile =  await User.findById(req.body._id); //usuario que solicita seguir
 
@@ -288,7 +271,6 @@ const followAndFollowed = async (req, res) => {
     const userProfileFound = userProfile.followedUsers.followed.includes(userFollowed._id);
 
     if(userFollowedFound && userProfileFound){
-        console.log('encontrado');
         const arrayUF = userFollowed.followersUsers.followers;
         const indexUP = arrayUF.indexOf(userProfile._id);
         arrayUF.splice(indexUP, 1);
@@ -304,7 +286,7 @@ const followAndFollowed = async (req, res) => {
         await userFollowed.save();
         await userProfile.save();
     }else{
-        console.log('no encontrado');
+
         const newUserFollowed = [...userFollowed.followersUsers.followers, userProfile._id]
         userFollowed.followersUsers.followers = newUserFollowed;
         userFollowed.followersUsers.conutFollowers = userFollowed.followersUsers.conutFollowers + 1

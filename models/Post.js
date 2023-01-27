@@ -32,10 +32,6 @@ const postSchema = Schema({
         required:false
     },
     likePost: {
-        reactions:{
-            type: Number,
-            default: 0
-        },
         users : [{
             type: Schema.ObjectId,
             ref: 'User'
@@ -61,10 +57,6 @@ const postSchema = Schema({
         }]
     },
     usersSavedPost:{
-        numberUsersSavedPost:{
-            type: Number,
-            default: 0
-        },
         users:[{
             type: Schema.ObjectId,
             ref: 'User'
