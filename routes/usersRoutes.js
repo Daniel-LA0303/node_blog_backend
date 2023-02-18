@@ -1,4 +1,5 @@
 import express from "express";
+import fileUpload from "express-fileupload";
 import checkAuth from "../middleware/checkAuth.js"
 import { 
     registerUser, 
@@ -33,7 +34,11 @@ router.route('/new-password/:token')
     .get(checkToken) //comprueba el token que se manda cuando se ejecuta olvidePassword
     .post(newPassword) //redirije a una pestaña para nuevo password
 
-router.post('/new-info/:id', newInfoUser);
+router.post('/new-info/:id',     
+    fileUpload({
+        useTempFiles: true,
+        tempFileDir: "./uploads_pro",
+    }),newInfoUser);
 
 router.get('/get-profile/:id', getOneUser);
 

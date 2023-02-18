@@ -61,6 +61,10 @@ const postSchema = Schema({
             type: Schema.ObjectId,
             ref: 'User'
         }]
+    },
+    date:{
+        type: Number,
+        required: false
     }
 },
     {timestamps: true}

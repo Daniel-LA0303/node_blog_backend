@@ -4,8 +4,9 @@ import generateJWT from '../helpers/generateJWT.js'
 import { emailRegister, emailNewPassword } from '../helpers/email.js'
 import { fileURLToPath } from "url";
 import path from "path"
-import fs from "fs"
+import fs from "fs-extra"
 import Categories from '../models/Categories.js';
+import { deleteImage, uploadImage } from '../config/cloudinary.js';
 
 
 //registra un user
@@ -144,30 +145,57 @@ const newPassword = async (req, res) => {
 
 const newInfoUser = async (req, res) => {
     const{id} = req.params;
-    const user = await User.findById(id);
-    if(user){
+    // const user = await User.findById(id);
+    console.log(id);
+    console.log(req.body);
+    console.log(req.files);
+    // if(user){
 
         try {
+            const user = await User.findById(id);
+            //cuando inserta una nueva imagen tienen que eliminar la anterior
             if(req.body.previousName){
                 if((req.body.previousName !== "")){
-                    const __filename = fileURLToPath(import.meta.url);
-                    const __dirname = path.dirname(__filename);
-                    console.log(__dirname);
-                    fs.unlinkSync(__dirname+`/../uploads-profile/${req.body.previousName}`);
+                    //el usuario inserto una nueva imagen, la pasada se elimina
+                    await deleteImage(req.body.previousName) 
+                    // const __filename = fileURLToPath(import.meta.url);
+                    // const __dirname = path.dirname(__filename);
+                    // console.log(__dirname);
+                    // fs.unlinkSync(__dirname+`/../uploads-profile/${req.body.previousName}`);
                 }
             }
-
-            user.info = req.body.info //se asigna el nuevo password
-            user.profilePicture = req.body.profilePicture //se reinicia el token
+            //agrega la nueva imagen
+            if(req.files?.image){
+                const result = await uploadImage(req.files.image.tempFilePath)
+                user.profilePicture = {
+                    public_id: result.public_id, //para eliminar el archivo cuando se requiera
+                    secure_url: result.secure_url //para consultar el archivo
+                } 
+                await fs.unlink(req.files.image.tempFilePath)
+            }
+            //cuando el usuario decidio no cambiar la imagen
+            if(req.body.profilePicture){
+                const profilePicture = JSON.parse(req.body.profilePicture)
+                user.profilePicture = profilePicture
+            }
+            
+            user.info = {
+                desc: req.body.desc,
+                work: req.body.work,
+                education: req.body.education,
+                skills: req.body.skills
+            }
+            
             await user.save();
             res.json({msg: "User modified"}) 
         } catch (error) {
             console.log(error);
         }
-    }else{
-        const error = new Error('Invalid token');
-        return res.status(400).json({msg: error.message});
-    }
+    // }
+    // else{
+    //     const error = new Error('Invalid token');
+    //     return res.status(400).json({msg: error.message});
+    // }
     
 }
 
