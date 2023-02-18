@@ -20,8 +20,14 @@ const postSchema = Schema({
         required: true
     },
     linkImage: {
-        type: String,
-        required: false
+        secure_url: {
+            type: String,
+            default: ''
+        },
+        public_id: {
+            type: String,
+            default: ''
+        },
     },
     categoriesPost:{
         type: Array,

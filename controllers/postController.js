@@ -2,7 +2,9 @@ import Post from '../models/Post.js';
 import User from '../models/User.js'
 import { fileURLToPath } from "url";
 import path from "path"
-import fs from "fs"
+// import fs from "fs"
+import fs from "fs-extra"
+import { deleteImage, uploadImage, uploadImagePost } from '../config/cloudinary.js';
 
 //registra un user
 const registerPost = async (req, res) => {
@@ -21,6 +23,23 @@ const registerPost = async (req, res) => {
         console.log(error);
     }
 }
+
+const uploadImagePostController = async (req, res) => {
+    // console.log(req.files);
+    try {
+        const result = await uploadImagePost(req.files.image.tempFilePath)
+        res.json({
+            public_id: result.public_id, //para eliminar el archivo cuando se requiera
+            secure_url: result.secure_url //para consultar el archivo
+        });
+        await fs.unlink(req.files.image.tempFilePath)
+    } catch (error) {
+        console.log(error);
+    }
+    
+
+}
+
 
 const getAllPosts = async (req, res, next) =>{
     try {
@@ -55,15 +74,19 @@ const getOnePost = async (req, res, next) =>{
 
 //update a post
 const updatePost = async(req, res, next) => {
+    const{id} = req.params;
+    console.log(id);
+    console.log(req.body);
+    // console.log(req.files);
 
     try {
+        // const post = await Post.findById(id)
         if(req.body.previousName){
             if((req.body.previousName !== "")){
-                const __filename = fileURLToPath(import.meta.url);
-                const __dirname = path.dirname(__filename);
-                fs.unlinkSync(__dirname+`/../uploads-post/${req.body.previousName}`);
+                await deleteImage(req.body.previousName) 
             }
         }
+
         await Post.findByIdAndUpdate(
             {_id: req.params.id},{
                 title: req.body.title,
@@ -88,13 +111,7 @@ const deletePost = async (req, res, next) =>{
     const user = await User.findById(post.user)
 
     if(post.linkImage !== ''){
-        try {
-            const __filename = fileURLToPath(import.meta.url);
-            const __dirname = path.dirname(__filename);
-            fs.unlinkSync(__dirname+`/../uploads-post/${post.linkImage}`);
-        } catch (error) {
-            console.log(error);
-        }
+        await deleteImage(post.linkImage.public_id) 
     }
 
     // delete info from db
@@ -242,6 +259,7 @@ const getUserPost = async (req, res, next) =>{
 
 export {
     registerPost,
+    uploadImagePostController,
     getAllPosts,
     getOnePost,
     updatePost,
