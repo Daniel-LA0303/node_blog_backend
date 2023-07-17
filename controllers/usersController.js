@@ -7,6 +7,7 @@ import path from "path"
 import fs from "fs-extra"
 import Categories from '../models/Categories.js';
 import { deleteImage, uploadImage } from '../config/cloudinary.js';
+import { log } from 'console';
 
 
 //registra un user
@@ -243,7 +244,8 @@ const getOneUserFollow = async (req, res, next) =>{
                 path: "followed",
             }
         })
-        res.json(user);            
+        res.json(user);    
+        //console.log(user.followedUsers);        
     } catch (error) {
         console.log(error);
         res.json({msg: 'This post does not exist'});
@@ -251,44 +253,37 @@ const getOneUserFollow = async (req, res, next) =>{
     }    
 }
 
-
-const saveFollowTag = async  (req, res) => {
-    const category = await Categories.findById(req.body._id)
-    const user = await User.findById(req.params.id)
-
-
-    const userFound = category.follows.users.includes(user._id);
-    const categoryFound = user.followsTags.tags.includes(category._id);
-    if(userFound && categoryFound){
-
-        const arrayC = category.follows.users;
-        const indexCat = arrayC.indexOf(user._id);
-        arrayC.splice(indexCat, 1);
-        category.follows.users = arrayC;
-        category.follows.countFollows = category.follows.countFollows -1
-        
-        const arrayU = user.followsTags.tags;
-        const indexU = arrayU.indexOf(category._id);
-        arrayU.splice(indexU, 1);
-        user.followsTags.tags = arrayU;
-        user.followsTags.countTags = user.followsTags.countTags -1
-
-        await user.save();
-        await category.save();
-    }else{
-        const newUserOnCategory = [...category.follows.users, user._id]
-        category.follows.users = newUserOnCategory;
-        category.follows.countFollows = category.follows.countFollows + 1;
-
-        const newCategoryOnUser = [...user.followsTags.tags, category._id];
-        user.followsTags.tags = newCategoryOnUser;
-        user.followsTags.countTags = user.followsTags.countTags +1
-
-        await user.save();
-        await category.save();
-
+const saveFollowTag = async (req, res) => {
+    try {
+      const category = await Categories.findById(req.body._id);
+      const user = await User.findById(req.params.id);
+  
+      const userFound = category.follows.users.includes(user._id);
+      const categoryFound = user.followsTags.tags.includes(category._id);
+  
+      if (userFound && categoryFound) {
+        category.follows.users.pull(user._id);
+        category.follows.countFollows -= 1;
+  
+        user.followsTags.tags.pull(category._id);
+        user.followsTags.countTags -= 1;
+      } else {
+        category.follows.users.push(user._id);
+        category.follows.countFollows += 1;
+  
+        user.followsTags.tags.push(category._id);
+        user.followsTags.countTags += 1;
+      }
+  
+      await Promise.all([user.save(), category.save()]);
+      console.log("click")
+    //   res.status(200).json({ message: 'Follow tag updated successfully' });
+    } catch (error) {
+      res.status(500).json({ error: 'Internal server error' });
     }
-}
+  };
+
+
 
 const followAndFollowed = async (req, res) => {
 
