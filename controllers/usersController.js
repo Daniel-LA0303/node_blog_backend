@@ -337,7 +337,8 @@ const getUserTags = async (req, res) => {
 
 const getUserPosts = async (req, res) => {
     try {
-        
+        const user = await User.findById(req.params.id).populate('posts')
+        res.json(user.posts); 
     } catch (error) {
         res.status(500).json({error: 'Something went wrong'});
         next(); 

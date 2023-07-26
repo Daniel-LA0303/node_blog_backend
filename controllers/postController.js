@@ -10,13 +10,19 @@ import { deleteImage, uploadImage, uploadImagePost } from '../config/cloudinary.
 const registerPost = async (req, res) => {
 
     const user = await User.findById(req.body.user);
+    if (!user) {
+        return res.status(404).json({ error: "User not found" });
+    }
     // //evitar email o usuarios duplicados
     try {
-        user.numberPost = user.numberPost + 1;
-        await user.save();
+
 
         const post = new Post(req.body);
         await post.save();
+
+        user.numberPost = user.numberPost + 1;
+        user.posts.push(post._id);
+        await user.save();
 
         res.json({ msg: "Post created correctly"})
     } catch (error) {
