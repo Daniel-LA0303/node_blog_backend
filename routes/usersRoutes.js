@@ -15,7 +15,11 @@ import {
     followAndFollowed,
     // getOneUserWPS,
     getAllUsers,
-    profile
+    profile,
+    getUserTags,
+    getUserPosts,
+    getUserLikePosts,
+    getUserSavePosts
 } from "../controllers/usersController.js";
 
 const router = express.Router();
@@ -42,12 +46,21 @@ router.post('/new-info/:id',
 
 router.get('/get-profile/:id', getOneUser);
 
+//-- Dashboard start --//
+router.get('/get-user-tags/:id', getUserTags);
+
+router.get('/get-user-posts/:id', getUserPosts)
+
+router.get('/get-user-like-posts/:id', getUserLikePosts);
+
+router.get('/get-user-save-post/:id', getUserSavePosts);
+
 router.get('/get-profile-follows/:id', getOneUserFollow);
+//-- Dashboard end --//
 
 router.post('/save-follow/:id', saveFollowTag);
 
 router.post('/user-follow/:id', followAndFollowed);
-// router.get('/get-users-save/:id', getOneUserWPS);
 
 router.get('/all-users', getAllUsers);
 

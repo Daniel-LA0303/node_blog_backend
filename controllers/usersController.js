@@ -231,27 +231,6 @@ const getOneUser = async (req, res, next) =>{
     }    
 }
 
-const getOneUserFollow = async (req, res, next) =>{
-    try {
-        const user = await User.findById(req.params.id).populate({
-            path: "followersUsers",
-            populate: {
-                path: "followers",
-            }
-        }).populate({
-            path: "followedUsers",
-            populate: {
-                path: "followed",
-            }
-        })
-        res.json(user);    
-        //console.log(user.followedUsers);        
-    } catch (error) {
-        console.log(error);
-        res.json({msg: 'This post does not exist'});
-        next();
-    }    
-}
 
 const saveFollowTag = async (req, res) => {
     try {
@@ -339,6 +318,86 @@ const profile = async (req, res) => {
 }
 
 
+//-- Dashboard start --//
+const getUserTags = async (req, res) => {
+        try {
+        const user = await User.findById(req.params.id).populate({
+            path: "followsTags",
+            populate: {
+                path: "tags",
+
+            }
+        })
+        res.json(user.followsTags.tags);            
+    } catch (error) {
+        res.status(500).json({error: 'Something went wrong'});
+        next();
+    }    
+}
+
+const getUserPosts = async (req, res) => {
+    try {
+        
+    } catch (error) {
+        res.status(500).json({error: 'Something went wrong'});
+        next(); 
+    }
+}
+
+const getUserLikePosts= async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).populate({
+            path: "likePost",
+            populate: {
+                path: "posts",
+
+            }
+        })
+        res.json(user.likePost.posts);            
+    } catch (error) {
+        res.status(500).json({error: 'Something went wrong'});
+        next();
+    }    
+}
+
+const getUserSavePosts = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).populate({
+            path: "postsSaved",
+            populate: {
+                path: "posts",
+
+            }
+        })
+        res.json(user.postsSaved.posts);            
+    } catch (error) {
+        res.status(500).json({error: 'Something went wrong'});
+        next();
+    }
+}
+
+
+const getOneUserFollow = async (req, res, next) =>{
+    try {
+        const user = await User.findById(req.params.id).populate({
+            path: "followersUsers",
+            populate: {
+                path: "followers",
+            }
+        }).populate({
+            path: "followedUsers",
+            populate: {
+                path: "followed",
+            }
+        })
+        res.json(user);          
+    } catch (error) {
+        res.status(500).json({error: 'Something went wrong'});
+        next();
+    }    
+}
+//-- Dashboard end --//
+
 export {
     registerUser,
     authUser,
@@ -348,7 +407,13 @@ export {
     newPassword,
     newInfoUser,
     getOneUser,
+    //dashboard
     getOneUserFollow,
+    getUserTags,
+    getUserPosts,
+    getUserLikePosts,
+    getUserSavePosts,
+    //dashboard
     saveFollowTag,
     followAndFollowed,
     getAllUsers,
