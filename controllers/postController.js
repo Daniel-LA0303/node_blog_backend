@@ -1,22 +1,37 @@
 import Post from '../models/Post.js';
-import User from '../models/User.js'
+import User from '../models/User.js';
+import Categories from '../models/Categories.js';
 import { fileURLToPath } from "url";
 import path from "path"
 // import fs from "fs"
 import fs from "fs-extra"
 import { deleteImage, uploadImage, uploadImagePost } from '../config/cloudinary.js';
 
-//registra un user
+
+// -- Upload image post start --//
+const uploadImagePostController = async (req, res) => {
+    try {
+        const result = await uploadImagePost(req.files.image.tempFilePath)
+        res.json({
+            public_id: result.public_id, //to delete the file
+            secure_url: result.secure_url //to consume the file
+        });
+        await fs.unlink(req.files.image.tempFilePath)
+    } catch (error) {
+        console.log(error);
+    }
+}
+// -- Upload image post end --//
+
+//-- CRUD post start --//
+//create a post
 const registerPost = async (req, res) => {
 
     const user = await User.findById(req.body.user);
     if (!user) {
         return res.status(404).json({ error: "User not found" });
     }
-    // //evitar email o usuarios duplicados
     try {
-
-
         const post = new Post(req.body);
         await post.save();
 
@@ -30,23 +45,7 @@ const registerPost = async (req, res) => {
     }
 }
 
-const uploadImagePostController = async (req, res) => {
-    // console.log(req.files);
-    try {
-        const result = await uploadImagePost(req.files.image.tempFilePath)
-        res.json({
-            public_id: result.public_id, //para eliminar el archivo cuando se requiera
-            secure_url: result.secure_url //para consultar el archivo
-        });
-        await fs.unlink(req.files.image.tempFilePath)
-    } catch (error) {
-        console.log(error);
-    }
-    
-
-}
-
-
+//get all posts
 const getAllPosts = async (req, res, next) =>{
     try {
         const post = await Post.find({}).populate('user')
@@ -57,8 +56,8 @@ const getAllPosts = async (req, res, next) =>{
     }
 }
 
+//get one post
 const getOnePost = async (req, res, next) =>{
-
     try {
         const post = await Post.findById(req.params.id).populate({
             path: "commenstOnPost",
@@ -80,19 +79,12 @@ const getOnePost = async (req, res, next) =>{
 
 //update a post
 const updatePost = async(req, res, next) => {
-    const{id} = req.params;
-    console.log(id);
-    console.log(req.body);
-    // console.log(req.files);
-
     try {
-        // const post = await Post.findById(id)
         if(req.body.previousName){
             if((req.body.previousName !== "")){
                 await deleteImage(req.body.previousName) 
             }
         }
-
         await Post.findByIdAndUpdate(
             {_id: req.params.id},{
                 title: req.body.title,
@@ -110,8 +102,8 @@ const updatePost = async(req, res, next) => {
     }
 }
 
+//delete a post
 const deletePost = async (req, res, next) =>{
-    
     //search info about
     const post = await Post.findById(req.params.id)
     const user = await User.findById(post.user)
@@ -124,7 +116,6 @@ const deletePost = async (req, res, next) =>{
     try {
         user.numberPost = user.numberPost - 1;
         await user.save();
-
         await Post.findByIdAndDelete({_id: req.params.id});
         res.json({msg: 'The post has been eliminated'})
     } catch (error) {
@@ -133,15 +124,60 @@ const deletePost = async (req, res, next) =>{
     }
 }
 
+//-- CRUD post end --//
+
+// -- Dashboard action start --//
+const getUserPost = async (req, res, next) =>{
+    console.log(req.params.id);
+    const post = await Post.find({user:req.params.id})
+    res.json(post)
+}
+
+//-- Dashboard action end --//
+
+//-- Search start --//
+const filterPostByCategory = async (req, res, next) =>{
+    try {
+        const filteredPosts = await Post.find({
+            categoriesPost: { $elemMatch: { $eq: req.params.id} }
+          });
+        res.json(filteredPosts);
+      } catch (error) {
+        res.status(500).json({ error: 'Error to find posts' });
+      }
+
+}
+
+const searchByParam = async (req, res, next) =>{
+    try {
+        const [posts, users, categories] = await Promise.all([
+          Post.find({ title: { $regex: req.params.id, $options: 'i' } }),
+          User.find({ $or: [{ name: { $regex: req.params.id, $options: 'i' } }, { email: { $regex: req.params.id, $options: 'i' } }] }), 
+          Categories.find({ name: { $regex: req.params.id, $options: 'i' } }) 
+        ]);
+    
+        const searchResults = {
+          posts,
+          users,
+          categories 
+        };
+    
+        res.json(searchResults);
+      } catch (error) {
+        res.status(500).json({ error: 'Error to search' });
+      }
+}
+
+//-- Search end --//
+
+//-- Actions post start --//
 const likePost = async (req, res, next) =>{
     
     //search info about
     const post = await Post.findById(req.params.id)
     const user = await User.findById(req.body._id)
-
     const userFound = post.likePost.users.includes(user._id);
     const postFound = user.likePost.posts.includes(post._id);
-
 
     if(userFound && postFound){
         const arrayP = post.likePost.users;
@@ -195,17 +231,17 @@ const savePost = async (req, res, next) =>{
         const newPostOnUser = [...user.postsSaved.posts, post._id];
         user.postsSaved.posts = newPostOnUser;
 
-
         const newUserOnPost = [...post.usersSavedPost.users, user._id]
         post.usersSavedPost.users = newUserOnPost;
-  
 
         await post.save();
         await user.save();
     }
 }
+//-- Actions post end --//
 
 
+//-- Actions comment post start --//
 const saveComment = async (req, res, next) =>{
 
     const post = await Post.findById(req.params.id)
@@ -213,8 +249,6 @@ const saveComment = async (req, res, next) =>{
     try {
         post.commenstOnPost.numberComments = post.commenstOnPost.numberComments +1;
         const newComments = [...post.commenstOnPost.comments, req.body]
-
-
         post.commenstOnPost.comments = newComments;
         await post.save();
     } catch (error) {
@@ -225,9 +259,6 @@ const saveComment = async (req, res, next) =>{
 
 const deleteComment = async (req, res, next) =>{
     const post = await Post.findById(req.params.id)
-
-
-
     try {
         post.commenstOnPost.numberComments = post.commenstOnPost.numberComments -1;
         const newComments = post.commenstOnPost.comments.filter(comment => comment._id != req.body.id)
@@ -240,7 +271,6 @@ const deleteComment = async (req, res, next) =>{
 } 
 
 const editComment = async (req, res, next) =>{
-
 
     //solution 2
     Post.findOneAndUpdate(
@@ -255,25 +285,38 @@ const editComment = async (req, res, next) =>{
     )
 } 
 
-const getUserPost = async (req, res, next) =>{
-    console.log(req.params.id);
-    const post = await Post.find({user:req.params.id})
-    res.json(post)
-}
-
-
+//-- Actions comment post end --//
 
 export {
-    registerPost,
+    //-- Upload image post start --//
     uploadImagePostController,
+    //-- Upload image post end --//
+
+    //-- CRUD post start --//
+    registerPost,
     getAllPosts,
     getOnePost,
     updatePost,
     deletePost,
+    //-- CRUD post end --//
+
+    //-- Dashboard action start --//
+    getUserPost,
+    //-- Dashboard action end --//
+
+    // -- Search start --//
+    filterPostByCategory,
+    searchByParam,
+    // -- Search end --//
+
+    //-- Actions post start --//
     likePost,
     savePost,
+    //-- Actions post end --//
+    
+    //-- Actions comment post start --//
     saveComment,
     deleteComment,
     editComment,
-    getUserPost
+    // -- Actions comment post end --//
 }
