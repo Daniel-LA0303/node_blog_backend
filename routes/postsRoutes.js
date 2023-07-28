@@ -17,6 +17,7 @@ import {
     searchByParam,
     saveReplyComment,
     deleteReplyComment,
+    editReplyComment,
 } from "../controllers/postController.js";
 
 
@@ -69,6 +70,7 @@ router.post('/edit-post-comment/:id', editComment);
 // -- Actions reply comment post start --//
 router.post('/save-reply-comment/:id', saveReplyComment);
 router.post('/delete-reply-comment/:id', deleteReplyComment);
+router.post('/edit-reply-comment/:id', editReplyComment);
 // -- Actions reply comment post end --//
 
 export default router

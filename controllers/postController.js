@@ -325,8 +325,15 @@ const saveReplyComment = async (req, res, next) =>{
   
       //save the post
       await post.save();
-  
-      return res.json({ msg: 'Reply added successfully' });
+
+      await post.populate({
+        path: "commenstOnPost.comments",
+        populate: {
+          path: "replies.userID",
+        },
+      })
+
+  return res.json(post.commenstOnPost.comments);
     } catch (error) {
       console.log(error);
       return res.status(500).json({ msg: 'Server error' });
@@ -358,11 +365,56 @@ const deleteReplyComment = async (req, res, next) =>{
 
     // save the post
     await post.save();
-    res.status(200).json({ message: "Response deleted" });
+
+    await post.populate({
+        path: "commenstOnPost.comments",
+        populate: {
+          path: "replies.userID",
+        },
+      })
+      return res.json(post.commenstOnPost.comments); 
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Error in server" });
   }
+
+}
+
+const editReplyComment = async (req, res, next) =>{
+    const { idReply, idComment, newContentReply } = req.body;
+
+    try {
+        
+       await Post.findOneAndUpdate(
+            { 
+              "_id": req.params.id, 
+              "commenstOnPost.comments._id": idComment, 
+              "commenstOnPost.comments.replies._id": idReply 
+            },
+            {
+              "$set": {
+                "commenstOnPost.comments.$[comment].replies.$[reply].reply": newContentReply
+              }
+            },
+            {
+              arrayFilters: [
+                { "comment._id": idComment },
+                { "reply._id": idReply }
+              ],
+              new: true 
+            },)
+
+            const post = await Post.findById(req.params.id).populate({
+                path: "commenstOnPost.comments",
+                populate: {
+                  path: "replies.userID",
+                },
+            });
+            return res.json(post.commenstOnPost.comments);
+    } catch (error) {
+        console.log(error);
+    }
+
 
 }
 
@@ -404,5 +456,6 @@ export {
     //-- Actions reply comment post start --//
     saveReplyComment,
     deleteReplyComment,
+    editReplyComment,
     //-- Actions reply comment post end --//
 }
