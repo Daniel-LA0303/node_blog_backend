@@ -15,6 +15,8 @@ import {
     uploadImagePostController,
     filterPostByCategory,
     searchByParam,
+    saveReplyComment,
+    deleteReplyComment,
 } from "../controllers/postController.js";
 
 
@@ -63,5 +65,10 @@ router.post('/save-comment/:id', saveComment);
 router.post('/delete-post-comment/:id', deleteComment);
 router.post('/edit-post-comment/:id', editComment);
 // -- Actions comment post end --//
+
+// -- Actions reply comment post start --//
+router.post('/save-reply-comment/:id', saveReplyComment);
+router.post('/delete-reply-comment/:id', deleteReplyComment);
+// -- Actions reply comment post end --//
 
 export default router

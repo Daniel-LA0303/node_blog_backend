@@ -66,8 +66,14 @@ const getOnePost = async (req, res, next) =>{
                 populate:{
                     path: "userID"
                 }
-            }
-        }).populate('user')
+            },
+        }).
+        populate({
+            path: "commenstOnPost.comments",
+            populate: {
+              path: "replies.userID",
+            },
+          }).populate('user')
 
         res.json(post);    
     } catch (error) {
@@ -287,6 +293,81 @@ const editComment = async (req, res, next) =>{
 
 //-- Actions comment post end --//
 
+//-- Actions reply comment post start --//
+const saveReplyComment = async (req, res, next) =>{
+    const postId = req.params.id; 
+    const { userID, commentId, reply, dateReply } = req.body; 
+  
+    try {
+      //search by post id
+      const post = await Post.findById(postId).populate('commenstOnPost.comments');;
+  
+      if (!post) {
+        return res.status(404).json({ msg: 'Post not found' });
+      }
+  
+      // serch the comment by id 
+      const comment = post.commenstOnPost.comments.find((c) => c._id.toString() === commentId);
+  
+      if (!comment) {
+        return res.status(404).json({ msg: 'Comment not found' });
+      }
+  
+      // we create the new reply
+      const newReply = {
+        userID: userID,
+        reply: reply,
+        dateReply: dateReply
+      };
+  
+      // add the new reply to the comment
+      comment.replies.push(newReply);
+  
+      //save the post
+      await post.save();
+  
+      return res.json({ msg: 'Reply added successfully' });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ msg: 'Server error' });
+    }
+}
+
+const deleteReplyComment = async (req, res, next) =>{
+    const { idReply, idComment } = req.body;
+
+  try {
+    // first find the post
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ error: "Post not find" });
+    }
+
+    // find the comment
+    const comment = post.commenstOnPost.comments.find(
+      (comment) => comment._id.toString() === idComment
+    );
+
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not find" });
+    }
+
+    // we utilize pull to remove the reply
+    comment.replies.pull({ _id: idReply });
+
+    // save the post
+    await post.save();
+    res.status(200).json({ message: "Response deleted" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Error in server" });
+  }
+
+}
+
+//-- Actions reply comment post end --//
+
 export {
     //-- Upload image post start --//
     uploadImagePostController,
@@ -319,4 +400,9 @@ export {
     deleteComment,
     editComment,
     // -- Actions comment post end --//
+
+    //-- Actions reply comment post start --//
+    saveReplyComment,
+    deleteReplyComment,
+    //-- Actions reply comment post end --//
 }

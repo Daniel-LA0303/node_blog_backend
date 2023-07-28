@@ -60,6 +60,19 @@ const postSchema = Schema({
             dateComment: {
                 type: String
             },
+            replies: [{
+                userID: {
+                  type: Schema.ObjectId,
+                  ref: 'User'
+                },
+                reply: {
+                  type: String,
+                  // default: ''
+                },
+                dateReply: {
+                  type: String
+                },
+              }]
         }]
     },
     usersSavedPost:{
