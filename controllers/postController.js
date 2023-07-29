@@ -146,7 +146,7 @@ const filterPostByCategory = async (req, res, next) =>{
     try {
         const filteredPosts = await Post.find({
             categoriesPost: { $elemMatch: { $eq: req.params.id} }
-          });
+          }).populate('user');
         res.json(filteredPosts);
       } catch (error) {
         res.status(500).json({ error: 'Error to find posts' });
@@ -157,11 +157,11 @@ const filterPostByCategory = async (req, res, next) =>{
 const searchByParam = async (req, res, next) =>{
     try {
         const [posts, users, categories] = await Promise.all([
-          Post.find({ title: { $regex: req.params.id, $options: 'i' } }),
+          Post.find({ title: { $regex: req.params.id, $options: 'i' } }).populate('user'),
           User.find({ $or: [{ name: { $regex: req.params.id, $options: 'i' } }, { email: { $regex: req.params.id, $options: 'i' } }] }), 
           Categories.find({ name: { $regex: req.params.id, $options: 'i' } }) 
         ]);
-    
+        
         const searchResults = {
           posts,
           users,
@@ -169,6 +169,7 @@ const searchByParam = async (req, res, next) =>{
         };
     
         res.json(searchResults);
+        console.log(posts);
       } catch (error) {
         res.status(500).json({ error: 'Error to search' });
       }
