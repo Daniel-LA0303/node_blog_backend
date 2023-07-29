@@ -175,6 +175,33 @@ const searchByParam = async (req, res, next) =>{
       }
 }
 
+const postsRecommend = async (req, res, next) =>{
+
+    try {
+        // get post
+        const { id } = req.params;
+        const post = await Post.findOne({ id });
+    
+        if (!post) {
+          return res.status(404).json({ message: 'Post not found' });
+        }
+    
+        // Extrait les catégories du post
+        const { categoriesPost } = post;
+    
+        // Bchercher les posts qui ont des catégories en commun avec le post actuel
+        const recommendedPosts = await Post.find({
+          _id: { $ne: post._id }, // exclure le post actuel
+          categoriesPost: { $in: categoriesPost }, // chercher les posts qui ont des catégories en commun avec le post actuel
+        }).limit(5); // limite à 5 posts
+    
+        return res.json({ recommendedPosts });
+      } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Internal server error' });
+      }
+}
+
 //-- Search end --//
 
 //-- Actions post start --//
@@ -441,6 +468,7 @@ export {
     // -- Search start --//
     filterPostByCategory,
     searchByParam,
+    postsRecommend,
     // -- Search end --//
 
     //-- Actions post start --//
