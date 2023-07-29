@@ -18,6 +18,7 @@ import {
     saveReplyComment,
     deleteReplyComment,
     editReplyComment,
+    postsRecommend,
 } from "../controllers/postController.js";
 
 
@@ -53,6 +54,7 @@ router.get('/get-user-posts/:id', getUserPost);
 // -- Search start --//
 router.get('/filter-post-by-category/:id', filterPostByCategory );
 router.get('/search-by-param/:id', searchByParam);
+router.get('/posts-recommend/:id', postsRecommend);
 // -- Search end --//
 
 //-- Actions post start --//
