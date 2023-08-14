@@ -7,7 +7,6 @@ import path from "path"
 import fs from "fs-extra"
 import { deleteImage, uploadImage, uploadImagePost } from '../config/cloudinary.js';
 
-
 // -- Upload image post start --//
 const uploadImagePostController = async (req, res) => {
     try {
@@ -279,12 +278,25 @@ const savePost = async (req, res, next) =>{
 const saveComment = async (req, res, next) =>{
 
     const post = await Post.findById(req.params.id)
-
+    const userPost = await User.findById(req.body.userPost)
+    
     try {
         post.commenstOnPost.numberComments = post.commenstOnPost.numberComments +1;
-        const newComments = [...post.commenstOnPost.comments, req.body]
+        const newComments = [...post.commenstOnPost.comments, req.body.data]
         post.commenstOnPost.comments = newComments;
+
+        const Obj = {
+          user: req.body.data.userID,
+          notification: 'comment your Post:',
+          type: 'comment',
+          date: req.body.data.dateComment,
+        }
+        userPost.notifications.push(Obj);
+
         await post.save();
+        await userPost.save();
+
+        return res.json(Obj);
     } catch (error) {
         console.log(error);
         next();

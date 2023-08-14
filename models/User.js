@@ -100,7 +100,23 @@ const usersSchema = mongoose.Schema({
     posts:[{
         type: Schema.ObjectId,
         ref: 'Post'
-    }]
+    }],
+    notifications:[{
+        user:{
+            type: Schema.ObjectId,
+            ref: 'User'
+        },
+        notification: {
+            type: String,
+        },
+        type:{
+            type: String,
+        },
+        date:{
+            type: Date,
+        }
+
+    }],
 }, {
     timestamps: true
 });
