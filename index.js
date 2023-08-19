@@ -71,23 +71,23 @@ const server = app.listen(PORT, () => {
 
 
 // Socket.io
-import { Server } from "socket.io";
+// import { Server } from "socket.io";
 
-const io = new Server(server, {
-    pingTimeout: 60000,
-    cors: {
-      origin: 'http://127.0.0.1:5173',
-    },
-});
+// const io = new Server(server, {
+//     pingTimeout: 60000,
+//     cors: {
+//       origin: 'http://127.0.0.1:5173',
+//     },
+// });
 
-io.on("connection", (socket) => {
-    console.log("a user connected"); 
+// io.on("connection", (socket) => {
+//     console.log("a user connected"); 
 
-    socket.on('newComment', (data) => {
-        console.log("newComment", data);
-        const userID = data.userID;
-        socket.emit('newNotification', data);
-        console.log('envio');
-    });
+//     socket.on('newComment', (data) => {
+//         console.log("newComment", data);
+//         const userID = data.userID;
+//         socket.emit('newNotification', data);
+//         console.log('envio');
+//     });
 
-});
+// });
