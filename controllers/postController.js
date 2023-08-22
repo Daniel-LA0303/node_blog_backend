@@ -237,6 +237,61 @@ const likePost = async (req, res, next) =>{
     }
 }
 
+const likePostt = async (req, res) => {
+  try {
+    const postId = req.params.id; // ID del post
+    const userId = req.body._id; // ID del usuario
+
+    await Post.findByIdAndUpdate(
+      postId,
+      {
+        $addToSet: { 'likePost.users': userId },
+      },
+      { new: true }
+    );
+
+    await User.findByIdAndUpdate(
+      userId,
+      {
+        $addToSet: { 'likePost.posts': postId },
+      },
+      { new: true }
+    );
+
+    res.status(200).json({ message: 'Like on post updated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const unlikePost = async (req, res) => {
+  try {
+    const postId = req.params.id; // ID del post
+    const userId = req.body._id; // ID del usuario
+
+    await Post.findByIdAndUpdate(
+      postId,
+      {
+        $pull: { 'likePost.users': userId },
+      },
+      { new: true }
+    );
+
+    await User.findByIdAndUpdate(
+      userId,
+      {
+        $pull: { 'likePost.posts': postId },
+      },
+      { new: true }
+    );
+
+    res.status(200).json({ message: 'Unlike on post updated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
 const savePost = async (req, res, next) =>{
 
     const post = await Post.findById(req.params.id)
@@ -271,6 +326,62 @@ const savePost = async (req, res, next) =>{
         await user.save();
     }
 }
+
+const savePostt = async (req, res) => {
+  try {
+    const postId = req.params.id; // ID del post
+    const userId = req.body._id; // ID del usuario
+
+    await User.findByIdAndUpdate(
+      userId,
+      {
+        $addToSet: { 'postsSaved.posts': postId },
+      },
+      { new: true }
+    );
+
+    await Post.findByIdAndUpdate(
+      postId,
+      {
+        $addToSet: { 'usersSavedPost.users': userId },
+      },
+      { new: true }
+    );
+
+    res.status(200).json({ message: 'Post saved successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const unsavePost = async (req, res) => {
+  try {
+    const postId = req.params.id; // ID del post
+    const userId = req.body._id; // ID del usuario
+
+    await User.findByIdAndUpdate(
+      userId,
+      {
+        $pull: { 'postsSaved.posts': postId },
+      },
+      { new: true }
+    );
+
+    await Post.findByIdAndUpdate(
+      postId,
+      {
+        $pull: { 'usersSavedPost.users': userId },
+      },
+      { new: true }
+    );
+
+    res.status(200).json({ message: 'Post unsaved successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
 //-- Actions post end --//
 
 

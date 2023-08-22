@@ -10,7 +10,7 @@ import { deleteImage, uploadImage } from '../config/cloudinary.js';
 import { log } from 'console';
 
 
-//registra un user
+// --- Auth Users start --//
 const registerUser = async (req, res) => {
 
     //evitar email o usuarios duplicados
@@ -144,6 +144,14 @@ const newPassword = async (req, res) => {
     }
 }
 
+const profile = async (req, res) => {
+    const {user} = req;
+    res.json(user);
+}
+
+// -- Auth Users end --//
+
+// -- Users CRUD actions start --//
 const newInfoUser = async (req, res) => {
     const{id} = req.params;
     // const user = await User.findById(id);
@@ -231,7 +239,18 @@ const getOneUser = async (req, res, next) =>{
     }    
 }
 
+const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find();
+        res.status(200).json(users);
+    } catch (error) {
+        res.status(500).json(error);
+    }
+}
 
+// -- Users CRUD actions end --//
+
+// -- Actions beetween Users start --/
 const saveFollowTag = async (req, res) => {
     try {
       const category = await Categories.findById(req.body._id);
@@ -261,6 +280,65 @@ const saveFollowTag = async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   };
+
+  const followTag = async (req, res) => {
+    try {
+      const categoryId = req.body._id; // ID de la categoría
+      const userId = req.params.id; // ID del usuario
+  
+      await Categories.findByIdAndUpdate(
+        categoryId,
+        {
+          $addToSet: { 'follows.users': userId },
+          $inc: { 'follows.countFollows': 1 },
+        },
+        { new: true }
+      );
+  
+      await User.findByIdAndUpdate(
+        userId,
+        {
+          $addToSet: { 'followsTags.tags': categoryId },
+          $inc: { 'followsTags.countTags': 1 },
+        },
+        { new: true }
+      );
+  
+      res.status(200).json({ message: 'Follow tag updated successfully' });
+    } catch (error) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
+
+  const unFollowTag = async (req, res) => {
+    try {
+      const categoryId = req.body._id; // ID de la categoría
+      const userId = req.params.id; // ID del usuario
+  
+      await Categories.findByIdAndUpdate(
+        categoryId,
+        {
+          $pull: { 'follows.users': userId },
+          $inc: { 'follows.countFollows': -1 },
+        },
+        { new: true }
+      );
+  
+      await User.findByIdAndUpdate(
+        userId,
+        {
+          $pull: { 'followsTags.tags': categoryId },
+          $inc: { 'followsTags.countTags': -1 },
+        },
+        { new: true }
+      );
+  
+      res.status(200).json({ message: 'Unfollow tag updated successfully' });
+    } catch (error) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
+  
 
 
 
@@ -303,19 +381,65 @@ const followAndFollowed = async (req, res) => {
 
 }
 
-const getAllUsers = async (req, res) => {
+const followUser = async (req, res) => {
     try {
-        const users = await User.find();
-        res.status(200).json(users);
+      const userFollowedId = req.params.id; // ID del usuario a seguir
+      const userProfileId = req.body._id; // ID del usuario que solicita seguir
+  
+      const userFollowed = await User.findByIdAndUpdate(
+        userFollowedId,
+        {
+          $addToSet: { 'followersUsers.followers': userProfileId },
+          $inc: { 'followersUsers.conutFollowers': 1 },
+        },
+        { new: true }
+      );
+  
+      const userProfile = await User.findByIdAndUpdate(
+        userProfileId,
+        {
+          $addToSet: { 'followedUsers.followed': userFollowedId },
+          $inc: { 'followedUsers.conutFollowed': 1 },
+        },
+        { new: true }
+      );
+  
+      res.status(200).json({ message: 'Usuario seguido con éxito' });
     } catch (error) {
-        res.status(500).json(error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
-}
+  };
 
-const profile = async (req, res) => {
-    const {user} = req;
-    res.json(user);
-}
+  const unfollowUser = async (req, res) => {
+    try {
+      const userFollowedId = req.params.id; // ID del usuario a dejar de seguir
+      const userProfileId = req.body._id; // ID del usuario que solicita dejar de seguir
+  
+      const userFollowed = await User.findByIdAndUpdate(
+        userFollowedId,
+        {
+          $pull: { 'followersUsers.followers': userProfileId },
+          $inc: { 'followersUsers.conutFollowers': -1 },
+        },
+        { new: true }
+      );
+  
+      const userProfile = await User.findByIdAndUpdate(
+        userProfileId,
+        {
+          $pull: { 'followedUsers.followed': userFollowedId },
+          $inc: { 'followedUsers.conutFollowed': -1 },
+        },
+        { new: true }
+      );
+  
+      res.status(200).json({ message: 'Dejaste de seguir al usuario' });
+    } catch (error) {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  };
+  
+// -- Actions beetween Users end --/
 
 
 //-- Dashboard start --//
