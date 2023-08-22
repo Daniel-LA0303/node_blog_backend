@@ -251,35 +251,6 @@ const getAllUsers = async (req, res) => {
 // -- Users CRUD actions end --//
 
 // -- Actions beetween Users start --/
-const saveFollowTag = async (req, res) => {
-    try {
-      const category = await Categories.findById(req.body._id);
-      const user = await User.findById(req.params.id);
-  
-      const userFound = category.follows.users.includes(user._id);
-      const categoryFound = user.followsTags.tags.includes(category._id);
-  
-      if (userFound && categoryFound) {
-        category.follows.users.pull(user._id);
-        category.follows.countFollows -= 1;
-  
-        user.followsTags.tags.pull(category._id);
-        user.followsTags.countTags -= 1;
-      } else {
-        category.follows.users.push(user._id);
-        category.follows.countFollows += 1;
-  
-        user.followsTags.tags.push(category._id);
-        user.followsTags.countTags += 1;
-      }
-  
-      await Promise.all([user.save(), category.save()]);
-      console.log("click")
-    //   res.status(200).json({ message: 'Follow tag updated successfully' });
-    } catch (error) {
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  };
 
   const followTag = async (req, res) => {
     try {
@@ -339,48 +310,6 @@ const saveFollowTag = async (req, res) => {
     }
   };
   
-
-
-
-const followAndFollowed = async (req, res) => {
-
-    const userFollowed =  await User.findById(req.params.id); //usuario para seguir
-    const userProfile =  await User.findById(req.body._id); //usuario que solicita seguir
-
-    const userFollowedFound = userFollowed.followersUsers.followers.includes(userProfile._id);
-    const userProfileFound = userProfile.followedUsers.followed.includes(userFollowed._id);
-
-    if(userFollowedFound && userProfileFound){
-        const arrayUF = userFollowed.followersUsers.followers;
-        const indexUP = arrayUF.indexOf(userProfile._id);
-        arrayUF.splice(indexUP, 1);
-        userFollowed.followersUsers.followers = arrayUF;
-        userFollowed.followersUsers.conutFollowers = userFollowed.followersUsers.conutFollowers - 1;
-
-        const arrayUP = userProfile.followedUsers.followed;
-        const indexUF = arrayUP.indexOf(userFollowed._id);
-        arrayUP.splice(indexUF, 1);
-        userProfile.followedUsers.followed = arrayUP;
-        userProfile.followedUsers.conutFollowed =  userProfile.followedUsers.conutFollowed - 1
-
-        await userFollowed.save();
-        await userProfile.save();
-    }else{
-
-        const newUserFollowed = [...userFollowed.followersUsers.followers, userProfile._id]
-        userFollowed.followersUsers.followers = newUserFollowed;
-        userFollowed.followersUsers.conutFollowers = userFollowed.followersUsers.conutFollowers + 1
-
-        const newUserProfile = [...userProfile.followedUsers.followed, userFollowed._id]
-        userProfile.followedUsers.followed = newUserProfile;
-        userProfile.followedUsers.conutFollowed =  userProfile.followedUsers.conutFollowed + 1
-
-        await userFollowed.save();
-        await userProfile.save();
-    }
-
-}
-
 const followUser = async (req, res) => {
     try {
       const userFollowedId = req.params.id; // ID del usuario a seguir
@@ -524,14 +453,20 @@ const getOneUserFollow = async (req, res, next) =>{
 //-- Dashboard end --//
 
 export {
+    //-- auth user start --//
     registerUser,
     authUser,
     confirm,        
     forgetPassword,
     checkToken,
     newPassword,
+    profile,
+    //-- auth user end --//
+    //-- crud user start --//
     newInfoUser,
     getOneUser,
+    getAllUsers,
+    //-- crud user end --//
     //dashboard
     getOneUserFollow,
     getUserTags,
@@ -539,9 +474,10 @@ export {
     getUserLikePosts,
     getUserSavePosts,
     //dashboard
-    saveFollowTag,
-    followAndFollowed,
-    getAllUsers,
-    // getOneUserWPS,
-    profile
+    //-- actions user start --//
+    followUser,
+    unfollowUser,
+    followTag, 
+    unFollowTag,
+    //-- actions user end --//
 }

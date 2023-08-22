@@ -204,40 +204,8 @@ const postsRecommend = async (req, res, next) =>{
 //-- Search end --//
 
 //-- Actions post start --//
-const likePost = async (req, res, next) =>{
-    
-    //search info about
-    const post = await Post.findById(req.params.id)
-    const user = await User.findById(req.body._id)
-    const userFound = post.likePost.users.includes(user._id);
-    const postFound = user.likePost.posts.includes(post._id);
 
-    if(userFound && postFound){
-        const arrayP = post.likePost.users;
-        const indexP = arrayP.indexOf(user._id);
-        arrayP.splice(indexP, 1);
-        post.likePost.users = arrayP;
-
-        const arrayU = user.likePost.posts;
-        const indexU = arrayU.indexOf(post._id);
-        arrayU.splice(indexU, 1);
-        user.likePost.post = arrayU;
-
-        await post.save();
-        await user.save();
-    }else{
-        const newLikeOnPost = [...post.likePost.users, user._id]
-        post.likePost.users = newLikeOnPost;
-
-        const newLikeOnUser = [...user.likePost.posts, post._id]
-        user.likePost.posts = newLikeOnUser;
-
-        await post.save();
-        await user.save();
-    }
-}
-
-const likePostt = async (req, res) => {
+const likePost = async (req, res) => {
   try {
     const postId = req.params.id; // ID del post
     const userId = req.body._id; // ID del usuario
@@ -264,7 +232,7 @@ const likePostt = async (req, res) => {
   }
 };
 
-const unlikePost = async (req, res) => {
+const dislikePost = async (req, res) => {
   try {
     const postId = req.params.id; // ID del post
     const userId = req.body._id; // ID del usuario
@@ -292,42 +260,42 @@ const unlikePost = async (req, res) => {
 };
 
 
-const savePost = async (req, res, next) =>{
+// const savePost = async (req, res, next) =>{
 
-    const post = await Post.findById(req.params.id)
-    const user = await User.findById(req.body._id)
+//     const post = await Post.findById(req.params.id)
+//     const user = await User.findById(req.body._id)
 
-    const postFound = user.postsSaved.posts.includes(post._id);
-    const userFound = post.usersSavedPost.users.includes(user._id);
-    if(postFound && userFound){
+//     const postFound = user.postsSaved.posts.includes(post._id);
+//     const userFound = post.usersSavedPost.users.includes(user._id);
+//     if(postFound && userFound){
 
-        const arrayP = user.postsSaved.posts;
-        const indexPost = arrayP.indexOf(post._id)
-        arrayP.splice(indexPost, 1)        
-        user.postsSaved.posts = arrayP;
+//         const arrayP = user.postsSaved.posts;
+//         const indexPost = arrayP.indexOf(post._id)
+//         arrayP.splice(indexPost, 1)        
+//         user.postsSaved.posts = arrayP;
         
-        const arrayU = post.usersSavedPost.users;
-        const indexUser = arrayU.indexOf(user._id);
-        arrayU.splice(indexUser, 1);
-        post.usersSavedPost.users = arrayU;
+//         const arrayU = post.usersSavedPost.users;
+//         const indexUser = arrayU.indexOf(user._id);
+//         arrayU.splice(indexUser, 1);
+//         post.usersSavedPost.users = arrayU;
 
-        await post.save();
-        await user.save();
+//         await post.save();
+//         await user.save();
 
-    }else{
+//     }else{
 
-        const newPostOnUser = [...user.postsSaved.posts, post._id];
-        user.postsSaved.posts = newPostOnUser;
+//         const newPostOnUser = [...user.postsSaved.posts, post._id];
+//         user.postsSaved.posts = newPostOnUser;
 
-        const newUserOnPost = [...post.usersSavedPost.users, user._id]
-        post.usersSavedPost.users = newUserOnPost;
+//         const newUserOnPost = [...post.usersSavedPost.users, user._id]
+//         post.usersSavedPost.users = newUserOnPost;
 
-        await post.save();
-        await user.save();
-    }
-}
+//         await post.save();
+//         await user.save();
+//     }
+// }
 
-const savePostt = async (req, res) => {
+const savePost = async (req, res) => {
   try {
     const postId = req.params.id; // ID del post
     const userId = req.body._id; // ID del usuario
@@ -596,7 +564,9 @@ export {
 
     //-- Actions post start --//
     likePost,
+    dislikePost,
     savePost,
+    unsavePost,
     //-- Actions post end --//
     
     //-- Actions comment post start --//

@@ -2,24 +2,34 @@ import express from "express";
 import fileUpload from "express-fileupload";
 import checkAuth from "../middleware/checkAuth.js"
 import { 
+    //-- auth user start --//
     registerUser, 
     authUser, 
     confirm,
     forgetPassword,
     checkToken,
     newPassword,
+    profile,
+    //-- auth user end --//
+    //-- crud user start --//
     newInfoUser,
     getOneUser,
-    getOneUserFollow,
-    saveFollowTag,
-    followAndFollowed,
-    // getOneUserWPS,
     getAllUsers,
-    profile,
+    //-- crud user end --//
+
+    //-- Dashboard start --//
+    getOneUserFollow,
     getUserTags,
     getUserPosts,
     getUserLikePosts,
-    getUserSavePosts
+    getUserSavePosts,
+    //-- Dashboard end --//
+    //-- User actions start --//
+    followTag,
+    unFollowTag,
+    followUser,
+    unfollowUser
+    //-- User actions end --//
 } from "../controllers/usersController.js";
 
 const router = express.Router();
@@ -58,9 +68,14 @@ router.get('/get-user-save-post/:id', getUserSavePosts);
 router.get('/get-profile-follows/:id', getOneUserFollow);
 //-- Dashboard end --//
 
-router.post('/save-follow/:id', saveFollowTag);
+//-- User actions start --//
+router.post('/follow-tag/:id', followTag);
+router.post('/unfollow-tag/:id', unFollowTag);
 
-router.post('/user-follow/:id', followAndFollowed);
+router.post('/user-follow/:id', followUser);
+router.post('/user-unfollow/:id', unfollowUser);
+// router.post('/user-follow/:id', followAndFollowed);
+//-- User actions end --//
 
 router.get('/all-users', getAllUsers);
 

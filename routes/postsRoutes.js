@@ -19,6 +19,8 @@ import {
     deleteReplyComment,
     editReplyComment,
     postsRecommend,
+    dislikePost,
+    unsavePost,
 } from "../controllers/postController.js";
 
 
@@ -59,7 +61,9 @@ router.get('/posts-recommend/:id', postsRecommend);
 
 //-- Actions post start --//
 router.post('/like-post/:id', likePost);
+router.post('/dislike-post/:id', dislikePost);
 router.post('/save-post/:id', savePost);
+router.post('/unsave-post/:id', unsavePost)
 //-- Actions post end --//
 
 
