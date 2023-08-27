@@ -367,7 +367,52 @@ const followUser = async (req, res) => {
       res.status(500).json({ error: 'Error interno del servidor' });
     }
   };
+    //   path: "postsSaved",
+    //   populate: {
+    //       path: "posts",
+    //       populate:{
+    //           path: "user"
+    //       }
+    //   }
+    // }).populate({
+    //   path: "followsTags",
+    //   populate: {
+    //       path: "tags",
+
+    //   }
+    // }).populate({
+    //   path: "likePost",
+    //   populate: {
+    //       path: "posts",
+
+    //   }
+    // })
   
+  const getUserNotifications = async (req, res) => {
+    try {
+        const userId = req.params.id; 
+        const user = await User.findById(userId)
+        .populate({
+            path: "notifications",
+            populate: {
+                path: "user",
+                select: 'name email profilePicture',
+            }
+        });
+        
+        console.log(user.notifications);
+
+        if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+    
+        res.json(user.notifications);
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error to get this user' });
+      }
+  }
+
 // -- Actions beetween Users end --/
 
 
@@ -479,5 +524,6 @@ export {
     unfollowUser,
     followTag, 
     unFollowTag,
+    getUserNotifications
     //-- actions user end --//
 }
