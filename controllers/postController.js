@@ -6,6 +6,7 @@ import path from "path"
 // import fs from "fs"
 import fs from "fs-extra"
 import { deleteImage, uploadImage, uploadImagePost } from '../config/cloudinary.js';
+import { log } from 'console';
 
 // -- Upload image post start --//
 const uploadImagePostController = async (req, res) => {
@@ -208,8 +209,32 @@ const postsRecommend = async (req, res, next) =>{
 const likePost = async (req, res) => {
   try {
     const postId = req.params.id; // ID del post
-    const userId = req.body._id; // ID del usuario
+    const userId = req.body.userP; // ID del usuario
+    const userAutor = req.body.userAutor; // ID del usuario
 
+    const userAutorDocument = await User.findById(userAutor);
+    const existingNotificationAutor = userAutorDocument.notifications.find((notification) => (
+      notification.type === 'like' && String(notification.idPost) === postId
+    ));
+
+    if (!existingNotificationAutor && userAutor !== userId) {
+      const Obj = {
+        user: req.body.data.userID,
+        notification: 'like your Post',
+        type: 'like',
+        date: req.body.data.dateLike,
+        idPost: req.params.id
+      }
+      await User.findByIdAndUpdate(
+        userAutor,
+        {
+          $push: { notifications: Obj },
+        },
+        { new: true }
+      );
+    }
+
+    console.log(userAutor, userId);
     await Post.findByIdAndUpdate(
       postId,
       {
@@ -217,14 +242,17 @@ const likePost = async (req, res) => {
       },
       { new: true }
     );
-
+    
     await User.findByIdAndUpdate(
       userId,
       {
-        $addToSet: { 'likePost.posts': postId },
+        $push: { notifications: Obj },
       },
       { new: true }
     );
+
+
+
 
     res.status(200).json({ message: 'Like on post updated successfully' });
   } catch (error) {
@@ -364,16 +392,22 @@ const saveComment = async (req, res, next) =>{
         const newComments = [...post.commenstOnPost.comments, req.body.data]
         post.commenstOnPost.comments = newComments;
 
-        const Obj = {
-          user: req.body.data.userID,
-          notification: 'comment your Post:',
-          type: 'comment',
-          date: req.body.data.dateComment,
+        let Obj = {};
+        console.log(req.body.data.userID, req.body.userPost);
+        if(req.body.data.userID !== req.body.userPost){
+          Obj = {
+            user: req.body.data.userID,
+            notification: 'comment your Post',
+            type: 'comment',
+            date: req.body.data.dateComment,
+            idPost: req.params.id
+          }
+          userPost.notifications.push(Obj);
+          await userPost.save();
         }
-        userPost.notifications.push(Obj);
 
         await post.save();
-        await userPost.save();
+
 
         return res.json(Obj);
     } catch (error) {
@@ -415,7 +449,7 @@ const editComment = async (req, res, next) =>{
 //-- Actions reply comment post start --//
 const saveReplyComment = async (req, res, next) =>{
     const postId = req.params.id; 
-    const { userID, commentId, reply, dateReply } = req.body; 
+    const { userID, commentId, reply, dateReply, commentAutor } = req.body; 
   
     try {
       //search by post id
@@ -431,17 +465,33 @@ const saveReplyComment = async (req, res, next) =>{
       if (!comment) {
         return res.status(404).json({ msg: 'Comment not found' });
       }
-  
-      // we create the new reply
       const newReply = {
         userID: userID,
         reply: reply,
-        dateReply: dateReply
+        dateReply: dateReply,
       };
-  
-      // add the new reply to the comment
+
       comment.replies.push(newReply);
+      
+      if (userID !== commentAutor) {
+
+        const Obj = {
+          user: userID,
+          notification: 'reply your Comment',
+          type: 'reply',
+          date: dateReply,
+          idPost: postId,
+        };
   
+        await User.findByIdAndUpdate(
+          commentAutor,
+          {
+            $push: { notifications: Obj },
+          },
+          { new: true }
+        );
+      }
+
       //save the post
       await post.save();
 

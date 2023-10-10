@@ -312,14 +312,31 @@ const getAllUsers = async (req, res) => {
   
 const followUser = async (req, res) => {
     try {
-      const userFollowedId = req.params.id; // ID del usuario a seguir
-      const userProfileId = req.body._id; // ID del usuario que solicita seguir
+      const userFollowedId = req.params.id; 
+      const userProfileId = req.body._id; 
+
+      const userFollowed = await User.findById(userFollowedId);
+      const existingNotification = userFollowed.notifications.find((notification) => (
+        notification.type === 'follow' && String(notification.user) === String(userProfileId)
+      ));
   
-      const userFollowed = await User.findByIdAndUpdate(
+      if (existingNotification) {
+        return res.status(400).json({ error: 'You follow this user yet!' });
+      }
+  
+      const Ob = {
+        user: userProfileId,
+        notification: 'has begun to follow you',
+        type: 'follow',
+        date: new Date(),
+      }
+
+      await User.findByIdAndUpdate(
         userFollowedId,
         {
           $addToSet: { 'followersUsers.followers': userProfileId },
           $inc: { 'followersUsers.conutFollowers': 1 },
+          $push: { notifications: Ob }
         },
         { new: true }
       );
@@ -332,7 +349,7 @@ const followUser = async (req, res) => {
         },
         { new: true }
       );
-  
+
       res.status(200).json({ message: 'Usuario seguido con éxito' });
     } catch (error) {
       res.status(500).json({ error: 'Error interno del servidor' });
@@ -396,17 +413,33 @@ const followUser = async (req, res) => {
             path: "notifications",
             populate: {
                 path: "user",
-                select: 'name email profilePicture',
+                select: 'name email profilePicture _id',
+            }
+        })
+        .populate({
+            path: "notifications",
+            populate: {
+                path: "idPost",
+                
             }
         });
         
-        console.log(user.notifications);
-
         if (!user) {
           return res.status(404).json({ error: 'User not found' });
         }
+
+        const groupedNotifications = {
+            comment: [],
+            reply: [],
+            like: [],
+            follow: [],
+          };
     
-        res.json(user.notifications);
+          user.notifications.forEach((notification) => {
+            groupedNotifications[notification.type].push(notification);
+          });
+
+        res.json(groupedNotifications);
       } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error to get this user' });
