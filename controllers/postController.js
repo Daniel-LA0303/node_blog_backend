@@ -39,9 +39,10 @@ const registerPost = async (req, res) => {
         user.posts.push(post._id);
         await user.save();
 
-        res.json({ msg: "Post created correctly"})
+        res.status(201).json({ msg: "Post created correctly"})
     } catch (error) {
         console.log(error);
+        res.status(500).json({ error: "Error to create post" });
     }
 }
 
@@ -49,9 +50,10 @@ const registerPost = async (req, res) => {
 const getAllPosts = async (req, res, next) =>{
     try {
         const post = await Post.find({}).populate('user')
-        res.json(post);
+        res.status(200).json(post);
     } catch (error) {
         console.log(error);
+        res.status(500).json({ error: 'Error to find posts' });
         next();
     }
 }
@@ -75,11 +77,15 @@ const getOnePost = async (req, res, next) =>{
             },
           }).populate('user')
 
-        res.json(post);    
+
+        if(!post){
+            return res.status(404).json({msg: 'This post does not exist'})
+        }
+
+        res.status(200).json(post);    
     } catch (error) {
         console.log(error);
-        res.json({msg: 'This post does not exist'});
-        next();
+        res.status(500).json({ error: 'Error to find post' });
     }
 }
 
@@ -91,7 +97,7 @@ const updatePost = async(req, res, next) => {
                 await deleteImage(req.body.previousName) 
             }
         }
-        await Post.findByIdAndUpdate(
+        const post = await Post.findByIdAndUpdate(
             {_id: req.params.id},{
                 title: req.body.title,
                 desc: req.body.desc,
@@ -102,9 +108,15 @@ const updatePost = async(req, res, next) => {
             },
             {new: true}
         )
-        res.json({msg: 'Post has been edited'});
+
+        if(!post){
+            return res.status(404).json({msg: 'This post does not exist'})
+        }
+
+        res.status(200).json(post);
     } catch (error) {
         console.log(error);
+        res.status(500).json({ error: 'Error to update post' });
     }
 }
 
@@ -113,6 +125,14 @@ const deletePost = async (req, res, next) =>{
     //search info about
     const post = await Post.findById(req.params.id)
     const user = await User.findById(post.user)
+
+    if(!post){
+        return res.status(404).json({msg: 'This post does not exist'})
+    }
+
+    if(!user){
+        return res.status(404).json({msg: 'This user does not exist'})
+    }
 
     if(post.linkImage !== ''){
         await deleteImage(post.linkImage.public_id) 
@@ -123,9 +143,10 @@ const deletePost = async (req, res, next) =>{
         user.numberPost = user.numberPost - 1;
         await user.save();
         await Post.findByIdAndDelete({_id: req.params.id});
-        res.json({msg: 'The post has been eliminated'})
+        res.status(200).json({msg: 'Post deleted correctly'})
     } catch (error) {
         console.log(error);
+        res.status(500).json({ error: 'Error to delete post' });
         next();
     }
 }
@@ -136,7 +157,12 @@ const deletePost = async (req, res, next) =>{
 const getUserPost = async (req, res, next) =>{
     console.log(req.params.id);
     const post = await Post.find({user:req.params.id})
-    res.json(post)
+
+    if(!post){
+        return res.status(404).json({msg: 'This user does not have posts'})
+    }
+
+    res.status(200).json(post);
 }
 
 //-- Dashboard action end --//
@@ -147,7 +173,12 @@ const filterPostByCategory = async (req, res, next) =>{
         const filteredPosts = await Post.find({
             categoriesPost: { $elemMatch: { $eq: req.params.id} }
           }).populate('user');
-        res.json(filteredPosts);
+
+        if(!filteredPosts){
+            return res.status(404).json({msg: 'This category does not have posts'})
+        }
+
+        res.status(200).json(filteredPosts);
       } catch (error) {
         res.status(500).json({ error: 'Error to find posts' });
       }
@@ -168,7 +199,7 @@ const searchByParam = async (req, res, next) =>{
           categories 
         };
     
-        res.json(searchResults);
+        res.status(200).json(searchResults);
         console.log(posts);
       } catch (error) {
         res.status(500).json({ error: 'Error to search' });
@@ -195,7 +226,7 @@ const postsRecommend = async (req, res, next) =>{
           categoriesPost: { $in: categoriesPost }, // chercher les posts qui ont des catégories en commun avec le post actuel
         }).limit(5); // limite à 5 posts
     
-        return res.json({ recommendedPosts });
+        return res.status(200).json(recommendedPosts);
       } catch (error) {
         console.error(error);
         return res.status(500).json({ message: 'Internal server error' });
@@ -386,6 +417,15 @@ const saveComment = async (req, res, next) =>{
 
     const post = await Post.findById(req.params.id)
     const userPost = await User.findById(req.body.userPost)
+
+    if(!post){
+        return res.status(404).json({msg: 'This post does not exist'})
+    }
+
+    if(!userPost){
+        return res.status(404).json({msg: 'This user does not exist'})
+    }
+    
     
     try {
         post.commenstOnPost.numberComments = post.commenstOnPost.numberComments +1;
@@ -409,9 +449,10 @@ const saveComment = async (req, res, next) =>{
         await post.save();
 
 
-        return res.json(Obj);
+        return res.status(200).json(Obj);
     } catch (error) {
         console.log(error);
+        res.status(500).json({ error: 'Error to save comment' });
         next();
     }
 }
@@ -442,6 +483,8 @@ const editComment = async (req, res, next) =>{
         function(error, doc){}
         
     )
+
+
 } 
 
 //-- Actions comment post end --//
@@ -502,7 +545,7 @@ const saveReplyComment = async (req, res, next) =>{
         },
       })
 
-  return res.json(post.commenstOnPost.comments);
+      return res.status(200).json(post.commenstOnPost.comments);
     } catch (error) {
       console.log(error);
       return res.status(500).json({ msg: 'Server error' });
@@ -541,7 +584,7 @@ const deleteReplyComment = async (req, res, next) =>{
           path: "replies.userID",
         },
       })
-      return res.json(post.commenstOnPost.comments); 
+      return res.status(200).json(post.commenstOnPost.comments); 
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Error in server" });
@@ -579,9 +622,10 @@ const editReplyComment = async (req, res, next) =>{
                   path: "replies.userID",
                 },
             });
-            return res.json(post.commenstOnPost.comments);
+            return res.status(200).json(post.commenstOnPost.comments);
     } catch (error) {
         console.log(error);
+        res.status(500).json({ error: "Error in server" });
     }
 
 
