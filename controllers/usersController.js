@@ -146,6 +146,8 @@ const newPassword = async (req, res) => {
 
 const profile = async (req, res) => {
     const {user} = req;
+
+    console.log("------ \n",user,"\n------");
     res.json(user);
 }
 
@@ -208,6 +210,13 @@ const newInfoUser = async (req, res) => {
     
 }
 
+/**
+ * This function get one user by id
+ * 
+ * @param req 
+ * @param res 
+ * @param next 
+ */
 const getOneUser = async (req, res, next) =>{
     try {
         const user = await User.findById(req.params.id).populate({
@@ -231,7 +240,8 @@ const getOneUser = async (req, res, next) =>{
 
             }
         })
-        res.json(user);            
+        res.json(user); 
+        console.log(user);           
     } catch (error) {
         console.log(error);
         res.json({msg: 'This post does not exist'});
