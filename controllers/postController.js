@@ -76,14 +76,6 @@ const getAllPosts = async (req, res, next) =>{
  */
 const getAllPostsCard = async (req, res, next) =>{
   try {
-      console.log("get all posts start");
-      /**
-       * post:
-       * title, linkImage, categoriesPost, _id, user, likePost, commenstOnPost, date
-       * user:
-       * name, id, profilePicture
-       * 
-       */
       try {
         console.log("get all posts start");
         const post2 = await Post.find({})
@@ -217,19 +209,28 @@ const getUserPost = async (req, res, next) =>{
 //-- Dashboard action end --//
 
 //-- Search start --//
-const filterPostByCategory = async (req, res, next) =>{
+
+/**
+ * Filter post by category
+ * @param {*} id 
+ * @returns 
+ */
+const filterPostByCategory = async (id) =>{
     try {
         const filteredPosts = await Post.find({
-            categoriesPost: { $elemMatch: { $eq: req.params.id} }
-          }).populate('user');
+            categoriesPost: { $elemMatch: { $eq: id} }
+          }).populate({
+            path: 'user',
+            select: 'name _id profilePicture' // Especificar los campos del usuario que quieres incluir
+          })
+          .select('title linkImage categoriesPost _id user likePost commenstOnPost date')
 
-        if(!filteredPosts){
-            return res.status(404).json({msg: 'This category does not have posts'})
-        }
-
-        res.status(200).json(filteredPosts);
+        // if(!filteredPosts){
+        //     return 'This category does not have posts'
+        // }
+        return filteredPosts;
       } catch (error) {
-        res.status(500).json({ error: 'Error to find posts' });
+        // res.status(500).json({ error: 'Error to find posts' });
       }
 
 }

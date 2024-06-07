@@ -249,6 +249,50 @@ const getOneUser = async (req, res, next) =>{
     }    
 }
 
+/**
+ * Get one user whit short info
+ * @param {*} req 
+ * @param {*} res 
+ */
+const getOneUserShortInfo = async (id) => {
+
+    /**
+     * postPublishsos
+     * followers
+     * postlikes
+     * postsaved
+     * tags saved
+     * follwed
+     */
+    try {
+
+        const userData = await User.findById(id)
+            .select('posts followersUsers likePost postsSaved followsTags followedUsers')
+            .populate('posts')
+            .populate('followersUsers.followers')
+            .populate('likePost.posts')
+            .populate('postsSaved.posts')
+            .populate('followsTags.tags')
+            .populate('followedUsers.followed');
+
+        const responseData = {
+            postsCount: userData.posts.length,
+            followersCount: userData.followersUsers.followers.length,
+            likePostsCount: userData.likePost.posts.length,
+            savedPostsCount: userData.postsSaved.posts.length,
+            tagsCount: userData.followsTags.tags.length,
+            followedUsersCount: userData.followedUsers.followed.length,
+        };
+        
+        return responseData;
+                
+    } catch (error) {
+        console.log(error);
+        // res.json({msg: 'This post does not exist'});
+        next();
+    }   
+}
+
 const getAllUsers = async (req, res) => {
     try {
         const users = await User.find();
@@ -567,6 +611,8 @@ export {
     unfollowUser,
     followTag, 
     unFollowTag,
-    getUserNotifications
+    getUserNotifications,
     //-- actions user end --//
+
+    getOneUserShortInfo
 }

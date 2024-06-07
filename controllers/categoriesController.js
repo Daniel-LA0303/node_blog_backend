@@ -16,15 +16,15 @@ const addCategory = async(req, res) => {
 const getCategories = async(req, res) => {
     try {
         const cats = await Categories.find().populate('follows');
-        // res.status(200).json(cats);
-        return cats;
+        res.status(200).json(cats);
+        // return cats;
     } catch (error) {
         res.status(500).json(error);
     }
 }
 
 /**
- * 
+ * Get all categfories that have more than 0 followers
  * @param {*} req 
  * @param {*} res 
  */
@@ -32,7 +32,7 @@ const getCategoriesNotZero = async(req, res) => {
 
     try {
         const cats = await Categories.find({ 'follows.countFollows': { $gt: 0 } })
-            .populate('follows.users');
+            .select('name color follows.countFollows');
         return cats;
     } catch (error) {
         res.status(500).json(error);
@@ -40,15 +40,47 @@ const getCategoriesNotZero = async(req, res) => {
 
 }
 
-const getOneCategory = async(req, res) => {
-
+/**
+ * Get all categories with basic ingo
+ * @param {*} req 
+ * @param {*} res 
+ */
+const getAllCategorisInfo = async(req, res) => {
     try {
-        const category = await Categories.findOne({name : req.params.id}).populate('follows');
-        res.status(200).json(category);
+        const cats = await Categories.find().populate('follows')
+            .select('name color desc');
+        return cats;
     } catch (error) {
         res.status(500).json(error);
     }
 }
+
+// const getOneCategory = async(req, res) => {
+
+//     try {
+//         const category = await Categories.findOne({name : req.params.id}).populate('follows');
+//         res.status(200).json(category);
+//     } catch (error) {
+//         res.status(500).json(error);
+//     }
+// }
+
+/**
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ */
+const getOneCategory = async(id) => {
+    try {
+        const category = await Categories.findOne({name : id})
+        .populate('follows')
+        .select('name color desc');
+        return category;
+    } catch (error) {
+        // res.status(500).json(error);
+    }
+}
+
 
 const updateCategories = async(req, res) => {  
     console.log(req.params.id); 
@@ -69,6 +101,7 @@ export {
     addCategory,
     getCategories,
     getCategoriesNotZero,
+    getAllCategorisInfo,
     getOneCategory,
     updateCategories
 }
