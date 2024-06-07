@@ -16,10 +16,28 @@ const addCategory = async(req, res) => {
 const getCategories = async(req, res) => {
     try {
         const cats = await Categories.find().populate('follows');
-        res.status(200).json(cats);
+        // res.status(200).json(cats);
+        return cats;
     } catch (error) {
         res.status(500).json(error);
     }
+}
+
+/**
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ */
+const getCategoriesNotZero = async(req, res) => {
+
+    try {
+        const cats = await Categories.find({ 'follows.countFollows': { $gt: 0 } })
+            .populate('follows.users');
+        return cats;
+    } catch (error) {
+        res.status(500).json(error);
+    }
+
 }
 
 const getOneCategory = async(req, res) => {
@@ -50,6 +68,7 @@ const updateCategories = async(req, res) => {
 export {
     addCategory,
     getCategories,
+    getCategoriesNotZero,
     getOneCategory,
     updateCategories
 }

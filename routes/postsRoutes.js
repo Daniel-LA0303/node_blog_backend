@@ -21,6 +21,7 @@ import {
     postsRecommend,
     dislikePost,
     unsavePost,
+    getAllPostsCard,
 } from "../controllers/postController.js";
 
 
@@ -39,6 +40,7 @@ router.post('/image-post',
 //-- CRUD post start --//
 router.post('/', registerPost)
 router.get('/', getAllPosts); 
+router.get('/get-all-posts-card', getAllPostsCard);
 router.get('/:id', getOnePost); 
 router.put('/:id', 
     fileUpload({

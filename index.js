@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import usersRoutes from './routes/usersRoutes.js'
 import postsRoutes from './routes/postsRoutes.js'
 import categoriesRoutes from './routes/categoriesRoutes.js'
+import pagesRoutes from './routes/pagesRoutes.js'
 
 
 const app = express();
@@ -61,6 +62,7 @@ app.use(express.json());
 app.use('/api/users', usersRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/categories', categoriesRoutes);
+app.use('/api/pages', pagesRoutes);
 
 
 //1. server

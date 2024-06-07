@@ -8,6 +8,9 @@ import fs from "fs-extra"
 import { deleteImage, uploadImage, uploadImagePost } from '../config/cloudinary.js';
 import { log } from 'console';
 
+//Transactions
+import mongoose from 'mongoose';
+
 // -- Upload image post start --//
 const uploadImagePostController = async (req, res) => {
     try {
@@ -48,14 +51,60 @@ const registerPost = async (req, res) => {
 
 //get all posts
 const getAllPosts = async (req, res, next) =>{
+
     try {
-        const post = await Post.find({}).populate('user')
-        res.status(200).json(post);
+        console.log("get all posts start");
+        const post2 = await Post.find({})
+        .populate({
+          path: 'user',
+          select: 'name _id profilePicture' // Especificar los campos del usuario que quieres incluir
+        })
+        .select('title linkImage categoriesPost _id user likePost commenstOnPost date') // Especificar los campos del post que quieres incluir
+        res.status(200).json(post2);
     } catch (error) {
         console.log(error);
         res.status(500).json({ error: 'Error to find posts' });
         next();
     }
+}
+
+/**
+ * Get all posts in card format
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+const getAllPostsCard = async (req, res, next) =>{
+  try {
+      console.log("get all posts start");
+      /**
+       * post:
+       * title, linkImage, categoriesPost, _id, user, likePost, commenstOnPost, date
+       * user:
+       * name, id, profilePicture
+       * 
+       */
+      try {
+        console.log("get all posts start");
+        const post2 = await Post.find({})
+        .populate({
+          path: 'user',
+          select: 'name _id profilePicture' // Especificar los campos del usuario que quieres incluir
+        })
+        .select('title linkImage categoriesPost _id user likePost commenstOnPost date') // Especificar los campos del post que quieres incluir
+        return post2;
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: 'Error to find posts' });
+        next();
+    }
+
+
+  } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: 'Error to find posts' });
+      next();
+  }
 }
 
 //get one post
@@ -641,6 +690,7 @@ export {
     //-- CRUD post start --//
     registerPost,
     getAllPosts,
+    getAllPostsCard,
     getOnePost,
     updatePost,
     deletePost,
