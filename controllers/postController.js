@@ -77,13 +77,12 @@ const getAllPosts = async (req, res, next) =>{
 const getAllPostsCard = async (req, res, next) =>{
   try {
       try {
-        console.log("get all posts start");
         const post2 = await Post.find({})
         .populate({
           path: 'user',
-          select: 'name _id profilePicture' // Especificar los campos del usuario que quieres incluir
+          select: 'name _id profilePicture' 
         })
-        .select('title linkImage categoriesPost _id user likePost commenstOnPost date') // Especificar los campos del post que quieres incluir
+        .select('title linkImage categoriesPost _id user likePost commenstOnPost date') 
         return post2;
     } catch (error) {
         console.log(error);

@@ -147,7 +147,7 @@ const newPassword = async (req, res) => {
 const profile = async (req, res) => {
     const {user} = req;
 
-    console.log("------ \n",user,"\n------");
+    // console.log("------ \n",user,"\n------");
     res.json(user);
 }
 
@@ -265,7 +265,6 @@ const getOneUserShortInfo = async (id) => {
      * follwed
      */
     try {
-
         const userData = await User.findById(id)
             .select('posts followersUsers likePost postsSaved followsTags followedUsers')
             .populate('posts')
@@ -283,7 +282,6 @@ const getOneUserShortInfo = async (id) => {
             tagsCount: userData.followsTags.tags.length,
             followedUsersCount: userData.followedUsers.followed.length,
         };
-        
         return responseData;
                 
     } catch (error) {
@@ -504,19 +502,18 @@ const followUser = async (req, res) => {
 
 
 //-- Dashboard start --//
-const getUserTags = async (req, res) => {
-        try {
-        const user = await User.findById(req.params.id).populate({
+const getUserTags = async (id) => {
+    
+    try {
+        const user = await User.findById(id).populate({
             path: "followsTags",
             populate: {
                 path: "tags",
 
             }
         })
-        res.json(user.followsTags.tags);            
+        return user.followsTags.tags;
     } catch (error) {
-        res.status(500).json({error: 'Something went wrong'});
-        next();
     }    
 }
 
@@ -530,56 +527,76 @@ const getUserPosts = async (req, res) => {
     }
 }
 
-const getUserLikePosts= async (req, res) => {
+const getUserLikePosts= async (id) => {
+    console.log("id",id);
     try {
-        const user = await User.findById(req.params.id).populate({
+        const user = await User.findById(id).populate({
             path: "likePost",
             populate: {
                 path: "posts",
+                populate: {
+                    path: "user",
+                    select: 'name _id profilePicture'
+                },
+                select : 'title linkImage categoriesPost _id user likePost commenstOnPost date'
 
             }
         })
-        res.json(user.likePost.posts);            
+        
+        return user.likePost.posts;
+          
     } catch (error) {
-        res.status(500).json({error: 'Something went wrong'});
-        next();
+       
     }    
 }
 
-const getUserSavePosts = async (req, res) => {
+const getUserSavePosts = async (id) => {
+
     try {
-        const user = await User.findById(req.params.id).populate({
+        const user = await User.findById(id).populate({
             path: "postsSaved",
             populate: {
                 path: "posts",
-
-            }
+                populate: {
+                    path: "user",
+                    select: 'name _id profilePicture'
+                },
+                select : 'title linkImage categoriesPost _id user likePost postsSaved commenstOnPost date'
+            },
         })
-        res.json(user.postsSaved.posts);            
+        return user.postsSaved.posts;
     } catch (error) {
-        res.status(500).json({error: 'Something went wrong'});
-        next();
+
     }
 }
 
 
-const getOneUserFollow = async (req, res, next) =>{
+const getOneUserFollow = async (id) =>{
+
     try {
-        const user = await User.findById(req.params.id).populate({
+        const user = await User.findById(id).populate({
             path: "followersUsers",
             populate: {
                 path: "followers",
-            }
-        }).populate({
+                select: 'name email profilePicture followersUsers followedUsers'
+            },
+            select: 'followers followed'
+        })
+        .populate({
             path: "followedUsers",
             populate: {
                 path: "followed",
-            }
+                select: 'name email profilePicture followedUsers followersUsers'
+            },
+            select: 'followers followed'
         })
-        res.json(user);          
+        const response = {
+            followers: user.followersUsers.followers,
+            followed: user.followedUsers.followed
+        };
+        return response;          
     } catch (error) {
-        res.status(500).json({error: 'Something went wrong'});
-        next();
+
     }    
 }
 //-- Dashboard end --//
