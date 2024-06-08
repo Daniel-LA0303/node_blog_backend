@@ -195,7 +195,6 @@ const deletePost = async (req, res, next) =>{
 
 // -- Dashboard action start --//
 const getUserPost = async (req, res, next) =>{
-    console.log(req.params.id);
     const post = await Post.find({user:req.params.id})
 
     if(!post){
@@ -330,9 +329,6 @@ const likePost = async (req, res) => {
       },
       { new: true }
     );
-
-
-
 
     res.status(200).json({ message: 'Like on post updated successfully' });
   } catch (error) {

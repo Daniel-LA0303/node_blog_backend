@@ -1,6 +1,7 @@
 import express from "express";
 
 import {
+    getCategoriesNewPostPage,
     getCategoriesPage,
     getCategoryPostPage,
     getDashboardFollowUserPage,
@@ -9,7 +10,8 @@ import {
     getDashboardPostsUserPage,
     getDashboardSavedPostUserPage,
     getDashboardTagsUserPage,
-    getPageHome
+    getPageHome,
+    getProfileInfoPage
 } from "../controllers/pagesController.js";
 
 const router = express.Router();
@@ -17,6 +19,7 @@ const router = express.Router();
 router.get('/page-home', getPageHome); 
 router.get('/page-categories', getCategoriesPage);
 router.get('/page-category-post/:id', getCategoryPostPage);
+router.get('/page-new-post', getCategoriesNewPostPage);
 /**
  * 
  */
@@ -30,5 +33,6 @@ router.get('/page-dashboard-tag-use/:id', getDashboardTagsUserPage);
 /**
  * 
  */
+router.get('/page-profile-user/:id', getProfileInfoPage);
 
 export default router

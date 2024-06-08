@@ -1,6 +1,6 @@
 import { getAllCategorisInfo, getCategories, getCategoriesNotZero, getOneCategory } from "./categoriesController.js";
-import { filterPostByCategory, getAllPosts, getAllPostsCard } from "./postController.js"
-import { getOneUserFollow, getOneUserShortInfo, getUserLikePosts, getUserSavePosts, getUserTags } from "./usersController.js";
+import { filterPostByCategory, getAllPosts, getAllPostsCard, getUserPost } from "./postController.js"
+import { getOneUserFollow, getOneUserProfile, getOneUserShortInfo, getUserLikePosts, getUserPosts, getUserSavePosts, getUserTags } from "./usersController.js";
 
 
 
@@ -55,7 +55,13 @@ const getDashboardPage = async (req, res) => {
 
 
 const getDashboardPostsUserPage = async (req, res) => {
-    
+    try {
+        
+        const posts = await getUserPosts(req.params.id);
+        res.status(200).json({posts});
+    } catch (error) {
+        res.status(500).json({ error: 'Error', details: error });
+    }
 }
 
 
@@ -112,12 +118,40 @@ const getDashboardTagsUserPage = async (req, res) => {
 
 }
 
+const getProfileInfoPage = async (req, res) => {
+
+    try {
+        const [posts, user] = await Promise.all([getUserPosts(req.params.id), getOneUserProfile(req.params.id)]);
+        console.log("posts",posts);
+        console.log("user",user);
+        res.status(200).json({
+            posts,
+            user
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Error', details: error });
+    }
+
+}
+
+const getCategoriesNewPostPage = async (req, res) => {
+    try {
+        const categories = await getCategories();
+        res.status(200).json({
+            categories
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Error', details: error });
+    }
+}
+
 
 
 export {
     getPageHome,
     getCategoriesPage,
     getCategoryPostPage,
+    getCategoriesNewPostPage,
     /**
      * 
      */
@@ -126,8 +160,9 @@ export {
     getDashboardFollowUserPage,
     getDashboardLikePostUserPage,
     getDashboardSavedPostUserPage,
-    getDashboardTagsUserPage
+    getDashboardTagsUserPage,
     /**
      * 
      */
+    getProfileInfoPage
 }

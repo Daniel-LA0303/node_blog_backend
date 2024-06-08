@@ -13,13 +13,16 @@ const addCategory = async(req, res) => {
     }
 }
 
-const getCategories = async(req, res) => {
+/**
+ * Get categories for new post
+ * @returns 
+ */
+const getCategories = async() => {
     try {
         const cats = await Categories.find().populate('follows');
-        res.status(200).json(cats);
-        // return cats;
+        return cats;
     } catch (error) {
-        res.status(500).json(error);
+        
     }
 }
 
@@ -55,15 +58,6 @@ const getAllCategorisInfo = async(req, res) => {
     }
 }
 
-// const getOneCategory = async(req, res) => {
-
-//     try {
-//         const category = await Categories.findOne({name : req.params.id}).populate('follows');
-//         res.status(200).json(category);
-//     } catch (error) {
-//         res.status(500).json(error);
-//     }
-// }
 
 /**
  * 

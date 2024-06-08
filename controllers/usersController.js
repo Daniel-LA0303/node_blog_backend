@@ -241,7 +241,39 @@ const getOneUser = async (req, res, next) =>{
             }
         })
         res.json(user); 
-        console.log(user);           
+        // console.log(user);           
+    } catch (error) {
+        console.log(error);
+        res.json({msg: 'This post does not exist'});
+        next();
+    }    
+}
+
+const getOneUserProfile = async (id) =>{
+    try {
+        const user = await User.findById(id).populate({
+            path: "postsSaved",
+            populate: {
+                path: "posts",
+                populate:{
+                    path: "user"
+                }
+            }
+        }).populate({
+            path: "followsTags",
+            populate: {
+                path: "tags",
+
+            }
+        }).populate({
+            path: "likePost",
+            populate: {
+                path: "posts",
+
+            }
+        })
+        return user; 
+        // console.log(user);           
     } catch (error) {
         console.log(error);
         res.json({msg: 'This post does not exist'});
@@ -363,32 +395,33 @@ const getAllUsers = async (req, res) => {
   };
   
 const followUser = async (req, res) => {
+    console.log("followUser",req.body._id);
     try {
       const userFollowedId = req.params.id; 
       const userProfileId = req.body._id; 
 
       const userFollowed = await User.findById(userFollowedId);
-      const existingNotification = userFollowed.notifications.find((notification) => (
-        notification.type === 'follow' && String(notification.user) === String(userProfileId)
-      ));
+    //   const existingNotification = userFollowed.notifications.find((notification) => (
+    //     notification.type === 'follow' && String(notification.user) === String(userProfileId)
+    //   ));
   
-      if (existingNotification) {
-        return res.status(400).json({ error: 'You follow this user yet!' });
-      }
+    //   if (existingNotification) {
+    //     return res.status(400).json({ error: 'You follow this user yet!' });
+    //   }
   
-      const Ob = {
-        user: userProfileId,
-        notification: 'has begun to follow you',
-        type: 'follow',
-        date: new Date(),
-      }
+    //   const Ob = {
+    //     user: userProfileId,
+    //     notification: 'has begun to follow you',
+    //     type: 'follow',
+    //     date: new Date(),
+    //   }
 
       await User.findByIdAndUpdate(
         userFollowedId,
         {
           $addToSet: { 'followersUsers.followers': userProfileId },
           $inc: { 'followersUsers.conutFollowers': 1 },
-          $push: { notifications: Ob }
+        //   $push: { notifications: Ob }
         },
         { new: true }
       );
@@ -409,6 +442,9 @@ const followUser = async (req, res) => {
   };
 
   const unfollowUser = async (req, res) => {
+
+    console.log("unfollowUser",req.body._id);
+
     try {
       const userFollowedId = req.params.id; // ID del usuario a dejar de seguir
       const userProfileId = req.body._id; // ID del usuario que solicita dejar de seguir
@@ -517,13 +553,21 @@ const getUserTags = async (id) => {
     }    
 }
 
-const getUserPosts = async (req, res) => {
+const getUserPosts = async (id) => {
     try {
-        const user = await User.findById(req.params.id).populate('posts')
-        res.json(user.posts); 
+        const user = await User.findById(id)
+            .populate({
+                path: "posts",
+                populate: {
+                    path: "user",
+                    select: 'name _id profilePicture'
+                },
+                select: 'title linkImage categoriesPost _id user likePost commenstOnPost date'
+            })
+
+        return user.posts;
     } catch (error) {
-        res.status(500).json({error: 'Something went wrong'});
-        next(); 
+
     }
 }
 
@@ -614,6 +658,7 @@ export {
     //-- crud user start --//
     newInfoUser,
     getOneUser,
+    getOneUserProfile,
     getAllUsers,
     //-- crud user end --//
     //dashboard
