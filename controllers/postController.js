@@ -6,7 +6,6 @@ import path from "path"
 // import fs from "fs"
 import fs from "fs-extra"
 import { deleteImage, uploadImage, uploadImagePost } from '../config/cloudinary.js';
-import { log } from 'console';
 
 //Transactions
 import mongoose from 'mongoose';
@@ -21,7 +20,6 @@ const uploadImagePostController = async (req, res) => {
         });
         await fs.unlink(req.files.image.tempFilePath)
     } catch (error) {
-        console.log(error);
     }
 }
 // -- Upload image post end --//
@@ -44,7 +42,6 @@ const registerPost = async (req, res) => {
 
         res.status(201).json({ msg: "Post created correctly"})
     } catch (error) {
-        console.log(error);
         res.status(500).json({ error: "Error to create post" });
     }
 }
@@ -53,7 +50,6 @@ const registerPost = async (req, res) => {
 const getAllPosts = async (req, res, next) =>{
 
     try {
-        console.log("get all posts start");
         const post2 = await Post.find({})
         .populate({
           path: 'user',
@@ -62,7 +58,6 @@ const getAllPosts = async (req, res, next) =>{
         .select('title linkImage categoriesPost _id user likePost commenstOnPost date') // Especificar los campos del post que quieres incluir
         res.status(200).json(post2);
     } catch (error) {
-        console.log(error);
         res.status(500).json({ error: 'Error to find posts' });
         next();
     }
@@ -85,14 +80,12 @@ const getAllPostsCard = async (req, res, next) =>{
         .select('title linkImage categoriesPost _id user likePost commenstOnPost date') 
         return post2;
     } catch (error) {
-        console.log(error);
         res.status(500).json({ error: 'Error to find posts' });
         next();
     }
 
 
   } catch (error) {
-      console.log(error);
       res.status(500).json({ error: 'Error to find posts' });
       next();
   }
@@ -124,7 +117,6 @@ const getOnePost = async (req, res, next) =>{
 
         res.status(200).json(post);    
     } catch (error) {
-        console.log(error);
         res.status(500).json({ error: 'Error to find post' });
     }
 }
@@ -155,7 +147,6 @@ const updatePost = async(req, res, next) => {
 
         res.status(200).json(post);
     } catch (error) {
-        console.log(error);
         res.status(500).json({ error: 'Error to update post' });
     }
 }
@@ -185,7 +176,6 @@ const deletePost = async (req, res, next) =>{
         await Post.findByIdAndDelete({_id: req.params.id});
         res.status(200).json({msg: 'Post deleted correctly'})
     } catch (error) {
-        console.log(error);
         res.status(500).json({ error: 'Error to delete post' });
         next();
     }
@@ -248,7 +238,6 @@ const searchByParam = async (req, res, next) =>{
         };
     
         res.status(200).json(searchResults);
-        console.log(posts);
       } catch (error) {
         res.status(500).json({ error: 'Error to search' });
       }
@@ -313,7 +302,6 @@ const likePost = async (req, res) => {
       );
     }
 
-    console.log(userAutor, userId);
     await Post.findByIdAndUpdate(
       postId,
       {
@@ -478,7 +466,6 @@ const saveComment = async (req, res, next) =>{
         post.commenstOnPost.comments = newComments;
 
         let Obj = {};
-        console.log(req.body.data.userID, req.body.userPost);
         if(req.body.data.userID !== req.body.userPost){
           Obj = {
             user: req.body.data.userID,
@@ -496,7 +483,6 @@ const saveComment = async (req, res, next) =>{
 
         return res.status(200).json(Obj);
     } catch (error) {
-        console.log(error);
         res.status(500).json({ error: 'Error to save comment' });
         next();
     }
@@ -592,7 +578,6 @@ const saveReplyComment = async (req, res, next) =>{
 
       return res.status(200).json(post.commenstOnPost.comments);
     } catch (error) {
-      console.log(error);
       return res.status(500).json({ msg: 'Server error' });
     }
 }
@@ -631,7 +616,6 @@ const deleteReplyComment = async (req, res, next) =>{
       })
       return res.status(200).json(post.commenstOnPost.comments); 
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Error in server" });
   }
 
@@ -669,7 +653,6 @@ const editReplyComment = async (req, res, next) =>{
             });
             return res.status(200).json(post.commenstOnPost.comments);
     } catch (error) {
-        console.log(error);
         res.status(500).json({ error: "Error in server" });
     }
 

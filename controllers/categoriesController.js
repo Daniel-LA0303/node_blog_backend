@@ -19,10 +19,11 @@ const addCategory = async(req, res) => {
  */
 const getCategories = async() => {
     try {
-        const cats = await Categories.find().populate('follows');
+        const cats = await Categories.find()
+        // .populate('follows');
         return cats;
     } catch (error) {
-        
+
     }
 }
 
@@ -51,7 +52,7 @@ const getCategoriesNotZero = async(req, res) => {
 const getAllCategorisInfo = async(req, res) => {
     try {
         const cats = await Categories.find().populate('follows')
-            .select('name color desc');
+            .select('name color desc value label ');
         return cats;
     } catch (error) {
         res.status(500).json(error);
@@ -77,7 +78,6 @@ const getOneCategory = async(id) => {
 
 
 const updateCategories = async(req, res) => {  
-    console.log(req.params.id); 
     const category = await Categories.findById(req.params.id);
     try {
 
@@ -86,7 +86,6 @@ const updateCategories = async(req, res) => {
         await category.save();
         res.json({msg: 'cateogry update'})
     } catch (error) {
-        console.log(error);
         next();
     }
 }

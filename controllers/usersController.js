@@ -7,7 +7,6 @@ import path from "path"
 import fs from "fs-extra"
 import Categories from '../models/Categories.js';
 import { deleteImage, uploadImage } from '../config/cloudinary.js';
-import { log } from 'console';
 
 
 // --- Auth Users start --//
@@ -34,7 +33,6 @@ const registerUser = async (req, res) => {
 
         res.json({ msg: "User created correctly, check your email to confirm."})
     } catch (error) {
-        console.log(error);
     }
 }
 
@@ -83,7 +81,6 @@ const confirm = async (req, res) => {
         await userConfirm.save();
         res.json({msg: "User confirmed correctly"});
     } catch (error) {
-        console.log(error);
     }
 }
 
@@ -106,7 +103,6 @@ const forgetPassword = async(req, res) => {
         })
         res.json({msg: "We have sent an email with instructions"});
     } catch (error) {
-        console.log(error);
     }
 }
 
@@ -136,7 +132,6 @@ const newPassword = async (req, res) => {
             await user.save();
             res.json({msg: "Password Modified Correctly"}) 
         } catch (error) {
-            console.log(error);
         }
     }else{
         const error = new Error('Invalid token');
@@ -146,8 +141,7 @@ const newPassword = async (req, res) => {
 
 const profile = async (req, res) => {
     const {user} = req;
-
-    // console.log("------ \n",user,"\n------");
+    console.log(user);
     res.json(user);
 }
 
@@ -157,9 +151,6 @@ const profile = async (req, res) => {
 const newInfoUser = async (req, res) => {
     const{id} = req.params;
     // const user = await User.findById(id);
-    console.log(id);
-    console.log(req.body);
-    console.log(req.files);
     // if(user){
 
         try {
@@ -171,7 +162,6 @@ const newInfoUser = async (req, res) => {
                     await deleteImage(req.body.previousName) 
                     // const __filename = fileURLToPath(import.meta.url);
                     // const __dirname = path.dirname(__filename);
-                    // console.log(__dirname);
                     // fs.unlinkSync(__dirname+`/../uploads-profile/${req.body.previousName}`);
                 }
             }
@@ -200,13 +190,7 @@ const newInfoUser = async (req, res) => {
             await user.save();
             res.json({msg: "User modified"}) 
         } catch (error) {
-            console.log(error);
         }
-    // }
-    // else{
-    //     const error = new Error('Invalid token');
-    //     return res.status(400).json({msg: error.message});
-    // }
     
 }
 
@@ -240,10 +224,8 @@ const getOneUser = async (req, res, next) =>{
 
             }
         })
-        res.json(user); 
-        // console.log(user);           
+        res.json(user);        
     } catch (error) {
-        console.log(error);
         res.json({msg: 'This post does not exist'});
         next();
     }    
@@ -272,10 +254,8 @@ const getOneUserProfile = async (id) =>{
 
             }
         })
-        return user; 
-        // console.log(user);           
+        return user;         
     } catch (error) {
-        console.log(error);
         res.json({msg: 'This post does not exist'});
         next();
     }    
@@ -317,7 +297,6 @@ const getOneUserShortInfo = async (id) => {
         return responseData;
                 
     } catch (error) {
-        console.log(error);
         // res.json({msg: 'This post does not exist'});
         next();
     }   
@@ -395,7 +374,6 @@ const getAllUsers = async (req, res) => {
   };
   
 const followUser = async (req, res) => {
-    console.log("followUser",req.body._id);
     try {
       const userFollowedId = req.params.id; 
       const userProfileId = req.body._id; 
@@ -442,8 +420,6 @@ const followUser = async (req, res) => {
   };
 
   const unfollowUser = async (req, res) => {
-
-    console.log("unfollowUser",req.body._id);
 
     try {
       const userFollowedId = req.params.id; // ID del usuario a dejar de seguir
@@ -572,7 +548,6 @@ const getUserPosts = async (id) => {
 }
 
 const getUserLikePosts= async (id) => {
-    console.log("id",id);
     try {
         const user = await User.findById(id).populate({
             path: "likePost",
