@@ -28,11 +28,9 @@ import {
     followTag,
     unFollowTag,
     followUser,
-    unfollowUser,
-    getUserNotifications
+    unfollowUser
     //-- User actions end --//
 } from "../controllers/usersController.js";
-import { get } from "mongoose";
 
 const router = express.Router();
 
@@ -76,9 +74,6 @@ router.post('/unfollow-tag/:id', unFollowTag);
 
 router.post('/user-follow/:id', followUser);
 router.post('/user-unfollow/:id', unfollowUser);
-
-router.get('/user-notifications/:id', getUserNotifications);
-
 // router.post('/user-follow/:id', followAndFollowed);
 //-- User actions end --//
 

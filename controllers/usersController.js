@@ -7,20 +7,21 @@ import path from "path"
 import fs from "fs-extra"
 import Categories from '../models/Categories.js';
 import { deleteImage, uploadImage } from '../config/cloudinary.js';
+import { log } from 'console';
 
 
 // --- Auth Users start --//
 const registerUser = async (req, res) => {
 
-    //evitar email o usuarios duplicados
-    const {email} = req.body;
-    const existUser = await User.findOne({email: email});
-    
-    if(existUser){
-        const error = new Error('This email is already registered');
-        return res.status(400).json({msg: error.message});
-    }
     try {
+        // throw new Error("Simulated error in getUserPosts");
+        const {email} = req.body;
+        const existUser = await User.findOne({email: email});
+        
+        if(existUser){
+            const error = new Error('This email is already registered');
+            return res.status(400).json({msg: error.message});
+        }
         const user = new User(req.body);
         user.token = generateID();
         await user.save();
@@ -33,36 +34,43 @@ const registerUser = async (req, res) => {
 
         res.json({ msg: "User created correctly, check your email to confirm."})
     } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: 'Error', msg: error.message});
     }
 }
 
 const authUser = async (req, res) => {
+    try {
+        
+        const {email, password} = req.body;
+        //comprobar si el user existe
+        const user = await User.findOne({email : email});
+        if(!user){
+            const error = new Error("This user does not exist");
+            return res.status(404).json({msg: error.message});
+        }
 
-    const {email, password} = req.body;
-    //comprobar si el user existe
-    const user = await User.findOne({email : email});
-    if(!user){
-        const error = new Error("This user does not exist");
-        return res.status(404).json({msg: error.message});
-    }
+        //comprobar si el user esta confirmado
+        if(!user.confirm){
+            const error = new Error("This account has not been confirmed");
+            return res.status(403).json({msg: error.message});
+        }
 
-    //comprobar si el user esta confirmado
-    if(!user.confirm){
-        const error = new Error("This account has not been confirmed");
-        return res.status(403).json({msg: error.message});
-    }
-
-    //comporbar su password
-    if(await user.checkPassword(password)){
-        res.json({
-            _id: user.id,
-            name: user.name,
-            email: user.email,
-            token: generateJWT(user._id) //<-- genera un JWT
-        })
-    }else{
-        const error = new Error("Your password is incorrect");
-        return res.status(404).json({msg: error.message});
+        //comporbar su password
+        if(await user.checkPassword(password)){
+            res.json({
+                _id: user.id,
+                name: user.name,
+                email: user.email,
+                token: generateJWT(user._id) //<-- genera un JWT
+            })
+        }else{
+            const error = new Error("Your password is incorrect");
+            return res.status(404).json({msg: error.message});
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: 'Error', msg: error.message});
     }
 }
 
@@ -81,19 +89,20 @@ const confirm = async (req, res) => {
         await userConfirm.save();
         res.json({msg: "User confirmed correctly"});
     } catch (error) {
+        console.log(error);
     }
 }
 
 const forgetPassword = async(req, res) => {
-    const {email} = req.body;
-    const user = await User.findOne({email: email});
-    
-    if(!user){
-        const error = new Error('This user does not exist');
-        return res.status(400).json({msg: error.message});
-    }
-
     try {
+        // throw new Error("Simulated error in getUserPosts");
+        const {email} = req.body;
+        const user = await User.findOne({email: email});
+        
+        if(!user){
+            const error = new Error('This user does not exist');
+            return res.status(400).json({msg: error.message});
+        }
         user.token = generateID();
         await user.save();
         emailNewPassword({
@@ -103,45 +112,56 @@ const forgetPassword = async(req, res) => {
         })
         res.json({msg: "We have sent an email with instructions"});
     } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: 'Error', msg: error.message});
     }
 }
 
 const checkToken = async (req, res) => {
-    const {token} = req.params;
+    try {
+        const {token} = req.params;
 
-    const tokenValid = await User.findOne({token});
+        const tokenValid = await User.findOne({token});
 
-    if(tokenValid){
-        res.json({msg: "Token valido y el usuario existe"})
-    }else{
-        const error = new Error('Token no valido');
-        return res.status(400).json({msg: error.message});
+        if(tokenValid){
+            res.json({msg: "Token valido y el usuario existe"})
+        }else{
+            const error = new Error('Token no valido');
+            return res.status(400).json({msg: error.message});
+        }
+    } catch (error) {
+        console.log(error);   
     }
 }
 
 const newPassword = async (req, res) => {
-    const {token} = req.params;
-    const {password} = req.body;
-
-    const user = await User.findOne({token});
-
-    if(user){
-        user.password = password //se asigna el nuevo password
-        user.token = '' //se reinicia el token
-        try {
-            await user.save();
-            res.json({msg: "Password Modified Correctly"}) 
-        } catch (error) {
+    try {
+        const {token} = req.params;
+        const {password} = req.body;
+    
+        const user = await User.findOne({token});
+    
+        if(user){
+            user.password = password //se asigna el nuevo password
+            user.token = '' //se reinicia el token
+            try {
+                await user.save();
+                res.json({msg: "Password Modified Correctly"}) 
+            } catch (error) {
+                console.log(error);
+            }
+        }else{
+            const error = new Error('Invalid token');
+            return res.status(400).json({msg: error.message});
         }
-    }else{
-        const error = new Error('Invalid token');
-        return res.status(400).json({msg: error.message});
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: 'Error', msg: error.message });
     }
 }
 
 const profile = async (req, res) => {
     const {user} = req;
-    console.log(user);
     res.json(user);
 }
 
@@ -151,10 +171,17 @@ const profile = async (req, res) => {
 const newInfoUser = async (req, res) => {
     const{id} = req.params;
     // const user = await User.findById(id);
+    console.log(id);
+    console.log(req.body);
+    console.log(req.files);
     // if(user){
 
         try {
+            // throw new Error("Simulated error in getUserPosts");
             const user = await User.findById(id);
+            if(req.params.id !== req.query.user){
+                return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
+            }
             //cuando inserta una nueva imagen tienen que eliminar la anterior
             if(req.body.previousName){
                 if((req.body.previousName !== "")){
@@ -162,6 +189,7 @@ const newInfoUser = async (req, res) => {
                     await deleteImage(req.body.previousName) 
                     // const __filename = fileURLToPath(import.meta.url);
                     // const __dirname = path.dirname(__filename);
+                    // console.log(__dirname);
                     // fs.unlinkSync(__dirname+`/../uploads-profile/${req.body.previousName}`);
                 }
             }
@@ -190,17 +218,16 @@ const newInfoUser = async (req, res) => {
             await user.save();
             res.json({msg: "User modified"}) 
         } catch (error) {
+            res.status(500).json({ error: 'Error', msg: error.message });
         }
+    // }
+    // else{
+    //     const error = new Error('Invalid token');
+    //     return res.status(400).json({msg: error.message});
+    // }
     
 }
 
-/**
- * This function get one user by id
- * 
- * @param req 
- * @param res 
- * @param next 
- */
 const getOneUser = async (req, res, next) =>{
     try {
         const user = await User.findById(req.params.id).populate({
@@ -224,82 +251,12 @@ const getOneUser = async (req, res, next) =>{
 
             }
         })
-        res.json(user);        
+        res.json(user);            
     } catch (error) {
+        console.log(error);
         res.json({msg: 'This post does not exist'});
         next();
     }    
-}
-
-const getOneUserProfile = async (id) =>{
-    try {
-        const user = await User.findById(id).populate({
-            path: "postsSaved",
-            populate: {
-                path: "posts",
-                populate:{
-                    path: "user"
-                }
-            }
-        }).populate({
-            path: "followsTags",
-            populate: {
-                path: "tags",
-
-            }
-        }).populate({
-            path: "likePost",
-            populate: {
-                path: "posts",
-
-            }
-        })
-        return user;         
-    } catch (error) {
-        res.json({msg: 'This post does not exist'});
-        next();
-    }    
-}
-
-/**
- * Get one user whit short info
- * @param {*} req 
- * @param {*} res 
- */
-const getOneUserShortInfo = async (id) => {
-
-    /**
-     * postPublishsos
-     * followers
-     * postlikes
-     * postsaved
-     * tags saved
-     * follwed
-     */
-    try {
-        const userData = await User.findById(id)
-            .select('posts followersUsers likePost postsSaved followsTags followedUsers')
-            .populate('posts')
-            .populate('followersUsers.followers')
-            .populate('likePost.posts')
-            .populate('postsSaved.posts')
-            .populate('followsTags.tags')
-            .populate('followedUsers.followed');
-
-        const responseData = {
-            postsCount: userData.posts.length,
-            followersCount: userData.followersUsers.followers.length,
-            likePostsCount: userData.likePost.posts.length,
-            savedPostsCount: userData.postsSaved.posts.length,
-            tagsCount: userData.followsTags.tags.length,
-            followedUsersCount: userData.followedUsers.followed.length,
-        };
-        return responseData;
-                
-    } catch (error) {
-        // res.json({msg: 'This post does not exist'});
-        next();
-    }   
 }
 
 const getAllUsers = async (req, res) => {
@@ -340,7 +297,7 @@ const getAllUsers = async (req, res) => {
   
       res.status(200).json({ message: 'Follow tag updated successfully' });
     } catch (error) {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: 'Internal server error', msg: error.message});
     }
   };
 
@@ -369,37 +326,22 @@ const getAllUsers = async (req, res) => {
   
       res.status(200).json({ message: 'Unfollow tag updated successfully' });
     } catch (error) {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: 'Internal server error', msg: error.message});
     }
   };
   
 const followUser = async (req, res) => {
     try {
-      const userFollowedId = req.params.id; 
-      const userProfileId = req.body._id; 
+      const userFollowedId = req.params.id; // ID del usuario a seguir
+      const userProfileId = req.body._id; // ID del usuario que solicita seguir
 
-      const userFollowed = await User.findById(userFollowedId);
-    //   const existingNotification = userFollowed.notifications.find((notification) => (
-    //     notification.type === 'follow' && String(notification.user) === String(userProfileId)
-    //   ));
+    //   throw new Error("Simulated error in getUserPosts");
   
-    //   if (existingNotification) {
-    //     return res.status(400).json({ error: 'You follow this user yet!' });
-    //   }
-  
-    //   const Ob = {
-    //     user: userProfileId,
-    //     notification: 'has begun to follow you',
-    //     type: 'follow',
-    //     date: new Date(),
-    //   }
-
-      await User.findByIdAndUpdate(
+      const userFollowed = await User.findByIdAndUpdate(
         userFollowedId,
         {
           $addToSet: { 'followersUsers.followers': userProfileId },
           $inc: { 'followersUsers.conutFollowers': 1 },
-        //   $push: { notifications: Ob }
         },
         { new: true }
       );
@@ -412,19 +354,18 @@ const followUser = async (req, res) => {
         },
         { new: true }
       );
-
+  
       res.status(200).json({ message: 'Usuario seguido con éxito' });
     } catch (error) {
-      res.status(500).json({ error: 'Error interno del servidor' });
+      res.status(500).json({ error: 'Error interno del servidor', msg: error.message });
     }
   };
 
   const unfollowUser = async (req, res) => {
-
     try {
       const userFollowedId = req.params.id; // ID del usuario a dejar de seguir
       const userProfileId = req.body._id; // ID del usuario que solicita dejar de seguir
-  
+        // throw new Error("Simulated error in getUserPosts");
       const userFollowed = await User.findByIdAndUpdate(
         userFollowedId,
         {
@@ -445,90 +386,46 @@ const followUser = async (req, res) => {
   
       res.status(200).json({ message: 'Dejaste de seguir al usuario' });
     } catch (error) {
-      res.status(500).json({ error: 'Error interno del servidor' });
+      res.status(500).json({ error: 'Error interno del servidor', msg: error.message });
     }
   };
-    //   path: "postsSaved",
-    //   populate: {
-    //       path: "posts",
-    //       populate:{
-    //           path: "user"
-    //       }
-    //   }
-    // }).populate({
-    //   path: "followsTags",
-    //   populate: {
-    //       path: "tags",
-
-    //   }
-    // }).populate({
-    //   path: "likePost",
-    //   populate: {
-    //       path: "posts",
-
-    //   }
-    // })
   
-  const getUserNotifications = async (req, res) => {
-    try {
-        const userId = req.params.id; 
-        const user = await User.findById(userId)
-        .populate({
-            path: "notifications",
-            populate: {
-                path: "user",
-                select: 'name email profilePicture _id',
-            }
-        })
-        .populate({
-            path: "notifications",
-            populate: {
-                path: "idPost",
-                
-            }
-        });
-        
-        if (!user) {
-          return res.status(404).json({ error: 'User not found' });
-        }
-
-        const groupedNotifications = {
-            comment: [],
-            reply: [],
-            like: [],
-            follow: [],
-          };
-    
-          user.notifications.forEach((notification) => {
-            groupedNotifications[notification.type].push(notification);
-          });
-
-        res.json(groupedNotifications);
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error to get this user' });
-      }
-  }
-
 // -- Actions beetween Users end --/
 
-
-//-- Dashboard start --//
-const getUserTags = async (id) => {
-    
+/**
+ * Get user info for dashboard
+ */
+const getOneUserShortInfo = async (id) => {
     try {
-        const user = await User.findById(id).populate({
-            path: "followsTags",
-            populate: {
-                path: "tags",
+        const userData = await User.findById(id)
+            .select('posts followersUsers likePost postsSaved followsTags followedUsers')
+            .populate('posts')
+            .populate('followersUsers.followers')
+            .populate('likePost.posts')
+            .populate('postsSaved.posts')
+            .populate('followsTags.tags')
+            .populate('followedUsers.followed');
 
-            }
-        })
-        return user.followsTags.tags;
+        const responseData = {
+            postsCount: userData.posts.length,
+            followersCount: userData.followersUsers.followers.length,
+            likePostsCount: userData.likePost.posts.length,
+            savedPostsCount: userData.postsSaved.posts.length,
+            tagsCount: userData.followsTags.tags.length,
+            followedUsersCount: userData.followedUsers.followed.length,
+        };
+        return responseData;
+                
     } catch (error) {
-    }    
+
+    }   
 }
 
+/**
+ * Get user posts for dashboard
+ * @param {*} id 
+ * @returns 
+ */
 const getUserPosts = async (id) => {
     try {
         const user = await User.findById(id)
@@ -538,60 +435,21 @@ const getUserPosts = async (id) => {
                     path: "user",
                     select: 'name _id profilePicture'
                 },
-                select: 'title linkImage categoriesPost _id user likePost commenstOnPost date'
+                select: 'title linkImage categoriesPost _id user likePost commenstOnPost date comments'
             })
-
         return user.posts;
     } catch (error) {
-
+        console.error("Error in getUserPosts:", error);
+        throw new Error('Error to find users posts');
     }
 }
 
-const getUserLikePosts= async (id) => {
-    try {
-        const user = await User.findById(id).populate({
-            path: "likePost",
-            populate: {
-                path: "posts",
-                populate: {
-                    path: "user",
-                    select: 'name _id profilePicture'
-                },
-                select : 'title linkImage categoriesPost _id user likePost commenstOnPost date'
-
-            }
-        })
-        
-        return user.likePost.posts;
-          
-    } catch (error) {
-       
-    }    
-}
-
-const getUserSavePosts = async (id) => {
-
-    try {
-        const user = await User.findById(id).populate({
-            path: "postsSaved",
-            populate: {
-                path: "posts",
-                populate: {
-                    path: "user",
-                    select: 'name _id profilePicture'
-                },
-                select : 'title linkImage categoriesPost _id user likePost postsSaved commenstOnPost date'
-            },
-        })
-        return user.postsSaved.posts;
-    } catch (error) {
-
-    }
-}
-
-
+/**
+ * Get user followers and followed for dashboard
+ * @param {*} id 
+ * @returns 
+ */
 const getOneUserFollow = async (id) =>{
-
     try {
         const user = await User.findById(id).populate({
             path: "followersUsers",
@@ -618,6 +476,130 @@ const getOneUserFollow = async (id) =>{
 
     }    
 }
+
+/**
+ * Get user like posts for dashboard
+ * @param {*} id 
+ * @returns 
+ */
+const getUserLikePosts= async (id) => {
+    try {
+        const user = await User.findById(id).populate({
+            path: "likePost",
+            populate: {
+                path: "posts",
+                populate: {
+                    path: "user",
+                    select: 'name _id profilePicture'
+                },
+                select : 'title linkImage categoriesPost _id user likePost commenstOnPost date comments'
+            }
+        })
+        return user.likePost.posts;
+    } catch (error) {
+       
+    }    
+}
+
+/**
+ * Get user save posts for dashboard
+ * @param {*} id 
+ * @returns 
+ */
+const getUserSavePosts = async (id) => {
+    try {
+        const user = await User.findById(id).populate({
+            path: "postsSaved",
+            populate: {
+                path: "posts",
+                populate: {
+                    path: "user",
+                    select: 'name _id profilePicture'
+                },
+                select : 'title linkImage categoriesPost _id user likePost postsSaved commenstOnPost date comments'
+            },
+        })
+        return user.postsSaved.posts;
+    } catch (error) {
+
+    }
+}
+
+/**
+ * Get user tags for dashboard
+ * @param {*} id 
+ * @returns 
+ */
+const getUserTags = async (id) => {
+    try {
+        const user = await User.findById(id).populate({
+            path: "followsTags",
+            populate: {
+                path: "tags",
+            }
+        })
+        return user.followsTags.tags;
+    } catch (error) {
+
+    }    
+}
+
+/**
+ * Get user info for dashboard
+ * @param {*} id 
+ * @returns 
+ */
+const getOneUserProfile = async (id) =>{
+    try {
+        const user = await User.findById(id).populate({
+            path: "postsSaved",
+            populate: {
+                path: "posts",
+                populate:{
+                    path: "user"
+                }
+            }
+        }).populate({
+            path: "followsTags",
+            populate: {
+                path: "tags",
+
+            }
+        }).populate({
+            path: "likePost",
+            populate: {
+                path: "posts",
+
+            }
+        })
+
+        if (!user) { //-> no entra a esta excepcion, se va directamente a el catch
+            throw new Error('User not found');
+        }
+        return user;         
+    } catch (error) {
+        console.error("Error in getOneUserProfile:", error);
+        throw new Error('Error to find user');
+    }    
+}
+
+/**
+ * Get user info for dashboard
+ * @param {*} id 
+ * @returns 
+ */
+const getOneUserEditProfile = async (id) => {
+    try {
+        const user = await User.findById(id)
+            .select('info profilePicture');
+        return user;
+    }
+    catch (error) {
+        
+    }
+}
+
+
 //-- Dashboard end --//
 
 export {
@@ -633,7 +615,6 @@ export {
     //-- crud user start --//
     newInfoUser,
     getOneUser,
-    getOneUserProfile,
     getAllUsers,
     //-- crud user end --//
     //dashboard
@@ -648,8 +629,8 @@ export {
     unfollowUser,
     followTag, 
     unFollowTag,
-    getUserNotifications,
+    getOneUserShortInfo,
+    getOneUserProfile,
+    getOneUserEditProfile
     //-- actions user end --//
-
-    getOneUserShortInfo
 }

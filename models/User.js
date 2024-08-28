@@ -114,12 +114,8 @@ const usersSchema = mongoose.Schema({
         },
         date:{
             type: Date,
-        },
-        idPost:{
-            type: Schema.ObjectId,
-            ref: 'Post',
-            default: null
         }
+
     }],
 }, {
     timestamps: true

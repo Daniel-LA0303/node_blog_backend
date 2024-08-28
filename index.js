@@ -10,9 +10,17 @@ import usersRoutes from './routes/usersRoutes.js'
 import postsRoutes from './routes/postsRoutes.js'
 import categoriesRoutes from './routes/categoriesRoutes.js'
 import pagesRoutes from './routes/pagesRoutes.js'
+import commentsRoutes from './routes/commentRoutes.js'
+import repliesRoutes from './routes/repliesRoutes.js'
 
 
 const app = express();
+
+connectDB();
+
+app.use(cors());
+
+
 dotenv.config();
 
 //pat
@@ -20,13 +28,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads-profile", express.static(path.join(__dirname,"/uploads-profile")))
 app.use("/uploads-post", express.static(path.join(__dirname,"/uploads-post")))
-// uploads-post
-// const {pathname: root} = new URL('../src', import.meta.url)
 
-//2.
-connectDB();
-
-app.use(cors());
 
 //configuracion de imagenes
 const storage = multer.diskStorage({
@@ -63,6 +65,8 @@ app.use('/api/users', usersRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/pages', pagesRoutes);
+app.use('/api/comments', commentsRoutes);
+app.use('/api/replies', repliesRoutes);
 
 
 //1. server
@@ -70,30 +74,3 @@ const server = app.listen(PORT, () => {
     console.log("server on 4000");
 
 })
-
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something broke!');
-});
-
-// Socket.io
-// import { Server } from "socket.io";
-
-// const io = new Server(server, {
-//     pingTimeout: 60000,
-//     cors: {
-//       origin: 'http://127.0.0.1:5173',
-//     },
-// });
-
-// io.on("connection", (socket) => {
-//     console.log("a user connected"); 
-
-//     socket.on('newComment', (data) => {
-//         console.log("newComment", data);
-//         const userID = data.userID;
-//         socket.emit('newNotification', data);
-//         console.log('envio');
-//     });
-
-// });

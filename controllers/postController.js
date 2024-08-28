@@ -6,9 +6,7 @@ import path from "path"
 // import fs from "fs"
 import fs from "fs-extra"
 import { deleteImage, uploadImage, uploadImagePost } from '../config/cloudinary.js';
-
-//Transactions
-import mongoose from 'mongoose';
+import Reply from '../models/Replies.js';
 
 // -- Upload image post start --//
 const uploadImagePostController = async (req, res) => {
@@ -20,6 +18,7 @@ const uploadImagePostController = async (req, res) => {
         });
         await fs.unlink(req.files.image.tempFilePath)
     } catch (error) {
+        console.log(error);
     }
 }
 // -- Upload image post end --//
@@ -27,12 +26,17 @@ const uploadImagePostController = async (req, res) => {
 //-- CRUD post start --//
 //create a post
 const registerPost = async (req, res) => {
-
-    const user = await User.findById(req.body.user);
-    if (!user) {
-        return res.status(404).json({ error: "User not found" });
-    }
     try {
+        const user = await User.findById(req.body.user);
+        if (!user) {
+            return res.status(404).json({ error: "User not found", msg: "Error User not found"});
+        }
+
+        const postSearch = await Post.findOne({ title: req.body.title });
+        if (postSearch) {
+            return res.status(400).json({ error: "Post already exists", msg: "Error Post whith this title already exists"});
+        }
+
         const post = new Post(req.body);
         await post.save();
 
@@ -42,53 +46,9 @@ const registerPost = async (req, res) => {
 
         res.status(201).json({ msg: "Post created correctly"})
     } catch (error) {
-        res.status(500).json({ error: "Error to create post" });
+        console.error("Error in registerPost:", error);
+        res.status(400).json({ error: 'Error', msg: error.message });
     }
-}
-
-//get all posts
-const getAllPosts = async (req, res, next) =>{
-
-    try {
-        const post2 = await Post.find({})
-        .populate({
-          path: 'user',
-          select: 'name _id profilePicture' // Especificar los campos del usuario que quieres incluir
-        })
-        .select('title linkImage categoriesPost _id user likePost commenstOnPost date') // Especificar los campos del post que quieres incluir
-        res.status(200).json(post2);
-    } catch (error) {
-        res.status(500).json({ error: 'Error to find posts' });
-        next();
-    }
-}
-
-/**
- * Get all posts in card format
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- */
-const getAllPostsCard = async (req, res, next) =>{
-  try {
-      try {
-        const post2 = await Post.find({})
-        .populate({
-          path: 'user',
-          select: 'name _id profilePicture' 
-        })
-        .select('title linkImage categoriesPost _id user likePost commenstOnPost date') 
-        return post2;
-    } catch (error) {
-        res.status(500).json({ error: 'Error to find posts' });
-        next();
-    }
-
-
-  } catch (error) {
-      res.status(500).json({ error: 'Error to find posts' });
-      next();
-  }
 }
 
 //get one post
@@ -109,27 +69,32 @@ const getOnePost = async (req, res, next) =>{
               path: "replies.userID",
             },
           }).populate('user')
+        .select('title desc content linkImage categoriesPost categoriesSelect usersSavedPost _id user likePost commenstOnPost date')
 
-
-        if(!post){
-            return res.status(404).json({msg: 'This post does not exist'})
-        }
-
-        res.status(200).json(post);    
+        res.json(post);    
     } catch (error) {
-        res.status(500).json({ error: 'Error to find post' });
+        console.log(error);
+        res.json({msg: 'This post does not exist'});
+        next();
     }
 }
 
 //update a post
 const updatePost = async(req, res, next) => {
     try {
+        // throw new Error("Simulated error in getUserPosts");
+        const post1 = await Post.findById(req.params.id)
+        .select('user');
+
+        if (post1.user.toString() !== req.query.user) {
+            return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
+        }
         if(req.body.previousName){
             if((req.body.previousName !== "")){
                 await deleteImage(req.body.previousName) 
             }
         }
-        const post = await Post.findByIdAndUpdate(
+        await Post.findByIdAndUpdate(
             {_id: req.params.id},{
                 title: req.body.title,
                 desc: req.body.desc,
@@ -140,43 +105,41 @@ const updatePost = async(req, res, next) => {
             },
             {new: true}
         )
-
-        if(!post){
-            return res.status(404).json({msg: 'This post does not exist'})
-        }
-
-        res.status(200).json(post);
+        res.status(201).json({msg: 'Post has been edited'});
     } catch (error) {
-        res.status(500).json({ error: 'Error to update post' });
+        res.status(500).json({ error: 'Error', msg: error.message});
     }
 }
 
 //delete a post
 const deletePost = async (req, res, next) =>{
     //search info about
-    const post = await Post.findById(req.params.id)
-    const user = await User.findById(post.user)
 
-    if(!post){
-        return res.status(404).json({msg: 'This post does not exist'})
-    }
-
-    if(!user){
-        return res.status(404).json({msg: 'This user does not exist'})
-    }
-
-    if(post.linkImage !== ''){
-        await deleteImage(post.linkImage.public_id) 
-    }
 
     // delete info from db
     try {
+        const post = await Post.findById(req.params.id)
+        const user = await User.findById(post.user)
+        const post1 = await Post.findById(req.params.id)
+        .select('user');
+    
+        // throw new Error("Simulated error in getUserPosts");
+        if (post1.user.toString() !== req.query.user) {
+          return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
+      }
+    
+        if(post.linkImage !== ''){
+            await deleteImage(post.linkImage.public_id) 
+        }
         user.numberPost = user.numberPost - 1;
+        // Remove the post from the user's posts array
+        user.posts = user.posts.filter(postId => postId.toString() !== req.params.id);
         await user.save();
-        await Post.findByIdAndDelete({_id: req.params.id});
-        res.status(200).json({msg: 'Post deleted correctly'})
+        await post.remove();
+        res.status(200).json({msg: 'The post has been eliminated'})
     } catch (error) {
-        res.status(500).json({ error: 'Error to delete post' });
+        console.log(error);
+        res.status(500).json({ error: 'Error', msg: error.message});
         next();
     }
 }
@@ -185,46 +148,20 @@ const deletePost = async (req, res, next) =>{
 
 // -- Dashboard action start --//
 const getUserPost = async (req, res, next) =>{
+    console.log(req.params.id);
     const post = await Post.find({user:req.params.id})
-
-    if(!post){
-        return res.status(404).json({msg: 'This user does not have posts'})
-    }
-
-    res.status(200).json(post);
+    res.json(post)
 }
 
 //-- Dashboard action end --//
 
 //-- Search start --//
 
-/**
- * Filter post by category
- * @param {*} id 
- * @returns 
- */
-const filterPostByCategory = async (id) =>{
-    try {
-        const filteredPosts = await Post.find({
-            categoriesPost: { $elemMatch: { $eq: id} }
-          }).populate({
-            path: 'user',
-            select: 'name _id profilePicture' // Especificar los campos del usuario que quieres incluir
-          })
-          .select('title linkImage categoriesPost _id user likePost commenstOnPost date')
-
-        // if(!filteredPosts){
-        //     return 'This category does not have posts'
-        // }
-        return filteredPosts;
-      } catch (error) {
-        // res.status(500).json({ error: 'Error to find posts' });
-      }
-
-}
 
 const searchByParam = async (req, res, next) =>{
     try {
+
+        // throw new Error("Simulated error in getUserPosts");
         const [posts, users, categories] = await Promise.all([
           Post.find({ title: { $regex: req.params.id, $options: 'i' } }).populate('user'),
           User.find({ $or: [{ name: { $regex: req.params.id, $options: 'i' } }, { email: { $regex: req.params.id, $options: 'i' } }] }), 
@@ -237,9 +174,10 @@ const searchByParam = async (req, res, next) =>{
           categories 
         };
     
-        res.status(200).json(searchResults);
+        res.json(searchResults);
+        console.log(posts);
       } catch (error) {
-        res.status(500).json({ error: 'Error to search' });
+        res.status(500).json({ error: 'Error to search',  msg: error.message });
       }
 }
 
@@ -263,7 +201,7 @@ const postsRecommend = async (req, res, next) =>{
           categoriesPost: { $in: categoriesPost }, // chercher les posts qui ont des catégories en commun avec le post actuel
         }).limit(5); // limite à 5 posts
     
-        return res.status(200).json(recommendedPosts);
+        return res.json({ recommendedPosts });
       } catch (error) {
         console.error(error);
         return res.status(500).json({ message: 'Internal server error' });
@@ -277,30 +215,9 @@ const postsRecommend = async (req, res, next) =>{
 const likePost = async (req, res) => {
   try {
     const postId = req.params.id; // ID del post
-    const userId = req.body.userP; // ID del usuario
-    const userAutor = req.body.userAutor; // ID del usuario
-
-    const userAutorDocument = await User.findById(userAutor);
-    const existingNotificationAutor = userAutorDocument.notifications.find((notification) => (
-      notification.type === 'like' && String(notification.idPost) === postId
-    ));
-
-    if (!existingNotificationAutor && userAutor !== userId) {
-      const Obj = {
-        user: req.body.data.userID,
-        notification: 'like your Post',
-        type: 'like',
-        date: req.body.data.dateLike,
-        idPost: req.params.id
-      }
-      await User.findByIdAndUpdate(
-        userAutor,
-        {
-          $push: { notifications: Obj },
-        },
-        { new: true }
-      );
-    }
+    const userId = req.body._id; // ID del usuario
+    
+    // throw new Error("Simulated error in getUserPosts");
 
     await Post.findByIdAndUpdate(
       postId,
@@ -309,18 +226,18 @@ const likePost = async (req, res) => {
       },
       { new: true }
     );
-    
+
     await User.findByIdAndUpdate(
       userId,
       {
-        $push: { notifications: Obj },
+        $addToSet: { 'likePost.posts': postId },
       },
       { new: true }
     );
 
     res.status(200).json({ message: 'Like on post updated successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', msg: error.message });
   }
 };
 
@@ -328,6 +245,8 @@ const dislikePost = async (req, res) => {
   try {
     const postId = req.params.id; // ID del post
     const userId = req.body._id; // ID del usuario
+
+    // throw new Error("Simulated error in getUserPosts");
 
     await Post.findByIdAndUpdate(
       postId,
@@ -347,50 +266,16 @@ const dislikePost = async (req, res) => {
 
     res.status(200).json({ message: 'Unlike on post updated successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', msg: error.message });
   }
 };
-
-
-// const savePost = async (req, res, next) =>{
-
-//     const post = await Post.findById(req.params.id)
-//     const user = await User.findById(req.body._id)
-
-//     const postFound = user.postsSaved.posts.includes(post._id);
-//     const userFound = post.usersSavedPost.users.includes(user._id);
-//     if(postFound && userFound){
-
-//         const arrayP = user.postsSaved.posts;
-//         const indexPost = arrayP.indexOf(post._id)
-//         arrayP.splice(indexPost, 1)        
-//         user.postsSaved.posts = arrayP;
-        
-//         const arrayU = post.usersSavedPost.users;
-//         const indexUser = arrayU.indexOf(user._id);
-//         arrayU.splice(indexUser, 1);
-//         post.usersSavedPost.users = arrayU;
-
-//         await post.save();
-//         await user.save();
-
-//     }else{
-
-//         const newPostOnUser = [...user.postsSaved.posts, post._id];
-//         user.postsSaved.posts = newPostOnUser;
-
-//         const newUserOnPost = [...post.usersSavedPost.users, user._id]
-//         post.usersSavedPost.users = newUserOnPost;
-
-//         await post.save();
-//         await user.save();
-//     }
-// }
 
 const savePost = async (req, res) => {
   try {
     const postId = req.params.id; // ID del post
     const userId = req.body._id; // ID del usuario
+
+    // throw new Error("Simulated error in getUserPosts");
 
     await User.findByIdAndUpdate(
       userId,
@@ -410,7 +295,7 @@ const savePost = async (req, res) => {
 
     res.status(200).json({ message: 'Post saved successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', msg: error.message });
   }
 };
 
@@ -418,6 +303,8 @@ const unsavePost = async (req, res) => {
   try {
     const postId = req.params.id; // ID del post
     const userId = req.body._id; // ID del usuario
+
+    // throw new Error("Simulated error in getUserPosts");
 
     await User.findByIdAndUpdate(
       userId,
@@ -437,7 +324,7 @@ const unsavePost = async (req, res) => {
 
     res.status(200).json({ message: 'Post unsaved successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', msg: error.message });
   }
 };
 
@@ -450,40 +337,26 @@ const saveComment = async (req, res, next) =>{
 
     const post = await Post.findById(req.params.id)
     const userPost = await User.findById(req.body.userPost)
-
-    if(!post){
-        return res.status(404).json({msg: 'This post does not exist'})
-    }
-
-    if(!userPost){
-        return res.status(404).json({msg: 'This user does not exist'})
-    }
-    
     
     try {
         post.commenstOnPost.numberComments = post.commenstOnPost.numberComments +1;
         const newComments = [...post.commenstOnPost.comments, req.body.data]
         post.commenstOnPost.comments = newComments;
 
-        let Obj = {};
-        if(req.body.data.userID !== req.body.userPost){
-          Obj = {
-            user: req.body.data.userID,
-            notification: 'comment your Post',
-            type: 'comment',
-            date: req.body.data.dateComment,
-            idPost: req.params.id
-          }
-          userPost.notifications.push(Obj);
-          await userPost.save();
+        const Obj = {
+          user: req.body.data.userID,
+          notification: 'comment your Post:',
+          type: 'comment',
+          date: req.body.data.dateComment,
         }
+        userPost.notifications.push(Obj);
 
         await post.save();
+        await userPost.save();
 
-
-        return res.status(200).json(Obj);
+        return res.json(Obj);
     } catch (error) {
-        res.status(500).json({ error: 'Error to save comment' });
+        console.log(error);
         next();
     }
 }
@@ -514,8 +387,6 @@ const editComment = async (req, res, next) =>{
         function(error, doc){}
         
     )
-
-
 } 
 
 //-- Actions comment post end --//
@@ -523,7 +394,7 @@ const editComment = async (req, res, next) =>{
 //-- Actions reply comment post start --//
 const saveReplyComment = async (req, res, next) =>{
     const postId = req.params.id; 
-    const { userID, commentId, reply, dateReply, commentAutor } = req.body; 
+    const { userID, commentId, reply, dateReply } = req.body; 
   
     try {
       //search by post id
@@ -539,33 +410,17 @@ const saveReplyComment = async (req, res, next) =>{
       if (!comment) {
         return res.status(404).json({ msg: 'Comment not found' });
       }
+  
+      // we create the new reply
       const newReply = {
         userID: userID,
         reply: reply,
-        dateReply: dateReply,
+        dateReply: dateReply
       };
-
-      comment.replies.push(newReply);
-      
-      if (userID !== commentAutor) {
-
-        const Obj = {
-          user: userID,
-          notification: 'reply your Comment',
-          type: 'reply',
-          date: dateReply,
-          idPost: postId,
-        };
   
-        await User.findByIdAndUpdate(
-          commentAutor,
-          {
-            $push: { notifications: Obj },
-          },
-          { new: true }
-        );
-      }
-
+      // add the new reply to the comment
+      comment.replies.push(newReply);
+  
       //save the post
       await post.save();
 
@@ -576,8 +431,9 @@ const saveReplyComment = async (req, res, next) =>{
         },
       })
 
-      return res.status(200).json(post.commenstOnPost.comments);
+  return res.json(post.commenstOnPost.comments);
     } catch (error) {
+      console.log(error);
       return res.status(500).json({ msg: 'Server error' });
     }
 }
@@ -607,15 +463,15 @@ const deleteReplyComment = async (req, res, next) =>{
 
     // save the post
     await post.save();
-
     await post.populate({
         path: "commenstOnPost.comments",
         populate: {
           path: "replies.userID",
         },
       })
-      return res.status(200).json(post.commenstOnPost.comments); 
+      return res.json(post.commenstOnPost.comments); 
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Error in server" });
   }
 
@@ -651,15 +507,109 @@ const editReplyComment = async (req, res, next) =>{
                   path: "replies.userID",
                 },
             });
-            return res.status(200).json(post.commenstOnPost.comments);
+            return res.json(post.commenstOnPost.comments);
     } catch (error) {
-        res.status(500).json({ error: "Error in server" });
+        console.log(error);
     }
+}
+//-- Actions reply comment post end --//
 
+/**
+ * Pages Start
+ */
+
+/**
+ * Filter post by category
+ * @param {*} id 
+ * @returns 
+ */
+const filterPostByCategory = async (id) =>{
+  try {
+      const filteredPosts = await Post.find({
+          categoriesPost: { $elemMatch: { $eq: id} }
+        }).populate({
+          path: 'user',
+          select: 'name _id profilePicture' // Especificar los campos del usuario que quieres incluir
+        })
+        .select('title linkImage categoriesPost _id user likePost commenstOnPost date')
+
+      // if(!filteredPosts){
+      //     return 'This category does not have posts'
+      // }
+      return filteredPosts;
+    } catch (error) {
+      // res.status(500).json({ error: 'Error to find posts' });
+    }
 
 }
 
-//-- Actions reply comment post end --//
+//get all posts
+const getAllPosts = async (req, res, next) =>{
+
+  try {
+      const post2 = await Post.find({})
+      .populate({
+        path: 'user',
+        select: 'name _id profilePicture' // Especificar los campos del usuario que quieres incluir
+      })
+      .select('title linkImage categoriesPost _id user likePost commenstOnPost date') // Especificar los campos del post que quieres incluir
+      res.status(200).json(post2);
+  } catch (error) {
+      res.status(500).json({ error: 'Error to find posts' });
+      next();
+  }
+}
+
+/**
+ * Get all posts in card format
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+const getAllPostsCard = async (req, res, next) =>{
+  try {
+    const post2 = await Post.find({})
+        .populate({
+            path: 'user',
+            select: 'name _id profilePicture' 
+        })
+        .select('title linkImage categoriesPost _id user likePost commenstOnPost date comments');
+    return post2;
+  } catch (error) {
+      console.error("Error in getAllPostsCard:", error);
+      throw new Error('Error to find posts');
+  }
+}
+
+const getEditOnePost = async (id) =>{
+  try {
+    const post = await Post.findById(id)
+      .select('title desc content linkImage categoriesPost categoriesSelect _id');
+      return post;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+const getViewPost = async (id) => {
+  try {
+      const post = await Post.findById(id)
+          .select('categoriesPost categoriesSelect content date desc likePost linkImage title usersSavedPost createdAt')
+          .populate({
+              path: 'user',
+              select: 'name email followedUsers followersUsers profilePicture'
+          });
+      
+      return post;
+  } catch (error) {
+      console.error("Error en getViewPost:", error);
+      throw error; // Lanza el error para que sea capturado por el try-catch en getViewPostPage
+  }
+}
+/**
+ * Pages End
+ */
+
 
 export {
     //-- Upload image post start --//
@@ -669,7 +619,6 @@ export {
     //-- CRUD post start --//
     registerPost,
     getAllPosts,
-    getAllPostsCard,
     getOnePost,
     updatePost,
     deletePost,
@@ -703,4 +652,7 @@ export {
     deleteReplyComment,
     editReplyComment,
     //-- Actions reply comment post end --//
+    getAllPostsCard,
+    getEditOnePost,
+    getViewPost
 }

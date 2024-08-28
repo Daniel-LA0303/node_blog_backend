@@ -1,4 +1,7 @@
 import mongoose from "mongoose";
+import User from "./User.js";
+import Reply from "./Replies.js";
+import Comment from "./Comments.js";
 const Schema = mongoose.Schema;
 
 const postSchema = Schema({
@@ -84,10 +87,38 @@ const postSchema = Schema({
     date:{
         type: Number,
         required: false
-    }
+    },
+    comments: [{
+        type: Schema.ObjectId,
+        ref: 'Comment'
+    }],
 },
     {timestamps: true}
 );
+
+postSchema.pre('remove', async function(next) {
+    try {
+        // Delete related comments and replies
+        await Comment.deleteMany({ postID: this._id });
+        await Reply.deleteMany({ postID: this._id });
+
+        // Find users who liked this post and remove the post from their likePost
+        await User.updateMany(
+            { "likePost.posts": this._id },
+            { $pull: { "likePost.posts": this._id } }
+        );
+
+        // Find users who saved this post and remove the post from their postsSaved
+        await User.updateMany(
+            { "postsSaved.posts": this._id },
+            { $pull: { "postsSaved.posts": this._id } }
+        );
+
+        next();
+    } catch (err) {
+        next(err);
+    }
+});
 
 const Post = mongoose.model('Post', postSchema);
 
