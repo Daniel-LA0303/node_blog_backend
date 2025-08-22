@@ -22,12 +22,14 @@ import {
     dislikePost,
     unsavePost,
 } from "../controllers/postController.js";
+import checkAuth from "../middleware/checkAuth.js";
 
 
 const router = express.Router();
 
 // -- Upload image post start --//
 router.post('/image-post',
+    checkAuth,
     fileUpload({
         useTempFiles: true,
         tempFileDir: "./uploads_post",
@@ -37,7 +39,10 @@ router.post('/image-post',
 // -- Upload image post end --//
 
 //-- CRUD post start --//
-router.post('/', registerPost)
+router.post('/', 
+    checkAuth,
+    registerPost
+);
 router.get('/', getAllPosts); 
 router.get('/:id', getOnePost); 
 router.put('/:id', 

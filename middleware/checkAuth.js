@@ -8,23 +8,23 @@ const checkAuth = async (req, res, next) => {
     if(req.headers.authorization && req.headers.authorization.startsWith('Bearer')){
         try {
             token = req.headers.authorization.split(' ')[1]; //se obtiene el token que se envio en autenticacion para mostrar informacion
+
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             const user = await User.findById(decoded.id).select("-password -confirmado -token -__v"); //quitamos ciertos campos
             if(user === null ){
-                return res.status(404).json({msg: 'token invalido'});
+                return res.status(404).json({msg: 'Invalid token'});
             }
             req.user = user;
-            console.log(req.user);
             return next();
         } catch (error) {
-            console.log("token invalido");
-            return res.status(404).json({msg: 'Hubo un Error'});
+            console.error("Error in checkAuth middleware:", error);
+            return res.status(401).json({ msg: 'Invalid or expired token' });
             
         }
     }
 
     if(!token){
-        const error = new Error('Token no valido');
+        const error = new Error('Invalid token');
         return res.status(401).json({msg: error.message});
     }
 

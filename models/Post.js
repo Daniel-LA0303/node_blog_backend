@@ -5,23 +5,33 @@ import Comment from "./Comments.js";
 const Schema = mongoose.Schema;
 
 const postSchema = Schema({
+
+    // user
     user: {
         type: Schema.ObjectId,
         ref: 'User'
     },
+
+    // title
     title:{
         type: String,
         required: true,
         unique: true
     },
+
+    // description
     desc:{
         type: String,
         required: true
     },
+
+    // content
     content: {
         type: String,
         required: true
     },
+
+    // image in cloudinary
     linkImage: {
         secure_url: {
             type: String,
@@ -32,20 +42,23 @@ const postSchema = Schema({
             default: ''
         },
     },
-    categoriesPost:{
-        type: Array,
-        required:false
-    },
-    categoriesSelect: {
-        type: Array,
-        required:false
-    },
+
+    // categories select
+    categories: [{   
+        type: Schema.ObjectId,
+        ref: 'Categories',
+        required: false
+    }],
+
+    // like post
     likePost: {
         users : [{
             type: Schema.ObjectId,
             ref: 'User'
         }]
     },
+
+    // comments on post
     commenstOnPost:{
         numberComments:{
             type: Number,
@@ -78,16 +91,22 @@ const postSchema = Schema({
               }]
         }]
     },
+
+    // users that saved this post
     usersSavedPost:{
         users:[{
             type: Schema.ObjectId,
             ref: 'User'
         }]
     },
+
+    // date
     date:{
         type: Number,
         required: false
     },
+
+    // comments
     comments: [{
         type: Schema.ObjectId,
         ref: 'Comment'
