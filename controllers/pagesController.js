@@ -1,4 +1,6 @@
 import Post from "../models/Post.js";
+import categoriesServices from "../services/categoriesServices.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import { getAllCategorisInfo, getCategories, getCategoriesNotZero, getOneCategory } from "./categoriesController.js";
 import { getAllCommentsByPost } from "./commentsController.js";
 import { filterPostByCategory, getAllPosts, getAllPostsCard, getEditOnePost, getUserPost, getViewPost } from "./postController.js"
@@ -43,14 +45,20 @@ const getPageHome = async (req, res) => {
 const getCategoriesPage = async (req, res) => {
     try {
         console.log("waiting Categories");
-        // throwError();
-        const categories = await getAllCategorisInfo();
-        res.status(200).json({
-            categories
-        });
+        
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+
+        const result = await categoriesServices.getCategoriesPaginatedService(page, limit);
+
+        // mapping response
+        res.status(200).json(
+            new ApiResponse(200, "/api/page" + req.path, req.method, "Success get categories paginated", result, false)
+        );
+
         console.log("success Categories");
     } catch (error) {
-        res.status(404).json({ error: 'Error', msg: error.message });
+            res.status(500).json(new ApiResponse(500, "/api/page" + req.path, req.method, error.message, null, true));
     }
 }
 

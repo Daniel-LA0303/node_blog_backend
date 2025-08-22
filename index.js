@@ -12,6 +12,7 @@ import categoriesRoutes from './routes/categoriesRoutes.js'
 import pagesRoutes from './routes/pagesRoutes.js'
 import commentsRoutes from './routes/commentRoutes.js'
 import repliesRoutes from './routes/repliesRoutes.js'
+import { errorHandler } from "./utils/exception/errorHandler.js";
 
 
 const app = express();
@@ -67,6 +68,9 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/pages', pagesRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/replies', repliesRoutes);
+
+app.use(errorHandler)
+
 
 
 //1. server
