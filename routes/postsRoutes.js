@@ -39,10 +39,14 @@ router.post('/image-post',
 // -- Upload image post end --//
 
 //-- CRUD post start --//
+
+// new post
 router.post('/', 
     checkAuth,
     registerPost
 );
+
+
 router.get('/', getAllPosts); 
 router.get('/:id', getOnePost); 
 router.put('/:id', 

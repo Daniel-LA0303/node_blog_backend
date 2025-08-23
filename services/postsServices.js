@@ -8,13 +8,13 @@ const saveNewPostService = async (userId, postData) => {
   // 1. search user
   const user = await User.findById(userId);
   if (!user) {
-    throw new ServiceException(404, "User not found");
+    throw new ServiceException("User not found", 404);
   }
 
   // 2. valid if title exists
   const postSearch = await Post.findOne({ title: postData.title });
   if (postSearch) {
-    throw new ServiceException(400, "Post already exists with this title");
+    throw new ServiceException("Post already exists with this title", 400);
   }
 
   // 3. assamble the info

@@ -27,6 +27,7 @@ const uploadImagePostController = async (req, res) => {
 // -- Upload image post end --//
 
 //-- CRUD post start --//
+
 //create a post
 const registerPost = async (req, res, next) => {
   try {

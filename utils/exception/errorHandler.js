@@ -7,10 +7,11 @@ export const errorHandler = (err, req, res, next) => {
       error: true,
       status: err.status,
       message: err.message,
+      data: null,
       path: req.originalUrl,
       method: req.method,
       timestamp: new Date().toISOString(),
-      ...err.extra, // datos extra opcionales
+      ...err.extra, 
     });
   }
 
