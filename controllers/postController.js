@@ -608,21 +608,6 @@ const getEditOnePost = async (id) => {
   }
 }
 
-const getViewPost = async (id) => {
-  try {
-    const post = await Post.findById(id)
-      .select('categoriesPost categoriesSelect content date desc likePost linkImage title usersSavedPost createdAt')
-      .populate({
-        path: 'user',
-        select: 'name email followedUsers followersUsers profilePicture'
-      });
-
-    return post;
-  } catch (error) {
-    console.error("Error en getViewPost:", error);
-    throw error; // Lanza el error para que sea capturado por el try-catch en getViewPostPage
-  }
-}
 /**
  * Pages End
  */
@@ -671,5 +656,4 @@ export {
   //-- Actions reply comment post end --//
   getAllPostsCard,
   getEditOnePost,
-  getViewPost
 }

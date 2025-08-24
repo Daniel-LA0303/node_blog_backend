@@ -1,9 +1,11 @@
 import Post from "../models/Post.js";
 import categoriesServices from "../services/categoriesServices.js";
+import commentsService from "../services/commentsService.js";
+import postsServices from "../services/postsServices.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { getAllCategorisInfo, getCategories, getCategoriesNotZero, getOneCategory } from "./categoriesController.js";
 import { getAllCommentsByPost } from "./commentsController.js";
-import { filterPostByCategory, getAllPosts, getAllPostsCard, getEditOnePost, getUserPost, getViewPost } from "./postController.js"
+import { filterPostByCategory, getAllPosts, getAllPostsCard, getEditOnePost, getUserPost } from "./postController.js"
 import { getOneUserEditProfile, getOneUserFollow, getOneUserProfile, getOneUserShortInfo, getUserLikePosts, getUserPosts, getUserSavePosts, getUserTags } from "./usersController.js";
 
 
@@ -311,24 +313,30 @@ const getEditPostPage = async (req, res) => {
 /**
  * Get View Post Page
  */
-const getViewPostPage = async (req, res) => {
+const getViewPostPage = async (req, res, next) => {
     try {
         console.log("waiting ViewPost");
-        // throw new Error("Simulated error in getUserPosts");
-        const [comments, post] = await Promise.all([
-            getAllCommentsByPost(req.params.id),
-            getViewPost(req.params.id)
-        ]);
-        res.status(200).json({
-            comments,
-            post,
-        });
+
+        const postInfo = await postsServices.getViewPostInfoService(req.params.id)
+        const { post, comments } = postInfo;        
+
+        res.status(200).json(new ApiResponse(
+            200,
+            req.originalUrl,
+            req.method,
+            "Post info successfully",
+            {
+                post,
+                comments
+            },
+            false
+        ));
         console.log("success ViewPost");
     } catch (error) {
-        console.error("Error:", error);
-        res.status(500).json({ error: 'Error', msg: error.message });
+        next(error);
     }
 }
+
 export {
     /**
      * 

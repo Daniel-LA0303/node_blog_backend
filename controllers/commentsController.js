@@ -24,6 +24,7 @@ const getAllComments = async(req, res) => {
 
 }
 
+/*DELETE*/ 
 const getAllCommentsByPost = async (postId) => {
     try {
         const comments = await Comment.find({ postID: postId }) // Cambiado de id a postID
@@ -44,7 +45,7 @@ const getAllCommentsByPost = async (postId) => {
         return comments;
     } catch (error) {
         console.error("Error en getAllCommentsByPost:", error);
-        throw error; // Lanza el error para que sea capturado por el try-catch en getViewPostPage
+        throw error; 
     }
 }
 
