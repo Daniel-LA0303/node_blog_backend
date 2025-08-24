@@ -28,7 +28,7 @@ import {
     followTag,
     unFollowTag,
     followUser,
-    unfollowUser
+    unfollowUser,
     //-- User actions end --//
 } from "../controllers/usersController.js";
 
@@ -48,7 +48,8 @@ router.route('/new-password/:token')
     .get(checkToken) //comprueba el token que se manda cuando se ejecuta olvidePassword
     .post(newPassword) //redirije a una pestaña para nuevo password
 
-router.post('/new-info/:id',     
+router.post('/new-info/:id', 
+    checkAuth,    
     fileUpload({
         useTempFiles: true,
         tempFileDir: "./uploads_pro",

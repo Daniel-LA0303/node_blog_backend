@@ -531,11 +531,16 @@ const filterPostByCategory = async (id) => {
   try {
     const filteredPosts = await Post.find({
       categoriesPost: { $elemMatch: { $eq: id } }
-    }).populate({
-      path: 'user',
-      select: 'name _id profilePicture' // Especificar los campos del usuario que quieres incluir
     })
-      .select('title linkImage categoriesPost _id user likePost commenstOnPost date')
+    .select('title linkImage categories _id user likePost commenstOnPost date')
+    .populate({
+      path: 'user',
+      select: 'name _id profilePicture' 
+    }).populate({
+      path: 'categories',
+      select: "_id name value label color"
+    })
+    
 
     // if(!filteredPosts){
     //     return 'This category does not have posts'
