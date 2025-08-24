@@ -22,5 +22,7 @@ export const uploadImagePost = async (filePath) => {
 }
 
 export const deleteImage = async (publicId) => {
+  console.log("delete img: ", publicId);
+  
   return await cloudinary.uploader.destroy(publicId)
 }

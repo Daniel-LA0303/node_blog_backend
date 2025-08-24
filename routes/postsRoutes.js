@@ -54,7 +54,10 @@ router.put('/:id',
         useTempFiles: true,
         tempFileDir: "./uploads_post",
     }), updatePost);
-router.delete('/:id', deletePost);
+
+router.delete('/:postId', 
+    checkAuth,
+    deletePost);
 //-- CRUD post end --//
 
 // -- Dashboard action start --//

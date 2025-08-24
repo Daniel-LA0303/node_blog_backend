@@ -130,29 +130,21 @@ const deletePost = async (req, res, next) => {
 
   // delete info from db
   try {
-    const post = await Post.findById(req.params.id)
-    const user = await User.findById(post.user)
-    const post1 = await Post.findById(req.params.id)
-      .select('user');
 
-    // throw new Error("Simulated error in getUserPosts");
-    if (post1.user.toString() !== req.query.user) {
-      return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
-    }
+    await postsServices.deletePostService(req.params.postId, req.query.userId);
 
-    if (post.linkImage !== '') {
-      await deleteImage(post.linkImage.public_id)
-    }
-    user.numberPost = user.numberPost - 1;
-    // Remove the post from the user's posts array
-    user.posts = user.posts.filter(postId => postId.toString() !== req.params.id);
-    await user.save();
-    await post.remove();
-    res.status(200).json({ msg: 'The post has been eliminated' })
+    res.status(201).json(
+      new ApiResponse(
+        200,
+        "/api" + req.path,
+        req.method,
+        "Post deleted successfully",
+        null,
+        false
+      )
+    );
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: 'Error', msg: error.message });
-    next();
+    next(error);
   }
 }
 
