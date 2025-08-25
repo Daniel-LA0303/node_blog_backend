@@ -2,6 +2,7 @@ import Post from "../models/Post.js";
 import categoriesServices from "../services/categoriesServices.js";
 import commentsService from "../services/commentsService.js";
 import postsServices from "../services/postsServices.js";
+import usersServices from "../services/usersServices.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { getAllCategorisInfo, getCategories, getCategoriesNotZero, getOneCategory } from "./categoriesController.js";
 import { getAllCommentsByPost } from "./commentsController.js";
@@ -266,20 +267,25 @@ const getCategoriesNewPostPage = async (req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-const getProfileEditUserPage = async (req, res) => {
+const getProfileEditUserPage = async (req, res, next) => {
     try {
         console.log("waiting ProfileEdit");
-        // throw new Error("Simulated error in getUserPosts");
-        if(req.params.id !== req.query.user){
-            return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
-        }
-        const user = await getOneUserEditProfile(req.params.id);   
-        res.status(200).json({
-            user
-        });
+        const userAuth = req.user;        
+
+        const user = await usersServices.getUserInfoToEdit(req.params.id, userAuth._id);  
+        res.status(200).json(
+        new ApiResponse(
+            200,
+            "/api" + req.path,
+            req.method,
+            "User info to edit",
+            user,
+            false
+        )
+        );
         console.log("success ProfileEdit");
     } catch (error) {
-        res.status(500).json({ error: 'Error', msg: error.message });
+       next(error);
     }
 }
 

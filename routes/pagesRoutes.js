@@ -16,6 +16,7 @@ import {
 } from "../controllers/pagesController.js";
 import { getProfileEditUserPage } from "../controllers/pagesController.js";
 import { getEditPostPage } from "../controllers/pagesController.js";
+import checkAuth from "../middleware/checkAuth.js";
 
 const router = express.Router();
 
@@ -45,7 +46,9 @@ router.get('/page-dashboard-liked-post-user/:id', getDashboardLikePostUserPage);
 router.get('/page-dashboard-saved-post-user/:id', getDashboardSavedPostUserPage);
 router.get('/page-dashboard-tag-user/:id', getDashboardTagsUserPage);
 router.get('/page-new-post', getCategoriesNewPostPage);
-router.get('/page-edit-profile/:id', getProfileEditUserPage);
+router.get('/page-edit-profile/:id', 
+    checkAuth,
+    getProfileEditUserPage);
 router.get('/page-edit-post/:id',getEditPostPage );
 router.get('/page-view-post/:id',getViewPostPage );
 /**

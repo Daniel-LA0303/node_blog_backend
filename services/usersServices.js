@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { deleteImage, uploadImage } from "../config/cloudinary.js";
 import Categories from "../models/Categories.js";
 import User from "../models/User.js";
@@ -139,8 +140,25 @@ const userFollowATag = async (categoryId, userId) => {
 
 }
 
+const getUserInfoToEdit = async (userId, userAuthId) => {
+
+    // 1. search user
+    const user = await User.findById(userId).select('info profilePicture');
+
+    if (!user) throw new ServiceException("User not found", 404);
+
+    // 3. check if userId and user auth id are the same
+    if(userId.toString() !== userAuthId.toString()){
+        throw new ServiceException("You don't have permissions to edit this user", 403);
+    }
+
+    return user;
+
+}
+
 export default {
     updateProfileService,
     userFollowATag,
     userUnfollowATag,
+    getUserInfoToEdit,
 }

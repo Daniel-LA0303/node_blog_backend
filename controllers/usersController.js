@@ -549,6 +549,8 @@ const getOneUserProfile = async (id) => {
  * @param {*} id 
  * @returns 
  */
+
+// DELETE
 const getOneUserEditProfile = async (id) => {
     try {
         const user = await User.findById(id)
