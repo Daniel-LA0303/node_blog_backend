@@ -70,8 +70,12 @@ router.get('/get-profile-follows/:id', getOneUserFollow);
 //-- Dashboard end --//
 
 //-- User actions start --//
-router.post('/follow-tag/:id', followTag);
-router.post('/unfollow-tag/:id', unFollowTag);
+router.post('/follow-tag/:id', 
+    checkAuth,
+    followTag);
+router.post('/unfollow-tag/:id', 
+    checkAuth,
+    unFollowTag);
 
 router.post('/user-follow/:id', followUser);
 router.post('/user-unfollow/:id', unfollowUser);

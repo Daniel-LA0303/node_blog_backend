@@ -1,4 +1,5 @@
 import { deleteImage, uploadImage } from "../config/cloudinary.js";
+import Categories from "../models/Categories.js";
 import User from "../models/User.js";
 import { ServiceException } from "../utils/exception/ServiceException.js";
 import fs from "fs-extra"
@@ -18,7 +19,7 @@ const updateProfileService = async (userId, previousName, files, profilePicture,
     // 2. when user inserts a new image, we need to delete 
     if (previousName) {
         console.log("******DELETE IMAGE*****");
-        
+
         if (previousName !== "") {
             await deleteImage(previousName);
         }
@@ -52,6 +53,94 @@ const updateProfileService = async (userId, previousName, files, profilePicture,
     await user.save();
 }
 
+// user unfollow a ta or category
+const userUnfollowATag = async (categoryId, userId) => {
+
+    // 1. check if user exists
+    const user = await User.findById(userId);
+    if (!user) throw new ServiceException("User not found", 404);
+
+    // 2. check if category exists
+    const category = await Categories.findById(categoryId);
+    if (!category) throw new ServiceException("Category not found", 404);
+
+    // 3. validations: check if relation exists
+    const userFollowsCategory = category.follows.users.includes(userId);
+    const categoryInUser = user.followsTags.tags.includes(categoryId);
+
+    if (!userFollowsCategory || !categoryInUser) {
+        throw new ServiceException("User does not follow this category", 400);
+    }
+
+
+    // 4. we quit user from categories
+    await Categories.findByIdAndUpdate(
+        categoryId,
+        {
+            $pull: { 'follows.users': userId },
+            $inc: { 'follows.countFollows': -1 },
+        },
+        { new: true }
+    );
+
+    // 5. we quit cateroy form user
+    await User.findByIdAndUpdate(
+        userId,
+        {
+            $pull: { 'followsTags.tags': categoryId },
+            $inc: { 'followsTags.countTags': -1 },
+        },
+        { new: true }
+    );
+
+}
+
+// user follow a tag or category
+const userFollowATag = async (categoryId, userId) => {
+
+    // 1. check if user exists
+    const user = await User.findById(userId);
+    if (!user) throw new ServiceException("User not found", 404);
+
+    // 2. check if category exists
+    const category = await Categories.findById(categoryId);
+    if (!category) throw new ServiceException("Category not found", 404);
+
+    // 3. validations: check if relation already exists
+    const alreadyInCategory = category.follows.users.includes(userId);
+    if (alreadyInCategory) {
+        throw new ServiceException("User already unfollows this category", 400);
+    }
+
+    const alreadyInUser = user.followsTags.tags.includes(categoryId);
+    if (alreadyInUser) {
+        throw new ServiceException("Category already unfollowed by user", 400);
+    }
+
+    // 4. first we add user in categories
+    await Categories.findByIdAndUpdate(
+        categoryId,
+        {
+            $addToSet: { 'follows.users': userId },
+            $inc: { 'follows.countFollows': 1 },
+        },
+        { new: true }
+    );
+
+    // 5. add category in user
+    await User.findByIdAndUpdate(
+        userId,
+        {
+            $addToSet: { 'followsTags.tags': categoryId },
+            $inc: { 'followsTags.countTags': 1 },
+        },
+        { new: true }
+    );
+
+}
+
 export default {
     updateProfileService,
+    userFollowATag,
+    userUnfollowATag,
 }

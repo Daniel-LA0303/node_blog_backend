@@ -177,7 +177,7 @@ const newInfoUser = async (req, res, next) => {
             id,
             req.body.previousName,
             req.files,
-            req.body.profilePicture, 
+            req.body.profilePicture,
             req.body
         );
         res.status(200).json(
@@ -239,61 +239,49 @@ const getAllUsers = async (req, res) => {
 
 // -- Actions beetween Users start --/
 
-const followTag = async (req, res) => {
+const followTag = async (req, res, next) => {
     try {
-        const categoryId = req.body._id; // ID de la categoría
+        const { categoryId } = req.query; // ID de la categoría
         const userId = req.params.id; // ID del usuario
 
-        await Categories.findByIdAndUpdate(
-            categoryId,
-            {
-                $addToSet: { 'follows.users': userId },
-                $inc: { 'follows.countFollows': 1 },
-            },
-            { new: true }
+        await usersServices.userFollowATag(categoryId, userId);
+
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "Follow tag updated successfully",
+                "Follow success",
+                false
+            )
         );
 
-        await User.findByIdAndUpdate(
-            userId,
-            {
-                $addToSet: { 'followsTags.tags': categoryId },
-                $inc: { 'followsTags.countTags': 1 },
-            },
-            { new: true }
-        );
-
-        res.status(200).json({ message: 'Follow tag updated successfully' });
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error', msg: error.message });
+        next(error);
     }
 };
 
-const unFollowTag = async (req, res) => {
+const unFollowTag = async (req, res, next) => {
     try {
-        const categoryId = req.body._id; // ID de la categoría
+        const { categoryId } = req.query; // ID de la categoría
         const userId = req.params.id; // ID del usuario
 
-        await Categories.findByIdAndUpdate(
-            categoryId,
-            {
-                $pull: { 'follows.users': userId },
-                $inc: { 'follows.countFollows': -1 },
-            },
-            { new: true }
+        await usersServices.userUnfollowATag(categoryId, userId);
+
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "Unfollow tag updated successfully",
+                "Unfollow success",
+                false
+            )
         );
 
-        await User.findByIdAndUpdate(
-            userId,
-            {
-                $pull: { 'followsTags.tags': categoryId },
-                $inc: { 'followsTags.countTags': -1 },
-            },
-            { new: true }
-        );
-
-        res.status(200).json({ message: 'Unfollow tag updated successfully' });
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error', msg: error.message });
+        next(error);
     }
 };
 
@@ -401,11 +389,11 @@ const getUserPosts = async (id) => {
                 select: "title linkImage categories _id user likePost commentsOnPost date comments",
                 populate: [
                     {
-                        path: "user", 
+                        path: "user",
                         select: "name _id profilePicture"
                     },
                     {
-                        path: "categories", 
+                        path: "categories",
                         select: "_id name value label color"
                     }
                 ]
