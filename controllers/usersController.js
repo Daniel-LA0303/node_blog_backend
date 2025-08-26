@@ -273,64 +273,50 @@ const unFollowTag = async (req, res, next) => {
     }
 };
 
-const followUser = async (req, res) => {
-    try {
-        const userFollowedId = req.params.id; // ID del usuario a seguir
-        const userProfileId = req.body._id; // ID del usuario que solicita seguir
+// follow user
+const followUser = async (req, res, next) => {
+  try {
+    const {userFollow} = req.query;  // ID of the user to follow
+    const userProfileId = req.params.id;    // ID of the current logged user
 
-        //   throw new Error("Simulated error in getUserPosts");
+    await usersServices.followUserService(userFollow, userProfileId);
 
-        const userFollowed = await User.findByIdAndUpdate(
-            userFollowedId,
-            {
-                $addToSet: { 'followersUsers.followers': userProfileId },
-                $inc: { 'followersUsers.conutFollowers': 1 },
-            },
-            { new: true }
-        );
-
-        const userProfile = await User.findByIdAndUpdate(
-            userProfileId,
-            {
-                $addToSet: { 'followedUsers.followed': userFollowedId },
-                $inc: { 'followedUsers.conutFollowed': 1 },
-            },
-            { new: true }
-        );
-
-        res.status(200).json({ message: 'Usuario seguido con éxito' });
-    } catch (error) {
-        res.status(500).json({ error: 'Error interno del servidor', msg: error.message });
-    }
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        "/api" + req.path,
+        req.method,
+        "User followed successfully",
+        "Follow success",
+        false
+      )
+    );
+  } catch (error) {
+    next(error);
+  }
 };
 
-const unfollowUser = async (req, res) => {
-    try {
-        const userFollowedId = req.params.id; // ID del usuario a dejar de seguir
-        const userProfileId = req.body._id; // ID del usuario que solicita dejar de seguir
-        // throw new Error("Simulated error in getUserPosts");
-        const userFollowed = await User.findByIdAndUpdate(
-            userFollowedId,
-            {
-                $pull: { 'followersUsers.followers': userProfileId },
-                $inc: { 'followersUsers.conutFollowers': -1 },
-            },
-            { new: true }
-        );
+// Unfollow User
+const unfollowUser = async (req, res, next) => {
+  try {
+    const {userUnfollow} = req.query;  // ID of the user to unfollow
+    const userProfileId = req.params.id;    // ID of the current logged user
 
-        const userProfile = await User.findByIdAndUpdate(
-            userProfileId,
-            {
-                $pull: { 'followedUsers.followed': userFollowedId },
-                $inc: { 'followedUsers.conutFollowed': -1 },
-            },
-            { new: true }
-        );
+    await usersServices.unfollowUserService(userUnfollow, userProfileId);
 
-        res.status(200).json({ message: 'Dejaste de seguir al usuario' });
-    } catch (error) {
-        res.status(500).json({ error: 'Error interno del servidor', msg: error.message });
-    }
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        "/api" + req.path,
+        req.method,
+        "User unfollowed successfully",
+        "Unfollow success",
+        false
+      )
+    );
+  } catch (error) {
+    next(error);
+  }
 };
 
 // -- Actions beetween Users end --/

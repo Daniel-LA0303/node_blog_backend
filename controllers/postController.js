@@ -220,14 +220,7 @@ const likePost = async (req, res, next) => {
   try {
     const postId = req.params.id;
     const {userId} = req.query;
-
-    console.log("******Like*******");
-    console.log("user: ", userId);
-    console.log("post: ", postId);
     
-    
-    
-
     await postsServices.userLikePostService(postId, userId);
 
     res.status(200).json(
@@ -250,10 +243,6 @@ const dislikePost = async (req, res, next) => {
   try {
     const postId = req.params.id;
     const {userId} = req.query;
-
-        console.log("******DISLike*******");
-    console.log("user: ", userId);
-    console.log("post: ", postId);
 
     await postsServices.userDisikePostService(postId, userId);
 
@@ -278,10 +267,6 @@ const savePost = async (req, res, next) => {
     const postId = req.params.id;
     const {userId} = req.query;
 
-        console.log("******save*******");
-    console.log("user: ", userId);
-    console.log("post: ", postId);
-
     await postsServices.userSavePostService(postId, userId);
 
     res.status(200).json(
@@ -304,10 +289,6 @@ const unsavePost = async (req, res, next) => {
   try {
     const postId = req.params.id;
     const {userId} = req.query;
-
-        console.log("******unsave*******");
-    console.log("user: ", userId);
-    console.log("post: ", postId);
 
     await postsServices.userUnsavePostService(postId, userId);
 

@@ -143,6 +143,93 @@ const userFollowATag = async (categoryId, userId) => {
 
 }
 
+// Follow a user
+const followUserService = async (userFollowedId, userProfileId) => {
+  // 1. check if userProfile exists
+  const userProfile = await User.findById(userProfileId);
+  if (!userProfile) throw new ServiceException("User (follower) not found", 404);
+
+  // 2. check if userFollowed exists
+  const userFollowed = await User.findById(userFollowedId);
+  if (!userFollowed) throw new ServiceException("User (to be followed) not found", 404);
+
+  // 3. validations: check if relation already exists
+  const alreadyFollower = userFollowed.followersUsers.followers.includes(userProfileId);
+  if (alreadyFollower) {
+    throw new ServiceException("User already follows this profile", 400);
+  }
+
+  const alreadyFollowing = userProfile.followedUsers.followed.includes(userFollowedId);
+  if (alreadyFollowing) {
+    throw new ServiceException("User already added this profile as followed", 400);
+  }
+
+  // 4. add follower in userFollowed
+  await User.findByIdAndUpdate(
+    userFollowedId,
+    {
+      $addToSet: { "followersUsers.followers": userProfileId },
+      $inc: { "followersUsers.conutFollowers": 1 },
+    },
+    { new: true }
+  );
+
+  // 5. add followed in userProfile
+  await User.findByIdAndUpdate(
+    userProfileId,
+    {
+      $addToSet: { "followedUsers.followed": userFollowedId },
+      $inc: { "followedUsers.conutFollowed": 1 },
+    },
+    { new: true }
+  );
+};
+
+// Unfollow a user
+const unfollowUserService = async (userFollowedId, userProfileId) => {
+  // 1. check if userProfile exists
+  const userProfile = await User.findById(userProfileId);
+  if (!userProfile) throw new ServiceException("User (follower) not found", 404);
+
+  // 2. check if userFollowed exists
+  const userFollowed = await User.findById(userFollowedId);
+  if (!userFollowed) throw new ServiceException("User (to be unfollowed) not found", 404);
+
+  // 3. validations: check if relation does NOT exist
+  const isFollower = userFollowed.followersUsers.followers.includes(userProfileId);
+  if (!isFollower) {
+    throw new ServiceException("User does not follow this profile", 400);
+  }
+
+  const isFollowing = userProfile.followedUsers.followed.includes(userFollowedId);
+  if (!isFollowing) {
+    throw new ServiceException("User does not have this profile as followed", 400);
+  }
+
+  // 4. remove follower from userFollowed
+  await User.findByIdAndUpdate(
+    userFollowedId,
+    {
+      $pull: { "followersUsers.followers": userProfileId },
+      $inc: { "followersUsers.conutFollowers": -1 },
+    },
+    { new: true }
+  );
+
+  // 5. remove followed from userProfile
+  await User.findByIdAndUpdate(
+    userProfileId,
+    {
+      $pull: { "followedUsers.followed": userFollowedId },
+      $inc: { "followedUsers.conutFollowed": -1 },
+    },
+    { new: true }
+  );
+};
+
+
+
+
 const getUserInfoToEdit = async (userId, userAuthId) => {
 
     // 1. search user
@@ -238,4 +325,6 @@ export default {
     login,
     registerNewUser,
     userConfirmed,
+    followUserService,
+    unfollowUserService
 }
