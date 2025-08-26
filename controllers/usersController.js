@@ -11,31 +11,27 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 
 
 // --- Auth Users start --//
-const registerUser = async (req, res) => {
+const registerUser = async (req, res, next) => {
 
     try {
         // throw new Error("Simulated error in getUserPosts");
         const { email } = req.body;
-        const existUser = await User.findOne({ email: email });
 
-        if (existUser) {
-            const error = new Error('This email is already registered');
-            return res.status(400).json({ msg: error.message });
-        }
-        const user = new User(req.body);
-        user.token = generateID();
-        await user.save();
+        await usersServices.registerNewUser(email, req.body);
 
-        emailRegister({
-            email: user.email,
-            name: user.name,
-            token: user.token
-        })
+        res.status(201).json(
+            new ApiResponse(
+                201,
+                "/api" + req.path,
+                req.method,
+                "User created correctly, check your email to confirm.",
+                "User created",
+                false
+            )
+        );
 
-        res.json({ msg: "User created correctly, check your email to confirm." })
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: 'Error', msg: error.message });
+        next(error);
     }
 }
 
@@ -43,7 +39,7 @@ const authUser = async (req, res, next) => {
     try {
 
         const { email, password } = req.body;
-        
+
         const userInfo = await usersServices.login(email, password);
 
         res.status(200).json(
@@ -62,22 +58,26 @@ const authUser = async (req, res, next) => {
     }
 }
 
-const confirm = async (req, res) => {
-    const { token } = req.params;
-    //buscar user
-    const userConfirm = await User.findOne({ token: token });
+const confirm = async (req, res, next) => {
 
-    if (!userConfirm) {
-        const error = new Error("Invalid token");
-        return res.status(403).json({ msg: error.message });
-    }
     try {
-        userConfirm.confirm = true;
-        userConfirm.token = '';
-        await userConfirm.save();
-        res.json({ msg: "User confirmed correctly" });
+
+        const { token } = req.params;
+
+        // call service to confirm
+        await usersServices.userConfirmed(token);
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "User confirmed successfully",
+                "User confirmed",
+                false
+            )
+        );
     } catch (error) {
-        console.log(error);
+        next(error);
     }
 }
 

@@ -5,6 +5,8 @@ import User from "../models/User.js";
 import { ServiceException } from "../utils/exception/ServiceException.js";
 import fs from "fs-extra"
 import generateJWT from "../helpers/generateJWT.js";
+import generateID from "../helpers/generateID.js";
+import { emailRegister } from "../helpers/email.js";
 
 
 const updateProfileService = async (userId, previousName, files, profilePicture, body) => {
@@ -187,10 +189,53 @@ const login = async (email, password) => {
 
 }
 
+const registerNewUser = async (email, body) => {
+
+    // 1. check if email exists
+    const existUser = await User.findOne({ email: email });
+    if (existUser) {
+        throw new ServiceException("This email already exists", 400);
+    }
+
+    // 2. assamble use rinfo
+    const user = new User(body);
+
+    // 3. generate token to confirm
+    user.token = generateID();
+
+    // 4. save new user
+    await user.save();
+
+    // 5. send email
+    emailRegister({
+        email: user.email,
+        name: user.name,
+        token: user.token
+    });
+
+}
+
+const userConfirmed = async (token) => {
+
+    // 1. search user by token
+    const userConfirm = await User.findOne({ token: token });
+
+    // 2. if there isn't user, then there is a error
+    if (!userConfirm) {
+        throw new ServiceException("Invalid token", 403);
+    }
+
+    userConfirm.confirm = true;
+    userConfirm.token = '';
+    await userConfirm.save();
+}
+
 export default {
     updateProfileService,
     userFollowATag,
     userUnfollowATag,
     getUserInfoToEdit,
-    login
+    login,
+    registerNewUser,
+    userConfirmed,
 }
