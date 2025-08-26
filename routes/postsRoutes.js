@@ -72,10 +72,18 @@ router.get('/posts-recommend/:id', postsRecommend);
 // -- Search end --//
 
 //-- Actions post start --//
-router.post('/like-post/:id', likePost);
-router.post('/dislike-post/:id', dislikePost);
-router.post('/save-post/:id', savePost);
-router.post('/unsave-post/:id', unsavePost)
+router.post('/like-post/:id', 
+    checkAuth,
+    likePost);
+router.post('/dislike-post/:id', 
+    checkAuth,
+    dislikePost);
+router.post('/save-post/:id', 
+    checkAuth,
+    savePost);
+router.post('/unsave-post/:id', 
+    checkAuth,
+    unsavePost)
 //-- Actions post end --//
 
 

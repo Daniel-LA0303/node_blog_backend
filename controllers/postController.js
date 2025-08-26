@@ -216,119 +216,113 @@ const postsRecommend = async (req, res, next) => {
 
 //-- Actions post start --//
 
-const likePost = async (req, res) => {
+const likePost = async (req, res, next) => {
   try {
-    const postId = req.params.id; // ID del post
-    const userId = req.body._id; // ID del usuario
+    const postId = req.params.id;
+    const {userId} = req.query;
 
-    // throw new Error("Simulated error in getUserPosts");
+    console.log("******Like*******");
+    console.log("user: ", userId);
+    console.log("post: ", postId);
+    
+    
+    
 
-    await Post.findByIdAndUpdate(
-      postId,
-      {
-        $addToSet: { 'likePost.users': userId },
-      },
-      { new: true }
+    await postsServices.userLikePostService(postId, userId);
+
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        "/api" + req.path,
+        req.method,
+        "Like on post updated successfully",
+        "Like success",
+        false
+      )
     );
-
-    await User.findByIdAndUpdate(
-      userId,
-      {
-        $addToSet: { 'likePost.posts': postId },
-      },
-      { new: true }
-    );
-
-    res.status(200).json({ message: 'Like on post updated successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error', msg: error.message });
+    next(error);
   }
 };
 
-const dislikePost = async (req, res) => {
+// Dislike Post
+const dislikePost = async (req, res, next) => {
   try {
-    const postId = req.params.id; // ID del post
-    const userId = req.body._id; // ID del usuario
+    const postId = req.params.id;
+    const {userId} = req.query;
 
-    // throw new Error("Simulated error in getUserPosts");
+        console.log("******DISLike*******");
+    console.log("user: ", userId);
+    console.log("post: ", postId);
 
-    await Post.findByIdAndUpdate(
-      postId,
-      {
-        $pull: { 'likePost.users': userId },
-      },
-      { new: true }
+    await postsServices.userDisikePostService(postId, userId);
+
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        "/api" + req.path,
+        req.method,
+        "Dislike on post updated successfully",
+        "Dislike success",
+        false
+      )
     );
-
-    await User.findByIdAndUpdate(
-      userId,
-      {
-        $pull: { 'likePost.posts': postId },
-      },
-      { new: true }
-    );
-
-    res.status(200).json({ message: 'Unlike on post updated successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error', msg: error.message });
+    next(error);
   }
 };
 
-const savePost = async (req, res) => {
+// Save Post
+const savePost = async (req, res, next) => {
   try {
-    const postId = req.params.id; // ID del post
-    const userId = req.body._id; // ID del usuario
+    const postId = req.params.id;
+    const {userId} = req.query;
 
-    // throw new Error("Simulated error in getUserPosts");
+        console.log("******save*******");
+    console.log("user: ", userId);
+    console.log("post: ", postId);
 
-    await User.findByIdAndUpdate(
-      userId,
-      {
-        $addToSet: { 'postsSaved.posts': postId },
-      },
-      { new: true }
+    await postsServices.userSavePostService(postId, userId);
+
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        "/api" + req.path,
+        req.method,
+        "Post saved successfully",
+        "Save success",
+        false
+      )
     );
-
-    await Post.findByIdAndUpdate(
-      postId,
-      {
-        $addToSet: { 'usersSavedPost.users': userId },
-      },
-      { new: true }
-    );
-
-    res.status(200).json({ message: 'Post saved successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error', msg: error.message });
+    next(error);
   }
 };
 
-const unsavePost = async (req, res) => {
+// Unsave Post
+const unsavePost = async (req, res, next) => {
   try {
-    const postId = req.params.id; // ID del post
-    const userId = req.body._id; // ID del usuario
+    const postId = req.params.id;
+    const {userId} = req.query;
 
-    // throw new Error("Simulated error in getUserPosts");
+        console.log("******unsave*******");
+    console.log("user: ", userId);
+    console.log("post: ", postId);
 
-    await User.findByIdAndUpdate(
-      userId,
-      {
-        $pull: { 'postsSaved.posts': postId },
-      },
-      { new: true }
+    await postsServices.userUnsavePostService(postId, userId);
+
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        "/api" + req.path,
+        req.method,
+        "Post unsaved successfully",
+        "Unsave success",
+        false
+      )
     );
-
-    await Post.findByIdAndUpdate(
-      postId,
-      {
-        $pull: { 'usersSavedPost.users': userId },
-      },
-      { new: true }
-    );
-
-    res.status(200).json({ message: 'Post unsaved successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error', msg: error.message });
+    next(error);
   }
 };
 
@@ -532,15 +526,15 @@ const filterPostByCategory = async (id) => {
     const filteredPosts = await Post.find({
       categoriesPost: { $elemMatch: { $eq: id } }
     })
-    .select('title linkImage categories _id user likePost commenstOnPost date')
-    .populate({
-      path: 'user',
-      select: 'name _id profilePicture' 
-    }).populate({
-      path: 'categories',
-      select: "_id name value label color"
-    })
-    
+      .select('title linkImage categories _id user likePost commenstOnPost date')
+      .populate({
+        path: 'user',
+        select: 'name _id profilePicture'
+      }).populate({
+        path: 'categories',
+        select: "_id name value label color"
+      })
+
 
     // if(!filteredPosts){
     //     return 'This category does not have posts'
@@ -583,7 +577,7 @@ const getAllPostsCard = async (req, res, next) => {
         select: 'name _id profilePicture'
       })
       .populate({
-        path: 'categories',    
+        path: 'categories',
         select: '_id name value label color'
       })
       .select('title linkImage categories _id user likePost commenstOnPost date comments');

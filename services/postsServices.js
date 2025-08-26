@@ -108,8 +108,181 @@ const getViewPostInfoService = async (postId) => {
   return { post, comments };
 }
 
+const userLikePostService = async (postId, userId) => {
+
+  // 1. check if user exists
+  const user = await User.findById(userId);
+  if (!user) throw new ServiceException("User not found", 404);
+
+  // 2. check if post exists
+  const post = await Post.findById(postId);
+  if (!post) throw new ServiceException("Post not found", 404);
+
+  // 3. validations: check if relation already exists
+  const alreadyLikedPost = post.likePost.users.includes(userId);
+  if (alreadyLikedPost) {
+    throw new ServiceException("User already liked this post", 400);
+  }
+
+  const alreadyInUser = user.likePost.posts.includes(postId);
+  if (alreadyInUser) {
+    throw new ServiceException("Post already liked by user", 400);
+  }
+
+  // 4. add user in post likes
+  await Post.findByIdAndUpdate(
+    postId,
+    {
+      $addToSet: { 'likePost.users': userId },
+      $inc: { 'likePost.countLikes': 1 },
+    },
+    { new: true }
+  );
+
+  // 5. add post in user likes
+  await User.findByIdAndUpdate(
+    userId,
+    {
+      $addToSet: { 'likePost.posts': postId },
+      $inc: { 'likePost.countPosts': 1 },
+    },
+    { new: true }
+  );
+};
+
+const userDisikePostService = async (postId, userId) => {
+
+  // 1. check if user exists
+  const user = await User.findById(userId);
+  if (!user) throw new ServiceException("User not found", 404);
+
+  // 2. check if post exists
+  const post = await Post.findById(postId);
+  if (!post) throw new ServiceException("Post not found", 404);
+
+  // 3. validations: check if relation exists
+  const hasLikeInPost = post.likePost.users.includes(userId);
+  if (!hasLikeInPost) {
+    throw new ServiceException("User has not liked this post", 400);
+  }
+
+  const hasLikeInUser = user.likePost.posts.includes(postId);
+  if (!hasLikeInUser) {
+    throw new ServiceException("Post not liked by user", 400);
+  }
+
+  // 4. remove user from post likes
+  await Post.findByIdAndUpdate(
+    postId,
+    {
+      $pull: { 'likePost.users': userId },
+      $inc: { 'likePost.countLikes': -1 },
+    },
+    { new: true }
+  );
+
+  // 5. remove post from user likes
+  await User.findByIdAndUpdate(
+    userId,
+    {
+      $pull: { 'likePost.posts': postId },
+      $inc: { 'likePost.countPosts': -1 },
+    },
+    { new: true }
+  );
+};
+
+const userSavePostService = async (postId, userId) => {
+
+  // 1. check if user exists
+  const user = await User.findById(userId);
+  if (!user) throw new ServiceException("User not found", 404);
+
+  // 2. check if post exists
+  const post = await Post.findById(postId);
+  if (!post) throw new ServiceException("Post not found", 404);
+
+  // 3. validations: check if already saved
+  const alreadySavedPost = user.postsSaved.posts.includes(postId);
+  if (alreadySavedPost) {
+    throw new ServiceException("Post already saved by user", 400);
+  }
+
+  const alreadyInPost = post.usersSavedPost.users.includes(userId);
+  if (alreadyInPost) {
+    throw new ServiceException("User already saved this post", 400);
+  }
+
+  // 4. add post to user's saved posts
+  await User.findByIdAndUpdate(
+    userId,
+    {
+      $addToSet: { 'postsSaved.posts': postId },
+      $inc: { 'postsSaved.countPosts': 1 },
+    },
+    { new: true }
+  );
+
+  // 5. add user to post saved list
+  await Post.findByIdAndUpdate(
+    postId,
+    {
+      $addToSet: { 'usersSavedPost.users': userId },
+      $inc: { 'usersSavedPost.countUsers': 1 },
+    },
+    { new: true }
+  );
+};
+
+const userUnsavePostService = async (postId, userId) => {
+  // 1. check if user exists
+  const user = await User.findById(userId);
+  if (!user) throw new ServiceException("User not found", 404);
+
+  // 2. check if post exists
+  const post = await Post.findById(postId);
+  if (!post) throw new ServiceException("Post not found", 404);
+
+  // 3. validations: check if post was saved
+  const isSavedInUser = user.postsSaved.posts.includes(postId);
+  if (!isSavedInUser) {
+    throw new ServiceException("Post not saved by user", 400);
+  }
+
+  const isSavedInPost = post.usersSavedPost.users.includes(userId);
+  if (!isSavedInPost) {
+    throw new ServiceException("User has not saved this post", 400);
+  }
+
+  // 4. remove post from user's saved posts
+  await User.findByIdAndUpdate(
+    userId,
+    {
+      $pull: { 'postsSaved.posts': postId },
+      $inc: { 'postsSaved.countPosts': -1 },
+    },
+    { new: true }
+  );
+
+  // 5. remove user from post saved list
+  await Post.findByIdAndUpdate(
+    postId,
+    {
+      $pull: { 'usersSavedPost.users': userId },
+      $inc: { 'usersSavedPost.countUsers': -1 },
+    },
+    { new: true }
+  );
+};
+
+
+
 export default {
   saveNewPostService,
   getViewPostInfoService,
-  deletePostService
+  deletePostService,
+  userLikePostService,
+  userDisikePostService,
+  userSavePostService,
+  userUnsavePostService
 }
