@@ -39,38 +39,26 @@ const registerUser = async (req, res) => {
     }
 }
 
-const authUser = async (req, res) => {
+const authUser = async (req, res, next) => {
     try {
 
         const { email, password } = req.body;
-        //comprobar si el user existe
-        const user = await User.findOne({ email: email });
-        if (!user) {
-            const error = new Error("This user does not exist");
-            return res.status(404).json({ msg: error.message });
-        }
+        
+        const userInfo = await usersServices.login(email, password);
 
-        //comprobar si el user esta confirmado
-        if (!user.confirm) {
-            const error = new Error("This account has not been confirmed");
-            return res.status(403).json({ msg: error.message });
-        }
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "User login successfully",
+                userInfo,
+                false
+            )
+        );
 
-        //comporbar su password
-        if (await user.checkPassword(password)) {
-            res.json({
-                _id: user.id,
-                name: user.name,
-                email: user.email,
-                token: generateJWT(user._id) //<-- genera un JWT
-            })
-        } else {
-            const error = new Error("Your password is incorrect");
-            return res.status(404).json({ msg: error.message });
-        }
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: 'Error', msg: error.message });
+        next(error);
     }
 }
 

@@ -4,6 +4,7 @@ import Categories from "../models/Categories.js";
 import User from "../models/User.js";
 import { ServiceException } from "../utils/exception/ServiceException.js";
 import fs from "fs-extra"
+import generateJWT from "../helpers/generateJWT.js";
 
 
 const updateProfileService = async (userId, previousName, files, profilePicture, body) => {
@@ -148,11 +149,41 @@ const getUserInfoToEdit = async (userId, userAuthId) => {
     if (!user) throw new ServiceException("User not found", 404);
 
     // 3. check if userId and user auth id are the same
-    if(userId.toString() !== userAuthId.toString()){
+    if (userId.toString() !== userAuthId.toString()) {
         throw new ServiceException("You don't have permissions to edit this user", 403);
     }
 
     return user;
+
+}
+
+const login = async (email, password) => {
+
+    // 1. check if user exists
+    const user = await User.findOne({ email: email });
+    if (!user) {
+        throw new ServiceException("User not found", 404);
+    }
+
+    // 2. check if user is confirmed
+    if (!user.confirm) {
+        throw new ServiceException("This account has not been confirmed", 400);
+    }
+
+    // 3. check password
+    if (!await user.checkPassword(password)) {
+
+        throw new ServiceException("Your password is incorrect", 400);
+
+    }
+
+    return {
+        _id: user.id,
+        name: user.name,
+        email: user.email,
+        profileImage: user.profilePicture.secure_url,
+        token: generateJWT(user._id)
+    }
 
 }
 
@@ -161,4 +192,5 @@ export default {
     userFollowATag,
     userUnfollowATag,
     getUserInfoToEdit,
+    login
 }
