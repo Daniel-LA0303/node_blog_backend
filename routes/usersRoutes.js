@@ -77,8 +77,12 @@ router.post('/unfollow-tag/:id',
     checkAuth,
     unFollowTag);
 
-router.post('/user-follow/:id', followUser);
-router.post('/user-unfollow/:id', unfollowUser);
+router.post('/user-follow/:id', 
+    checkAuth,
+    followUser);
+router.post('/user-unfollow/:id', 
+    checkAuth,
+    unfollowUser);
 // router.post('/user-follow/:id', followAndFollowed);
 //-- User actions end --//
 

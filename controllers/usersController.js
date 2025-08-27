@@ -160,6 +160,8 @@ const newInfoUser = async (req, res, next) => {
     try {
         const { id } = req.params;
 
+        console.log(req.body);
+        
         // 1. call service
         await usersServices.updateProfileService(
             id,

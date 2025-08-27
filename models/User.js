@@ -44,8 +44,10 @@ const usersSchema = mongoose.Schema({
         default:0
     },
     info: {
-        type: Object,
-        default: {}
+        desc: { type: String, default: '' },
+        work: { type: String, default: '' },
+        education: { type: String, default: '' },
+        skills: { type: [String], default: [] } 
     },
     likePost: {
         reactions:{
