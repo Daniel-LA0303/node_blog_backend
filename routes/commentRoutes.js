@@ -1,5 +1,6 @@
 import express from "express";
 import { addComment, getOneComment, deleteComment, editComment, getAllComments, getAllCommentsByPost  } from "../controllers/commentsController.js";
+import checkAuth from "../middleware/checkAuth.js";
 
 const router = express.Router();
 /**
@@ -8,9 +9,15 @@ const router = express.Router();
 router.get('/get-all-comments', getAllComments);
 router.get('/get-all-comments-by-post/:id', getAllCommentsByPost);
 router.get('/get-one-comment/:id', getOneComment);
-router.post('/new-comment/:id', addComment);
-router.put('/edit-comment/:id', editComment);
-router.delete('/delete-comment/:id', deleteComment);
+router.post('/new-comment/:id', 
+    checkAuth,
+    addComment);
+router.put('/edit-comment/:id', 
+    checkAuth,
+    editComment);
+router.delete('/delete-comment/:id', 
+    checkAuth,
+    deleteComment);
 /**
  * comments routes end
  */

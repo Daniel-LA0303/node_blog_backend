@@ -103,7 +103,7 @@ const getViewPostInfoService = async (postId) => {
         path: 'userID',
         select: 'name profilePicture'
       }
-    });
+    }).sort({ dateComment: -1 });
 
   return { post, comments };
 }

@@ -1,22 +1,24 @@
 import Comment from "../models/Comments.js";
 import Post from "../models/Post.js";
+import commentsService from "../services/commentsService.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 
-const getAllComments = async(req, res) => {
+const getAllComments = async (req, res) => {
     try {
         const comments = await Comment.find()
-        .select('comment dateComment postID')  
-        .populate({
-            path: 'userID',
-            select: 'name profilePicture'  
-        }).populate({
-            path: 'replies',
-            select: 'reply dateReply',
-            populate: {
+            .select('comment dateComment postID')
+            .populate({
                 path: 'userID',
                 select: 'name profilePicture'
-            }
-        });
+            }).populate({
+                path: 'replies',
+                select: 'reply dateReply',
+                populate: {
+                    path: 'userID',
+                    select: 'name profilePicture'
+                }
+            });
         res.json(comments);
     } catch (error) {
         res.status(500).json(error);
@@ -24,7 +26,7 @@ const getAllComments = async(req, res) => {
 
 }
 
-/*DELETE*/ 
+/*DELETE*/
 const getAllCommentsByPost = async (postId) => {
     try {
         const comments = await Comment.find({ postID: postId }) // Cambiado de id a postID
@@ -41,11 +43,11 @@ const getAllCommentsByPost = async (postId) => {
                     select: 'name profilePicture'
                 }
             });
-        
+
         return comments;
     } catch (error) {
         console.error("Error en getAllCommentsByPost:", error);
-        throw error; 
+        throw error;
     }
 }
 
@@ -65,7 +67,7 @@ const getAllCommentsByPostFunction = async (id) => {
                     select: 'name profilePicture'
                 }
             });
-        
+
         res.json(comments);
     } catch (error) {
         res.status(500).json(error);
@@ -73,91 +75,86 @@ const getAllCommentsByPostFunction = async (id) => {
 }
 
 
-const addComment = async (req, res) => {
+const addComment = async (req, res, next) => {
 
     try {
-        // Buscar el post por su ID
-        // throw new Error("Simulated error in getUserPosts");
-        const { id } = req.params; // id del post
-        const { userID, comment } = req.body;
-        const post = await Post.findById(id);
-        if (!post) {
-            return res.status(404).json({ msg: 'Post not found' });
-        }
+        console.log("NEW COMMENT");
 
-        // Crear un nuevo comentario
-        const newComment = new Comment({
-            userID: userID,
-            comment: comment,
-            postID: id,
-        });
+        const newComment = await commentsService.newCommentService(req.params.id, req.body);
+        res.status(201).json(new ApiResponse(
+            201,
+            req.originalUrl,
+            req.method,
+            "Comment created successfully",
+            newComment,
+            false
+        ));
 
-        // Guardar el nuevo comentario
-        await newComment.save();
+        console.log("NEW COMMENT SUCCESS");
 
-        // Agregar el comentario al post
-        post.comments.push(newComment);
-        await post.save();
-
-        res.json({ msg: 'Comment saved', comment: newComment });
     } catch (error) {
+        console.log("NEW COMMENT EROR");
         console.error(error);
-        res.status(500).json({ error: 'Server error', msg: error.message});
+        next(error);
     }
 };
 
 
-const getOneComment = async(req, res) => {
+const getOneComment = async (req, res) => {
     try {
         const comment = await Comment.findById(req.params.id)
-        .select('comment dateComment ')  
-        .populate({
-            path: 'userID',
-            select: 'name profilePicture'  
-        }).populate({
-            path: 'replies',
-            select: 'reply dateReply',
-            populate: {
+            .select('comment dateComment ')
+            .populate({
                 path: 'userID',
                 select: 'name profilePicture'
-            }
-        })
+            }).populate({
+                path: 'replies',
+                select: 'reply dateReply',
+                populate: {
+                    path: 'userID',
+                    select: 'name profilePicture'
+                }
+            })
         res.json(comment);
     } catch (error) {
         res.status(500).json(error);
     }
 }
 
-const editComment = async(req, res) => {
+const editComment = async (req, res, next) => {
     try {
-        // throw new Error("Simulated error in getUserPosts");
-        const comment = await Comment.findById(req.params.id);
-        if(!comment){
-            return res.status(404).json({ error: 'Error', msg: "Comment not found" });
-        }
-        if (comment.userID.toString() !== req.query.user) {
-            return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
-        }
-        console.log(comment.userID.toString());
-        comment.comment = req.body.comment;
-        await comment.save();
-        res.json({msg: 'Comment updated'});
+
+        const commentUpdated = await commentsService.updateCommentService(req.params.id, req.query.user, req.body);
+        res.status(200).json(new ApiResponse(
+            200,
+            req.originalUrl,
+            req.method,
+            "Comment updated successfully",
+            commentUpdated,
+            false
+        ));
     } catch (error) {
-        res.status(500).json({ error: 'Error', msg: error.message});
+        console.log(error);
+        next(error);
     }
 }
 
-const deleteComment = async(req, res) => {
+const deleteComment = async (req, res, next) => {
     try {
-        const comment = await Comment.findById(req.params.id);
-        if (comment.userID.toString() !== req.query.user) {
-            return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
-        }
-        await comment.remove(); // Esto activará el middleware y eliminará las respuestas
-        res.json({ msg: 'Comment deleted' });
+
+        await commentsService.deleteCommentService(req.params.id, req.query.user, req.query.post);
+        res.status(200).json(new ApiResponse(
+            200,
+            req.originalUrl,
+            req.method,
+            "Comment deleted successfully",
+            "Comment deleted",
+            false
+        ));
     }
     catch (error) {
-        res.status(500).json(error);
+        console.log(error);
+        next(error);
     }
 }
 
