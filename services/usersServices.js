@@ -48,6 +48,10 @@ const updateProfileService = async (userId, previousName, files, profilePicture,
         user.profilePicture = profilePicture2
     }
 
+    console.log("********");
+    console.log(body.social);
+    
+    
     // 5. assamble info and save
     user.info = {
         desc: body.desc,
@@ -55,7 +59,8 @@ const updateProfileService = async (userId, previousName, files, profilePicture,
         education: body.education,
         skills: Array.isArray(body.skills)
             ? body.skills
-            : JSON.parse(body.skills || '[]') // parsea si viene como string JSON
+            : JSON.parse(body.skills || '[]'),
+        social: body.social ? JSON.parse(body.social) : {}
     };
     await user.save();
 }

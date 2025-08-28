@@ -47,7 +47,14 @@ const usersSchema = mongoose.Schema({
         desc: { type: String, default: '' },
         work: { type: String, default: '' },
         education: { type: String, default: '' },
-        skills: { type: [String], default: [] } 
+        skills: { type: [String], default: [] } ,
+        social: {
+            facebook: { type: String, default: '' },
+            twitter: { type: String, default: '' },
+            instagram: { type: String, default: '' },
+            youtube: { type: String, default: '' },
+            linkedin: { type: String, default: '' }
+        }
     },
     likePost: {
         reactions:{
