@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { deleteImage, uploadImage } from "../config/cloudinary.js";
 import Categories from "../models/Categories.js";
 import User from "../models/User.js";
+import Post from "../models/Post.js"
 import { ServiceException } from "../utils/exception/ServiceException.js";
 import fs from "fs-extra"
 import generateJWT from "../helpers/generateJWT.js";
@@ -319,6 +320,75 @@ const userConfirmed = async (token) => {
     await userConfirm.save();
 }
 
+const getPostByUserPaginatedService = async (page = 1, limit = 5, userId) => {
+
+    // 1. calculate skip
+    const skip = (page - 1) * limit;
+
+    // 2. get posts with info    
+    const posts = await Post.find({ user: mongoose.Types.ObjectId(userId) })
+        .skip(skip)
+        .limit(limit)
+        .populate({
+            path: 'user',
+            select: 'name _id profilePicture'
+        })
+        .populate({
+            path: 'categories',
+            select: '_id name value label color'
+        })
+        .select('title createdAt numberComments usersSavedPost linkImage date commenstOnPost likePost')
+        .sort({ createdAt: -1 });
+
+    
+    // 3. calculate total
+    const total = await Post.countDocuments({ userId });
+
+    // 4. return info
+    return {
+        data: posts,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
+
+}
+
+
+const getOneUserProfileInfoService = async (userId) => {
+
+    const user = await User.findById(userId).populate({
+        path: "postsSaved",
+        populate: {
+            path: "posts",
+            populate: {
+                path: "user"
+            }
+        }
+    }).populate({
+        path: "followsTags",
+        populate: {
+            path: "tags",
+
+        }
+    }).populate({
+        path: "likePost",
+        populate: {
+            path: "posts",
+
+        }
+    }).select('profilePicture email createdAt info name _id followersUsers numberPost');
+
+    if (!user) {
+        throw new ServiceException("User not found", 404);
+    }
+    return user;
+
+}
+
 export default {
     updateProfileService,
     userFollowATag,
@@ -328,5 +398,7 @@ export default {
     registerNewUser,
     userConfirmed,
     followUserService,
-    unfollowUserService
+    unfollowUserService,
+    getPostByUserPaginatedService,
+    getOneUserProfileInfoService
 }

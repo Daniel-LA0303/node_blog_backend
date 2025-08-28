@@ -54,18 +54,18 @@ const deletePostService = async (postId, userId) => {
   }
 
   // 4. we need to delete image from cloudinary
-  if (post.linkImage !== '') {
-    await deleteImage(post.linkImage.public_id)
+  if (post.linkImage && post.linkImage.public_id) {
+    await deleteImage(post.linkImage.public_id);
   }
 
   // 5. reduce number post
   user.numberPost = user.numberPost - 1;
-
+  
   // 6. delete post from user
-  user.posts = user.posts.filter(postId => postId.toString() !== post._id);
+  user.posts = user.posts.filter(postId => postId.toString() !== post._id.toString());
+
   user.save();
   post.remove();
-
 }
 
 

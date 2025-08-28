@@ -29,6 +29,7 @@ import {
     unFollowTag,
     followUser,
     unfollowUser,
+    getPostsByUserPaginated,
     //-- User actions end --//
 } from "../controllers/usersController.js";
 
@@ -85,6 +86,9 @@ router.post('/user-unfollow/:id',
     unfollowUser);
 // router.post('/user-follow/:id', followAndFollowed);
 //-- User actions end --//
+
+// posts by user paginated
+router.get("/posts-by-user/:id", getPostsByUserPaginated);
 
 router.get('/all-users', getAllUsers);
 

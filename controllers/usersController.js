@@ -161,7 +161,7 @@ const newInfoUser = async (req, res, next) => {
         const { id } = req.params;
 
         console.log(req.body);
-        
+
         // 1. call service
         await usersServices.updateProfileService(
             id,
@@ -277,51 +277,83 @@ const unFollowTag = async (req, res, next) => {
 
 // follow user
 const followUser = async (req, res, next) => {
-  try {
-    const {userFollow} = req.query;  // ID of the user to follow
-    const userProfileId = req.params.id;    // ID of the current logged user
+    try {
+        const { userFollow } = req.query;  // ID of the user to follow
+        const userProfileId = req.params.id;    // ID of the current logged user
 
-    await usersServices.followUserService(userFollow, userProfileId);
+        console.log("query user to unfollow: ", req.query);
+        console.log("params user logged: ", req.params.id);
 
-    res.status(200).json(
-      new ApiResponse(
-        200,
-        "/api" + req.path,
-        req.method,
-        "User followed successfully",
-        "Follow success",
-        false
-      )
-    );
-  } catch (error) {
-    next(error);
-  }
+        await usersServices.followUserService(userFollow, userProfileId);
+
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "User followed successfully",
+                "Follow success",
+                false
+            )
+        );
+    } catch (error) {
+        next(error);
+    }
 };
 
 // Unfollow User
 const unfollowUser = async (req, res, next) => {
-  try {
-    const {userUnfollow} = req.query;  // ID of the user to unfollow
-    const userProfileId = req.params.id;    // ID of the current logged user
+    try {
+        const { userUnfollow } = req.query;  // ID of the user to unfollow
+        const userProfileId = req.params.id;    // ID of the current logged user
 
-    await usersServices.unfollowUserService(userUnfollow, userProfileId);
+        console.log("query user to unfollow: ", req.query);
+        console.log("params user logged: ", req.params.id);
 
-    res.status(200).json(
-      new ApiResponse(
-        200,
-        "/api" + req.path,
-        req.method,
-        "User unfollowed successfully",
-        "Unfollow success",
-        false
-      )
-    );
-  } catch (error) {
-    next(error);
-  }
+
+        await usersServices.unfollowUserService(userUnfollow, userProfileId);
+
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "User unfollowed successfully",
+                "Unfollow success",
+                false
+            )
+        );
+    } catch (error) {
+        next(error);
+    }
 };
 
 // -- Actions beetween Users end --/
+
+const getPostsByUserPaginated = async (req, res, next) => {
+
+    try {
+        console.log("waiting Posts by user");
+
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 5;
+        const userId = req.params.id; 
+
+        const result = await usersServices.getPostByUserPaginatedService(page, limit, userId);
+
+        // mapping response
+        res.status(200).json(
+            new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts by user paginated", result, false)
+        );
+
+        console.log("success Posts by user");
+    } catch (error) {
+        console.log(error);
+        next(error);
+    }
+
+}
+
 
 /**
  * Get user info for dashboard
@@ -486,45 +518,6 @@ const getUserTags = async (id) => {
  * @param {*} id 
  * @returns 
  */
-const getOneUserProfile = async (id) => {
-    try {
-        const user = await User.findById(id).populate({
-            path: "postsSaved",
-            populate: {
-                path: "posts",
-                populate: {
-                    path: "user"
-                }
-            }
-        }).populate({
-            path: "followsTags",
-            populate: {
-                path: "tags",
-
-            }
-        }).populate({
-            path: "likePost",
-            populate: {
-                path: "posts",
-
-            }
-        })
-
-        if (!user) { //-> no entra a esta excepcion, se va directamente a el catch
-            throw new Error('User not found');
-        }
-        return user;
-    } catch (error) {
-        console.error("Error in getOneUserProfile:", error);
-        throw new Error('Error to find user');
-    }
-}
-
-/**
- * Get user info for dashboard
- * @param {*} id 
- * @returns 
- */
 
 // DELETE
 const getOneUserEditProfile = async (id) => {
@@ -569,7 +562,7 @@ export {
     followTag,
     unFollowTag,
     getOneUserShortInfo,
-    getOneUserProfile,
-    getOneUserEditProfile
+    getOneUserEditProfile,
     //-- actions user end --//
+    getPostsByUserPaginated
 }

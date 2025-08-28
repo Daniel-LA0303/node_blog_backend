@@ -7,7 +7,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { getAllCategorisInfo, getCategories, getCategoriesNotZero, getOneCategory } from "./categoriesController.js";
 import { getAllCommentsByPost } from "./commentsController.js";
 import { filterPostByCategory, getAllPosts, getAllPostsCard, getEditOnePost, getUserPost } from "./postController.js"
-import { getOneUserEditProfile, getOneUserFollow, getOneUserProfile, getOneUserShortInfo, getUserLikePosts, getUserPosts, getUserSavePosts, getUserTags } from "./usersController.js";
+import { getOneUserEditProfile, getOneUserFollow, getOneUserShortInfo, getUserLikePosts, getUserPosts, getUserSavePosts, getUserTags } from "./usersController.js";
 
 
 class NotFoundError extends Error {
@@ -48,7 +48,7 @@ const getPageHome = async (req, res) => {
 const getCategoriesPage = async (req, res) => {
     try {
         console.log("waiting Categories");
-        
+
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 10;
 
@@ -61,7 +61,7 @@ const getCategoriesPage = async (req, res) => {
 
         console.log("success Categories");
     } catch (error) {
-            res.status(500).json(new ApiResponse(500, "/api/page" + req.path, req.method, error.message, null, true));
+        res.status(500).json(new ApiResponse(500, "/api/page" + req.path, req.method, error.message, null, true));
     }
 }
 
@@ -93,7 +93,7 @@ const getCategoryPostPage = async (req, res) => {
 const getDashboardPage = async (req, res) => {
     try {
         console.log("waiting Dashboard");
-        if(req.params.id !== req.query.user){
+        if (req.params.id !== req.query.user) {
             return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
         }
 
@@ -119,11 +119,11 @@ const getDashboardPostsUserPage = async (req, res) => {
         console.log("waiting DashboardPosts");
         // Simulando una excepción directamente
         // throw new Error("Simulated error in getUserPosts");
-        if(req.params.id !== req.query.user){
+        if (req.params.id !== req.query.user) {
             return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
         }
         const posts = await getUserPosts(req.params.id);
-        res.status(200).json({posts});
+        res.status(200).json({ posts });
         console.log("success DashboardPosts");
     } catch (error) {
         res.status(404).json({ error: 'Error', msg: error.message });
@@ -138,7 +138,7 @@ const getDashboardFollowUserPage = async (req, res) => {
     try {
         console.log("waiting DashboardFollow");
         // throw new Error("Simulated error in getUserPosts");
-        if(req.params.id !== req.query.user){
+        if (req.params.id !== req.query.user) {
             return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
         }
         const userInfo = await getOneUserFollow(req.params.id);
@@ -161,7 +161,7 @@ const getDashboardLikePostUserPage = async (req, res) => {
     try {
         console.log("waiting DashboardLike");
         // throw new Error("Simulated error in getUserPosts");
-        if(req.params.id !== req.query.user){
+        if (req.params.id !== req.query.user) {
             return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
         }
         const userInfo = await getUserLikePosts(req.params.id);
@@ -183,7 +183,7 @@ const getDashboardSavedPostUserPage = async (req, res) => {
     try {
         console.log("waiting DashboardSaved");
         // throw new Error("Simulated error in getUserPosts");
-        if(req.params.id !== req.query.user){
+        if (req.params.id !== req.query.user) {
             return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
         }
         const posts = await getUserSavePosts(req.params.id);
@@ -206,7 +206,7 @@ const getDashboardTagsUserPage = async (req, res) => {
     try {
         console.log("waiting DashboardTags");
         // throw new Error("Simulated error in getUserPosts");
-        if(req.params.id !== req.query.user){
+        if (req.params.id !== req.query.user) {
             return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
         }
         const categories = await getUserTags(req.params.id);
@@ -228,11 +228,17 @@ const getProfileInfoPage = async (req, res) => {
     try {
         console.log("waiting ProfileInfo");
         // throwError();
-        const [user, posts] = await Promise.all([getOneUserProfile(req.params.id), getUserPosts(req.params.id)]);
-        res.status(200).json({
-            posts,
-            user
-        });
+        const user = await usersServices.getOneUserProfileInfoService(req.params.id);
+        res.status(200).json(
+            new ApiResponse(
+                201,
+                "/api" + req.path,
+                req.method,
+                "User created correctly, check your email to confirm.",
+                user,
+                false
+            )
+        );
         console.log("success ProfileInfo");
     } catch (error) {
         console.error("Error in getProfilePage:", error);
@@ -270,22 +276,22 @@ const getCategoriesNewPostPage = async (req, res) => {
 const getProfileEditUserPage = async (req, res, next) => {
     try {
         console.log("waiting ProfileEdit");
-        const userAuth = req.user;        
+        const userAuth = req.user;
 
-        const user = await usersServices.getUserInfoToEdit(req.params.id, userAuth._id);  
+        const user = await usersServices.getUserInfoToEdit(req.params.id, userAuth._id);
         res.status(200).json(
-        new ApiResponse(
-            200,
-            "/api" + req.path,
-            req.method,
-            "User info to edit",
-            user,
-            false
-        )
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "User info to edit",
+                user,
+                false
+            )
         );
         console.log("success ProfileEdit");
     } catch (error) {
-       next(error);
+        next(error);
     }
 }
 
@@ -311,7 +317,7 @@ const getEditPostPage = async (req, res) => {
         });
         console.log("success EditPost");
     } catch (error) {
-        res.status(500).json({ error: 'Error', msg: error.message});
+        res.status(500).json({ error: 'Error', msg: error.message });
     }
 
 }
@@ -324,7 +330,7 @@ const getViewPostPage = async (req, res, next) => {
         console.log("waiting ViewPost");
 
         const postInfo = await postsServices.getViewPostInfoService(req.params.id)
-        const { post, comments } = postInfo;        
+        const { post, comments } = postInfo;
 
         res.status(200).json(new ApiResponse(
             200,
