@@ -561,7 +561,7 @@ const getAllPostsCard = async (req, res, next) => {
         path: 'categories',
         select: '_id name value label color'
       })
-      .select('title linkImage categories _id user likePost commenstOnPost date comments');
+      .select('title linkImage categories _id user likePost commenstOnPost date comments usersSavedPost');
 
     return posts;
   } catch (error) {

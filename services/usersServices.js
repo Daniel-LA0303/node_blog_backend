@@ -279,6 +279,11 @@ const login = async (email, password) => {
         name: user.name,
         email: user.email,
         profileImage: user.profilePicture.secure_url,
+        likePost: user.likePost,
+        postsSaved: user.postsSaved,
+        followsTags: user.followsTags,
+        followersUsers: user.followersUsers,
+        followedUsers: user.followedUsers,
         token: generateJWT(user._id)
     }
 
