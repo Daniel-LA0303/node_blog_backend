@@ -27,11 +27,11 @@ const getPageHome = async (req, res) => {
     try {
         console.log("waiting Home");
         // throwError();
-        const [posts, categories] = await Promise.all([getAllPostsCard(), getCategoriesNotZero()]);
-        res.status(200).json({
-            posts,
-            categories,
-        });
+        const info = await usersServices.topUsersCategories();
+        res.status(200).json(
+            new ApiResponse(200, "/api/page" + req.path, req.method, "Success get categories paginated", info, false)
+        );
+
         console.log("success Home");
     } catch (error) {
         console.error("Error in getPageHome:", error);

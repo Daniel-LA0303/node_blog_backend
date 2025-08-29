@@ -275,6 +275,39 @@ const userUnsavePostService = async (postId, userId) => {
   );
 };
 
+/**
+ * get categories paginated
+ * @param {*} page 
+ * @param {*} limit 
+ * @returns 
+ */
+const getAllPostsPaginatedService = async(page = 1, limit=10) => {
+    try {
+        const skip = (page -1) * limit;
+const posts = await Post.find()
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 })
+    .populate("user")
+    .populate("categories");        
+        const total = await Post.countDocuments();
+
+        return {
+            data: posts,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
+            }
+        }
+
+    } catch (error) {
+        throw new Error("Error obteniendo posts: " + err.message);
+    }
+}
+
+
 
 
 export default {
@@ -284,5 +317,6 @@ export default {
   userLikePostService,
   userDisikePostService,
   userSavePostService,
-  userUnsavePostService
+  userUnsavePostService,
+  getAllPostsPaginatedService
 }

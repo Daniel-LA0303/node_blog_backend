@@ -581,6 +581,33 @@ const getEditOnePost = async (id) => {
 }
 
 /**
+ * Get Posts Page
+ * @param {*} req 
+ * @param {*} res 
+ */
+const getPostPaginated = async (req, res, next) => {
+    try {
+        console.log("waiting Categories");
+
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+
+        const result = await postsServices.getAllPostsPaginatedService(page, limit);
+
+        // mapping response
+        res.status(200).json(
+            new ApiResponse(200, "/api/post" + req.path, req.method, "Success get categories paginated", result, false)
+        );
+
+        console.log("success Categories");
+    } catch (error) {
+        next(error);
+        res.status(500).json(new ApiResponse(500, "/api/post" + req.path, req.method, error.message, null, true));
+    }
+}
+
+
+/**
  * Pages End
  */
 
@@ -628,4 +655,5 @@ export {
   //-- Actions reply comment post end --//
   getAllPostsCard,
   getEditOnePost,
+  getPostPaginated
 }
