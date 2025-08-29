@@ -53,10 +53,8 @@ router.get('/get-post-paginated', getPostPaginated);
 router.get('/', getAllPosts); 
 router.get('/:id', getOnePost); 
 router.put('/:id', 
-    fileUpload({
-        useTempFiles: true,
-        tempFileDir: "./uploads_post",
-    }), updatePost);
+    checkAuth,
+    updatePost);
 
 router.delete('/:postId', 
     checkAuth,

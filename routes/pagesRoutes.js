@@ -56,7 +56,9 @@ router.get('/page-new-post', getCategoriesNewPostPage);
 router.get('/page-edit-profile/:id', 
     checkAuth,
     getProfileEditUserPage);
-router.get('/page-edit-post/:id',getEditPostPage );
+router.get('/page-edit-post/:id',
+    checkAuth,
+    getEditPostPage );
 router.get('/page-view-post/:id',getViewPostPage );
 /**
  *  pages routes privade end

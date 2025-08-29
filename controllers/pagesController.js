@@ -350,23 +350,28 @@ const getProfileEditUserPage = async (req, res, next) => {
  * @param {*} req 
  * @param {*} res 
  */
-const getEditPostPage = async (req, res) => {
+// CHECK THIS
+const getEditPostPage = async (req, res, next) => {
     try {
-        console.log("waiting EditPost");
-        const post1 = await Post.findById(req.params.id)
-            .select('user');
+        console.log("waiting EditPost");      
+        
+        
+        const response = await postsServices.getOnePostToUpdate(req.params.id);
 
-        if (post1.user.toString() !== req.query.user) {
-            return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
-        }
-        const [post, categories] = await Promise.all([getEditOnePost(req.params.id), getAllCategorisInfo()]);
-        res.status(200).json({
-            post,
-            categories
-        });
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "User info to edit",
+                response,
+                false
+            )
+        );
         console.log("success EditPost");
     } catch (error) {
-        res.status(500).json({ error: 'Error', msg: error.message });
+        console.log(error);
+        next(error);
     }
 
 }

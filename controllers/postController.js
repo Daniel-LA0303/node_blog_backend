@@ -94,32 +94,50 @@ const getOnePost = async (req, res, next) => {
 //update a post
 const updatePost = async (req, res, next) => {
   try {
-    // throw new Error("Simulated error in getUserPosts");
-    const post1 = await Post.findById(req.params.id)
-      .select('user');
 
-    if (post1.user.toString() !== req.query.user) {
-      return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
-    }
-    if (req.body.previousName) {
-      if ((req.body.previousName !== "")) {
-        await deleteImage(req.body.previousName)
-      }
-    }
-    await Post.findByIdAndUpdate(
-      { _id: req.params.id }, {
-      title: req.body.title,
-      desc: req.body.desc,
-      content: req.body.content,
-      linkImage: req.body.linkImage,
-      categoriesPost: req.body.categoriesPost,
-      categoriesSelect: req.body.categoriesSelect,
-    },
-      { new: true }
-    )
-    res.status(201).json({ msg: 'Post has been edited' });
+
+    await postsServices.updatePostService(req.params.id, req.body);
+
+    // 2. assamble success response
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        "/api" + req.path,
+        req.method,
+        "Post updated successfully",
+        "Post updated",
+        false
+      )
+    );
+
+    
+    // const post1 = await Post.findById(req.params.id)
+    //   .select('user');
+
+    // if (post1.user.toString() !== req.query.user) {
+    //   return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
+    // }
+    // if (req.body.previousName) {
+    //   if ((req.body.previousName !== "")) {
+    //     await deleteImage(req.body.previousName)
+    //   }
+    // }
+    // await Post.findByIdAndUpdate(
+    //   { _id: req.params.id }, {
+    //   title: req.body.title,
+    //   desc: req.body.desc,
+    //   content: req.body.content,
+    //   linkImage: req.body.linkImage,
+    //   categoriesPost: req.body.categoriesPost,
+    //   categoriesSelect: req.body.categoriesSelect,
+    // },
+    //   { new: true }
+    // )
+    // res.status(201).json({ msg: 'Post has been edited' });
   } catch (error) {
-    res.status(500).json({ error: 'Error', msg: error.message });
+    console.log(error);
+    next(error);
+    // res.status(500).json({ error: 'Error', msg: error.message });
   }
 }
 
@@ -573,7 +591,11 @@ const getAllPostsCard = async (req, res, next) => {
 const getEditOnePost = async (id) => {
   try {
     const post = await Post.findById(id)
-      .select('title desc content linkImage categoriesPost categoriesSelect _id');
+      .select('title desc content linkImage _id')
+          .populate({
+      path: 'categories',
+      select: '_id name value label color desc follows'
+    });
     return post;
   } catch (error) {
     console.log(error);

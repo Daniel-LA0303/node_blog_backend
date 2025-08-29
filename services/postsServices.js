@@ -1,4 +1,5 @@
 import { deleteImage } from "../config/cloudinary.js";
+import Categories from "../models/Categories.js";
 import Comment from "../models/Comments.js";
 import Post from "../models/Post.js";
 import User from "../models/User.js";
@@ -33,6 +34,60 @@ const saveNewPostService = async (userId, postData) => {
   return post;
 };
 
+const updatePostService = async (postId, body) => {
+
+  // 1. check if post exists
+  const post = await Post.findById(postId);
+
+  if (!post) {
+    throw new ServiceException("This post not exists", 400);
+  }
+
+  // 2. if there is a previous name, then user change image, we need to delete img
+  if (body.previousName) {
+    if ((body.previousName !== "")) {
+      await deleteImage(body.previousName)
+    }
+  }
+
+  // 3. insert new post's data
+  await Post.findByIdAndUpdate(
+    { _id: postId }, {
+    title: body.title,
+    desc: body.desc,
+    content: body.content,
+    linkImage: body.linkImage,
+    // categoriesPost: body.categoriesPost,
+    categories: body.categoriesSelect,
+  },
+    { new: true }
+  );
+}
+
+const getOnePostToUpdate = async (postId) => {
+
+  // 1. get one post to update
+  const post = await Post.findById(postId).populate({
+      path: 'categories',
+      select: '_id name value label color'
+    })
+    // .select('user');
+
+  // 2. check if post exists
+  if (!post) {
+    throw new ServiceException("Post not found", 404);
+  }
+
+  // 3. return ctaegories
+  const categories = await Categories.find().populate('follows')
+    .select('name color desc value label ');
+
+  return {
+    post,
+    categories
+  }
+}
+
 // delete a post
 const deletePostService = async (postId, userId) => {
 
@@ -60,7 +115,7 @@ const deletePostService = async (postId, userId) => {
 
   // 5. reduce number post
   user.numberPost = user.numberPost - 1;
-  
+
   // 6. delete post from user
   user.posts = user.posts.filter(postId => postId.toString() !== post._id.toString());
 
@@ -281,30 +336,30 @@ const userUnsavePostService = async (postId, userId) => {
  * @param {*} limit 
  * @returns 
  */
-const getAllPostsPaginatedService = async(page = 1, limit=10) => {
-    try {
-        const skip = (page -1) * limit;
-const posts = await Post.find()
-    .skip(skip)
-    .limit(limit)
-    .sort({ createdAt: -1 })
-    .populate("user")
-    .populate("categories");        
-        const total = await Post.countDocuments();
+const getAllPostsPaginatedService = async (page = 1, limit = 10) => {
+  try {
+    const skip = (page - 1) * limit;
+    const posts = await Post.find()
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .populate("user")
+      .populate("categories");
+    const total = await Post.countDocuments();
 
-        return {
-            data: posts,
-            meta: {
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit)
-            }
-        }
-
-    } catch (error) {
-        throw new Error("Error obteniendo posts: " + err.message);
+    return {
+      data: posts,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
     }
+
+  } catch (error) {
+    throw new Error("Error obteniendo posts: " + err.message);
+  }
 }
 
 
@@ -318,5 +373,7 @@ export default {
   userDisikePostService,
   userSavePostService,
   userUnsavePostService,
-  getAllPostsPaginatedService
+  getAllPostsPaginatedService,
+  updatePostService,
+  getOnePostToUpdate
 }
