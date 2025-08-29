@@ -19,10 +19,6 @@ import {
 
     //-- Dashboard start --//
     getOneUserFollow,
-    getUserTags,
-    getUserPosts,
-    getUserLikePosts,
-    getUserSavePosts,
     //-- Dashboard end --//
     //-- User actions start --//
     followTag,
@@ -59,13 +55,6 @@ router.post('/new-info/:id',
 router.get('/get-profile/:id', getOneUser);
 
 //-- Dashboard start --//
-router.get('/get-user-tags/:id', getUserTags);
-
-router.get('/get-user-posts/:id', getUserPosts)
-
-router.get('/get-user-like-posts/:id', getUserLikePosts);
-
-router.get('/get-user-save-post/:id', getUserSavePosts);
 
 router.get('/get-profile-follows/:id', getOneUserFollow);
 //-- Dashboard end --//

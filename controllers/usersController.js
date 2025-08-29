@@ -1,11 +1,6 @@
 import User from '../models/User.js'
 import generateID from '../helpers/generateID.js'
-import generateJWT from '../helpers/generateJWT.js'
-import { emailRegister, emailNewPassword } from '../helpers/email.js'
-import { fileURLToPath } from "url";
-import path from "path"
-import fs from "fs-extra"
-import Categories from '../models/Categories.js';
+import { emailNewPassword } from '../helpers/email.js'
 import usersServices from '../services/usersServices.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 
@@ -14,7 +9,6 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 const registerUser = async (req, res, next) => {
 
     try {
-        // throw new Error("Simulated error in getUserPosts");
         const { email } = req.body;
 
         await usersServices.registerNewUser(email, req.body);
@@ -83,7 +77,6 @@ const confirm = async (req, res, next) => {
 
 const forgetPassword = async (req, res) => {
     try {
-        // throw new Error("Simulated error in getUserPosts");
         const { email } = req.body;
         const user = await User.findOne({ email: email });
 
@@ -354,65 +347,6 @@ const getPostsByUserPaginated = async (req, res, next) => {
 
 }
 
-
-/**
- * Get user info for dashboard
- */
-const getOneUserShortInfo = async (id) => {
-    try {
-        const userData = await User.findById(id)
-            .select('posts followersUsers likePost postsSaved followsTags followedUsers')
-            .populate('posts')
-            .populate('followersUsers.followers')
-            .populate('likePost.posts')
-            .populate('postsSaved.posts')
-            .populate('followsTags.tags')
-            .populate('followedUsers.followed');
-
-        const responseData = {
-            postsCount: userData.posts.length,
-            followersCount: userData.followersUsers.followers.length,
-            likePostsCount: userData.likePost.posts.length,
-            savedPostsCount: userData.postsSaved.posts.length,
-            tagsCount: userData.followsTags.tags.length,
-            followedUsersCount: userData.followedUsers.followed.length,
-        };
-        return responseData;
-
-    } catch (error) {
-
-    }
-}
-
-/**
- * Get user posts for dashboard
- * @param {*} id 
- * @returns 
- */
-const getUserPosts = async (id) => {
-    try {
-        const user = await User.findById(id)
-            .populate({
-                path: "posts",
-                select: "title linkImage categories _id user likePost commentsOnPost date comments",
-                populate: [
-                    {
-                        path: "user",
-                        select: "name _id profilePicture"
-                    },
-                    {
-                        path: "categories",
-                        select: "_id name value label color"
-                    }
-                ]
-            });
-        return user.posts;
-    } catch (error) {
-        console.error("Error in getUserPosts:", error);
-        throw new Error('Error to find users posts');
-    }
-}
-
 /**
  * Get user followers and followed for dashboard
  * @param {*} id 
@@ -441,73 +375,6 @@ const getOneUserFollow = async (id) => {
             followed: user.followedUsers.followed
         };
         return response;
-    } catch (error) {
-
-    }
-}
-
-/**
- * Get user like posts for dashboard
- * @param {*} id 
- * @returns 
- */
-const getUserLikePosts = async (id) => {
-    try {
-        const user = await User.findById(id).populate({
-            path: "likePost",
-            populate: {
-                path: "posts",
-                populate: {
-                    path: "user",
-                    select: 'name _id profilePicture'
-                },
-                select: 'title linkImage categoriesPost _id user likePost commenstOnPost date comments'
-            }
-        })
-        return user.likePost.posts;
-    } catch (error) {
-
-    }
-}
-
-/**
- * Get user save posts for dashboard
- * @param {*} id 
- * @returns 
- */
-const getUserSavePosts = async (id) => {
-    try {
-        const user = await User.findById(id).populate({
-            path: "postsSaved",
-            populate: {
-                path: "posts",
-                populate: {
-                    path: "user",
-                    select: 'name _id profilePicture'
-                },
-                select: 'title linkImage categoriesPost _id user likePost postsSaved commenstOnPost date comments'
-            },
-        })
-        return user.postsSaved.posts;
-    } catch (error) {
-
-    }
-}
-
-/**
- * Get user tags for dashboard
- * @param {*} id 
- * @returns 
- */
-const getUserTags = async (id) => {
-    try {
-        const user = await User.findById(id).populate({
-            path: "followsTags",
-            populate: {
-                path: "tags",
-            }
-        })
-        return user.followsTags.tags;
     } catch (error) {
 
     }
@@ -551,17 +418,13 @@ export {
     //-- crud user end --//
     //dashboard
     getOneUserFollow,
-    getUserTags,
-    getUserPosts,
-    getUserLikePosts,
-    getUserSavePosts,
     //dashboard
     //-- actions user start --//
     followUser,
     unfollowUser,
     followTag,
     unFollowTag,
-    getOneUserShortInfo,
+    // getOneUserShortInfo,
     getOneUserEditProfile,
     //-- actions user end --//
     getPostsByUserPaginated

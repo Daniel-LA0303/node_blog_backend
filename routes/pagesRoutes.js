@@ -4,6 +4,8 @@ import {
     getCategoriesNewPostPage,
     getCategoriesPage,
     getCategoryPostPage,
+    getDashboardFollowedByUserPage,
+    getDashboardFollowersByUserPage,
     getDashboardFollowUserPage,
     getDashboardLikePostUserPage,
     getDashboardPage,
@@ -12,7 +14,7 @@ import {
     getDashboardTagsUserPage,
     getPageHome,
     getProfileInfoPage,
-    getViewPostPage
+    getViewPostPage,
 } from "../controllers/pagesController.js";
 import { getProfileEditUserPage } from "../controllers/pagesController.js";
 import { getEditPostPage } from "../controllers/pagesController.js";
@@ -39,12 +41,17 @@ router.get('/page-profile-user/:id', getProfileInfoPage);
 /**
  * pages routes privade start
  */
-router.get('/page-dashboard/:id', getDashboardPage);
+router.get('/page-dashboard/:id', 
+    checkAuth,
+    getDashboardPage);
 router.get('/page-dashboard-post-user/:id', getDashboardPostsUserPage);
 router.get('/page-dashboard-follow-user/:id', getDashboardFollowUserPage);
+router.get('/page-dashboard-followers-user/:id', getDashboardFollowersByUserPage);
+router.get('/page-dashboard-followed-user/:id', getDashboardFollowedByUserPage);
 router.get('/page-dashboard-liked-post-user/:id', getDashboardLikePostUserPage);
 router.get('/page-dashboard-saved-post-user/:id', getDashboardSavedPostUserPage);
 router.get('/page-dashboard-tag-user/:id', getDashboardTagsUserPage);
+
 router.get('/page-new-post', getCategoriesNewPostPage);
 router.get('/page-edit-profile/:id', 
     checkAuth,

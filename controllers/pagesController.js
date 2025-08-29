@@ -7,7 +7,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { getAllCategorisInfo, getCategories, getCategoriesNotZero, getOneCategory } from "./categoriesController.js";
 import { getAllCommentsByPost } from "./commentsController.js";
 import { filterPostByCategory, getAllPosts, getAllPostsCard, getEditOnePost, getUserPost } from "./postController.js"
-import { getOneUserEditProfile, getOneUserFollow, getOneUserShortInfo, getUserLikePosts, getUserPosts, getUserSavePosts, getUserTags } from "./usersController.js";
+import { getOneUserEditProfile, getOneUserFollow } from "./usersController.js";
 
 
 class NotFoundError extends Error {
@@ -73,7 +73,6 @@ const getCategoriesPage = async (req, res) => {
 const getCategoryPostPage = async (req, res) => {
     try {
         console.log("waiting CategoryPost");
-        // throw new Error("Simulated error in getUserPosts");
         const [posts, category] = await Promise.all([filterPostByCategory(req.params.id), getOneCategory(req.params.id)]);
         res.status(200).json({
             posts,
@@ -90,21 +89,27 @@ const getCategoryPostPage = async (req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-const getDashboardPage = async (req, res) => {
+const getDashboardPage = async (req, res, next) => {
     try {
-        console.log("waiting Dashboard");
-        if (req.params.id !== req.query.user) {
-            return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
-        }
 
-        // throwError();
-        const userInfo = await getOneUserShortInfo(req.params.id);
-        res.status(200).json({
-            userInfo
-        });
+        console.log("waiting Dashboard");
+        const user = await usersServices.userDashboardInfoService(req.params.id);
+
+        console.log(user);
+
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "User info dashboard.",
+                user,
+                false
+            )
+        );
         console.log("success Dashboard");
     } catch (error) {
-        res.status(404).json({ error: 'Error', msg: error.message });
+        next(error);
     }
 }
 
@@ -114,19 +119,21 @@ const getDashboardPage = async (req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-const getDashboardPostsUserPage = async (req, res) => {
+const getDashboardPostsUserPage = async (req, res, next) => {
     try {
         console.log("waiting DashboardPosts");
-        // Simulando una excepción directamente
-        // throw new Error("Simulated error in getUserPosts");
-        if (req.params.id !== req.query.user) {
-            return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
-        }
-        const posts = await getUserPosts(req.params.id);
-        res.status(200).json({ posts });
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 5;
+        const userId = req.params.id;
+        const result = await usersServices.getPostByUserPaginatedService(page, limit, userId);
+
+        // mapping response
+        res.status(200).json(
+            new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts by user paginated", result, false)
+        );
         console.log("success DashboardPosts");
     } catch (error) {
-        res.status(404).json({ error: 'Error', msg: error.message });
+        next(error);
     }
 }
 /**
@@ -137,7 +144,6 @@ const getDashboardPostsUserPage = async (req, res) => {
 const getDashboardFollowUserPage = async (req, res) => {
     try {
         console.log("waiting DashboardFollow");
-        // throw new Error("Simulated error in getUserPosts");
         if (req.params.id !== req.query.user) {
             return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
         }
@@ -153,24 +159,67 @@ const getDashboardFollowUserPage = async (req, res) => {
 }
 
 /**
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ */
+const getDashboardFollowersByUserPage = async (req, res) => {
+    try {
+        console.log("waiting DashboardFollow");
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 5;
+        const userId = req.params.id;
+        const result = await usersServices.userDashboardFollowersPaginated(page, limit, userId);
+
+        // mapping response
+        res.status(200).json(
+            new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts liked by user paginated", result, false)
+        );
+        console.log("success DashboardFollow");
+    } catch (error) {
+        res.status(404).json({ error: 'Error', msg: error.message });
+    }
+}
+
+const getDashboardFollowedByUserPage = async (req, res) => {
+    try {
+        console.log("waiting DashboardFollow");
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 5;
+        const userId = req.params.id;
+        const result = await usersServices.userDashboardFollowingPaginated(page, limit, userId);
+
+
+        // mapping response
+        res.status(200).json(
+            new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts liked by user paginated", result, false)
+        );
+        console.log("success DashboardFollow");
+    } catch (error) {
+        res.status(404).json({ error: 'Error', msg: error.message });
+    }
+}
+
+/**
  * Get Dashboard Like Post User Page
  * @param {*} req 
  * @param {*} res 
  */
-const getDashboardLikePostUserPage = async (req, res) => {
+const getDashboardLikePostUserPage = async (req, res, next) => {
     try {
         console.log("waiting DashboardLike");
-        // throw new Error("Simulated error in getUserPosts");
-        if (req.params.id !== req.query.user) {
-            return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
-        }
-        const userInfo = await getUserLikePosts(req.params.id);
-        res.status(200).json({
-            userInfo
-        });
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 5;
+        const userId = req.params.id;
+        const result = await usersServices.userDashboardPostLikedPaginated(page, limit, userId);
+
+        // mapping response
+        res.status(200).json(
+            new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts liked by user paginated", result, false)
+        );
         console.log("success DashboardLike");
     } catch (error) {
-        res.status(404).json({ error: 'Error', msg: error.message });
+        next(error);
     }
 }
 
@@ -179,20 +228,21 @@ const getDashboardLikePostUserPage = async (req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-const getDashboardSavedPostUserPage = async (req, res) => {
+const getDashboardSavedPostUserPage = async (req, res, next) => {
     try {
         console.log("waiting DashboardSaved");
-        // throw new Error("Simulated error in getUserPosts");
-        if (req.params.id !== req.query.user) {
-            return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
-        }
-        const posts = await getUserSavePosts(req.params.id);
-        res.status(200).json({
-            posts
-        });
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 5;
+        const userId = req.params.id;
+        const result = await usersServices.userDashboardPostSavedPaginated(page, limit, userId);
+
+        // mapping response
+        res.status(200).json(
+            new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts liked by user paginated", result, false)
+        );
         console.log("success DashboardSaved");
     } catch (error) {
-        res.status(404).json({ error: 'Error', msg: error.message });
+        next(error);
     }
 
 }
@@ -204,15 +254,15 @@ const getDashboardSavedPostUserPage = async (req, res) => {
  */
 const getDashboardTagsUserPage = async (req, res) => {
     try {
-        console.log("waiting DashboardTags");
-        // throw new Error("Simulated error in getUserPosts");
-        if (req.params.id !== req.query.user) {
-            return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
-        }
-        const categories = await getUserTags(req.params.id);
-        res.status(200).json({
-            categories
-        });
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 5;
+        const userId = req.params.id;
+        const result = await usersServices.userDashboardFollowedTagsPaginated(page, limit, userId);
+
+        // mapping response
+        res.status(200).json(
+            new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts liked by user paginated", result, false)
+        );
         console.log("success DashboardTags");
     } catch (error) {
         res.status(404).json({ error: 'Error', msg: error.message });
@@ -303,7 +353,6 @@ const getProfileEditUserPage = async (req, res, next) => {
 const getEditPostPage = async (req, res) => {
     try {
         console.log("waiting EditPost");
-        // throw new Error("Simulated error in getUserPosts");
         const post1 = await Post.findById(req.params.id)
             .select('user');
 
@@ -363,9 +412,11 @@ export {
     getDashboardPage,
     getDashboardPostsUserPage,
     getDashboardFollowUserPage,
+    getDashboardFollowersByUserPage,
     getDashboardLikePostUserPage,
     getDashboardSavedPostUserPage,
     getDashboardTagsUserPage,
+    getDashboardFollowedByUserPage,
     /**
      * 
      */

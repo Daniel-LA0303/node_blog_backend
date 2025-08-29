@@ -50,8 +50,8 @@ const updateProfileService = async (userId, previousName, files, profilePicture,
 
     console.log("********");
     console.log(body.social);
-    
-    
+
+
     // 5. assamble info and save
     user.info = {
         desc: body.desc,
@@ -350,7 +350,7 @@ const getPostByUserPaginatedService = async (page = 1, limit = 5, userId) => {
         .select('title createdAt numberComments usersSavedPost linkImage date commenstOnPost likePost')
         .sort({ createdAt: -1 });
 
-    
+
     // 3. calculate total
     const total = await Post.countDocuments({ userId });
 
@@ -399,6 +399,235 @@ const getOneUserProfileInfoService = async (userId) => {
 
 }
 
+// user dashboard info
+const userDashboardInfoService = async (userId) => {
+
+    const userData = await User.findById(userId)
+        .select('posts followersUsers likePost postsSaved followsTags followedUsers')
+        .populate('posts')
+        .populate('followersUsers.followers')
+        .populate('likePost.posts')
+        .populate('postsSaved.posts')
+        .populate('followsTags.tags')
+        .populate('followedUsers.followed');
+
+    if(!userData){
+        throw new ServiceException("User not found", 404);
+    }
+
+    const responseData = {
+        postsCount: userData.posts.length,
+        followersCount: userData.followersUsers.followers.length,
+        likePostsCount: userData.likePost.posts.length,
+        savedPostsCount: userData.postsSaved.posts.length,
+        tagsCount: userData.followsTags.tags.length,
+        followedUsersCount: userData.followedUsers.followed.length,
+    };
+    return responseData;
+}
+
+const userDashboardPostSavedPaginated = async (page = 1, limit = 5, userId) => {
+    
+    // 1. get skip
+    const skip = (page - 1) * limit;
+
+    // 2. get total
+    const userTotal = await User.findById(userId).select("postsSaved.posts");
+    const total = userTotal?.postsSaved?.posts?.length || 0;
+
+    // 3. get post
+    const user = await User.findById(userId)
+        .select("postsSaved.posts")
+        .populate({
+            path: "postsSaved.posts",
+            options: {
+                skip,
+                limit,
+                // sort: { createdAt: -1 }
+            },
+            populate: [
+                { path: "user", select: "name _id profilePicture" },
+                { path: "categories", select: "_id name value label color" }
+            ],
+            select: "title createdAt numberComments usersSavedPost linkImage date commenstOnPost likePost"
+        });
+
+    if (!user) {
+        throw new ServiceException("User not found", 404);
+    }
+
+    // 4. sort post
+    const postsInverted = user.postsSaved.posts.reverse();
+
+    return {
+        data: postsInverted,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    };
+};
+
+
+
+const userDashboardPostLikedPaginated = async (page = 1, limit = 5, userId) => {
+    
+    // 1. get skip
+    const skip = (page - 1) * limit;
+
+    // 2. get total
+    const userTotal = await User.findById(userId).select("likePost.posts");
+    const total = userTotal?.likePost?.posts?.length || 0;
+
+    // 3. get psots
+    const user = await User.findById(userId)
+        .select("likePost.posts")
+        .populate({
+            path: "likePost.posts",
+            options: {
+                skip,
+                limit,
+                // sort: { createdAt: -1 }
+            },
+            populate: [
+                { path: "user", select: "name _id profilePicture" },
+                { path: "categories", select: "_id name value label color" }
+            ],
+            select: "title createdAt numberComments usersSavedPost linkImage date commenstOnPost likePost"
+        });
+
+    if (!user) {
+        throw new ServiceException("User not found", 404);
+    }
+
+    // 4. sort user
+    const postsInverted = user.likePost.posts.reverse();
+
+    return {
+        data: postsInverted,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    };
+};
+
+const userDashboardFollowedTagsPaginated = async (
+  page = 1,
+  limit = 10,
+  userId
+) => {
+  // 1. calcular skip
+  const skip = (page - 1) * limit;
+
+  // 2. get total
+  const userTotal = await User.findById(userId).select("followsTags.tags");
+  if (!userTotal) {
+    throw new ServiceException("User not found", 404);
+  }
+
+  const total = userTotal.followsTags?.tags?.length || 0;
+
+  // 3. get tags paginated
+  const user = await User.findById(userId)
+    .select("followsTags.tags")
+    .populate({
+      path: "followsTags.tags",
+      options: {
+        skip,
+        limit,
+        sort: { createdAt: -1 },
+      },
+    //   select: "name value label color desc",
+    });
+
+  // 4. sort tags
+  const tagsInverted = user.followsTags.tags.reverse();
+
+  return {
+    data: tagsInverted,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
+// get users
+const userDashboardFollowersPaginated = async (page = 1, limit = 10, userId) => {
+  const skip = (page - 1) * limit;
+
+  // 1. get total
+  const userTotal = await User.findById(userId).select("followersUsers.followers");
+  if (!userTotal) {
+    throw new ServiceException("User not found", 404);
+  }
+  const total = userTotal.followersUsers?.followers?.length || 0;
+
+  // 2. get users
+  const user = await User.findById(userId)
+    .select("followersUsers.followers")
+    .populate({
+      path: "followersUsers.followers",
+      options: { skip, limit },
+    //   select: "name email profilePicture",
+    });
+
+  // 3. sort users
+  const followersInverted = user.followersUsers.followers.reverse();
+
+  return {
+    data: followersInverted,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
+// get users
+const userDashboardFollowingPaginated = async (page = 1, limit = 10, userId) => {
+  const skip = (page - 1) * limit;
+
+  // 1. get total
+  const userTotal = await User.findById(userId).select("followedUsers.followed");
+  if (!userTotal) {
+    throw new ServiceException("User not found", 404);
+  }
+  const total = userTotal.followedUsers?.followed?.length || 0;
+
+  // 2. get users
+  const user = await User.findById(userId)
+    .select("followedUsers.followed")
+    .populate({
+      path: "followedUsers.followed",
+      options: { skip, limit },
+    //   select: "name email profilePicture",
+    });
+
+  // 3. new order
+  const followedInverted = user.followedUsers.followed.reverse();
+
+  return {
+    data: followedInverted,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
+
 export default {
     updateProfileService,
     userFollowATag,
@@ -410,5 +639,11 @@ export default {
     followUserService,
     unfollowUserService,
     getPostByUserPaginatedService,
-    getOneUserProfileInfoService
+    getOneUserProfileInfoService,
+    userDashboardInfoService,
+    userDashboardPostLikedPaginated,
+    userDashboardPostSavedPaginated,
+    userDashboardFollowedTagsPaginated,
+    userDashboardFollowersPaginated,
+    userDashboardFollowingPaginated
 }
