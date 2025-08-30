@@ -110,7 +110,7 @@ const updatePost = async (req, res, next) => {
       )
     );
 
-    
+
     // const post1 = await Post.findById(req.params.id)
     //   .select('user');
 
@@ -237,8 +237,8 @@ const postsRecommend = async (req, res, next) => {
 const likePost = async (req, res, next) => {
   try {
     const postId = req.params.id;
-    const {userId} = req.query;
-    
+    const { userId } = req.query;
+
     await postsServices.userLikePostService(postId, userId);
 
     res.status(200).json(
@@ -260,7 +260,7 @@ const likePost = async (req, res, next) => {
 const dislikePost = async (req, res, next) => {
   try {
     const postId = req.params.id;
-    const {userId} = req.query;
+    const { userId } = req.query;
 
     await postsServices.userDisikePostService(postId, userId);
 
@@ -283,7 +283,7 @@ const dislikePost = async (req, res, next) => {
 const savePost = async (req, res, next) => {
   try {
     const postId = req.params.id;
-    const {userId} = req.query;
+    const { userId } = req.query;
 
     await postsServices.userSavePostService(postId, userId);
 
@@ -306,7 +306,7 @@ const savePost = async (req, res, next) => {
 const unsavePost = async (req, res, next) => {
   try {
     const postId = req.params.id;
-    const {userId} = req.query;
+    const { userId } = req.query;
 
     await postsServices.userUnsavePostService(postId, userId);
 
@@ -521,29 +521,61 @@ const editReplyComment = async (req, res, next) => {
  * @returns 
  */
 const filterPostByCategory = async (id) => {
+
   try {
+    const category = await Categories.findOne({ name: id }); // aquí id = "Docker"
+    if (!category) {
+      return []; // o lanzar error si no existe la categoría
+    }
+
+    // 2. Filtrar posts que tengan esa categoría
     const filteredPosts = await Post.find({
-      categoriesPost: { $elemMatch: { $eq: id } }
+      categories: { $in: [category._id] }
     })
-      .select('title linkImage categories _id user likePost commenstOnPost date')
+      .select('title linkImage categories _id user likePost commenstOnPost date createdAt numberComments usersSavedPost')
       .populate({
         path: 'user',
         select: 'name _id profilePicture'
-      }).populate({
-        path: 'categories',
-        select: "_id name value label color"
       })
-
-
-    // if(!filteredPosts){
-    //     return 'This category does not have posts'
-    // }
+      .populate({
+        path: 'categories',
+        select: '_id name value label color'
+      });
     return filteredPosts;
   } catch (error) {
     // res.status(500).json({ error: 'Error to find posts' });
   }
 
 }
+
+
+const getPostsByCategoryPaginated = async (req, res, next) => {
+    try {
+        console.log("waiting Posts by category");
+
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 5;
+        const categoryName = req.params.id; 
+
+        const result = await postsServices.getPostsByCategoryPaginatedService(page, limit, categoryName);
+
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api/categories" + req.path,
+                req.method,
+                "Success get posts by category paginated",
+                result,
+                false
+            )
+        );
+
+        console.log("success Posts by category");
+    } catch (error) {
+        console.error(error);
+        next(error);
+    }
+};
 
 //get all posts
 const getAllPosts = async (req, res, next) => {
@@ -592,10 +624,10 @@ const getEditOnePost = async (id) => {
   try {
     const post = await Post.findById(id)
       .select('title desc content linkImage _id')
-          .populate({
-      path: 'categories',
-      select: '_id name value label color desc follows'
-    });
+      .populate({
+        path: 'categories',
+        select: '_id name value label color desc follows'
+      });
     return post;
   } catch (error) {
     console.log(error);
@@ -608,24 +640,24 @@ const getEditOnePost = async (id) => {
  * @param {*} res 
  */
 const getPostPaginated = async (req, res, next) => {
-    try {
-        console.log("waiting Categories");
+  try {
+    console.log("waiting Categories");
 
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
 
-        const result = await postsServices.getAllPostsPaginatedService(page, limit);
+    const result = await postsServices.getAllPostsPaginatedService(page, limit);
 
-        // mapping response
-        res.status(200).json(
-            new ApiResponse(200, "/api/post" + req.path, req.method, "Success get categories paginated", result, false)
-        );
+    // mapping response
+    res.status(200).json(
+      new ApiResponse(200, "/api/post" + req.path, req.method, "Success get categories paginated", result, false)
+    );
 
-        console.log("success Categories");
-    } catch (error) {
-        next(error);
-        res.status(500).json(new ApiResponse(500, "/api/post" + req.path, req.method, error.message, null, true));
-    }
+    console.log("success Categories");
+  } catch (error) {
+    next(error);
+    res.status(500).json(new ApiResponse(500, "/api/post" + req.path, req.method, error.message, null, true));
+  }
 }
 
 
@@ -677,5 +709,6 @@ export {
   //-- Actions reply comment post end --//
   getAllPostsCard,
   getEditOnePost,
-  getPostPaginated
+  getPostPaginated,
+  getPostsByCategoryPaginated
 }

@@ -22,6 +22,7 @@ import {
     dislikePost,
     unsavePost,
     getPostPaginated,
+    getPostsByCategoryPaginated,
 } from "../controllers/postController.js";
 import checkAuth from "../middleware/checkAuth.js";
 
@@ -100,6 +101,7 @@ router.post('/delete-reply-comment/:id', deleteReplyComment);
 router.post('/edit-reply-comment/:id', editReplyComment);
 // -- Actions reply comment post end --//
 
-
+// get post paginated
+router.get('/get-posts-by-category-name/:id', getPostsByCategoryPaginated);
 
 export default router

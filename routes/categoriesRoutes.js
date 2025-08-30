@@ -15,7 +15,9 @@ const router = express.Router();
 router.post('/', addCategory); 
 router.get('/', getCategories); 
 router.get('/:id', getOneCategory); 
-router.post('/category/:id', updateCategories); 
+
+// update category
+router.put('/category/:id', updateCategories); 
 /**
  * categories routes end
  */

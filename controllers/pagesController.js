@@ -70,16 +70,29 @@ const getCategoriesPage = async (req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-const getCategoryPostPage = async (req, res) => {
+const getCategoryPostPage = async (req, res, next) => {
     try {
-        console.log("waiting CategoryPost");
-        const [posts, category] = await Promise.all([filterPostByCategory(req.params.id), getOneCategory(req.params.id)]);
-        res.status(200).json({
-            posts,
-            category
-        });
-        console.log("success CategoryPost");
+
+        // console.log("waiting CategoryPost");
+        const fullCategoryInfo = await categoriesServices.getOneCategoryFullInfo(req.params.id, req.query.userId);
+
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "User info dashboard.",
+                {
+            fullCategoryInfo
+        },
+                false
+            )
+        );
+
+        // console.log("success CategoryPost");
     } catch (error) {
+        console.log(error);
+        next(error);
         res.status(500).json({ error: 'Error', msg: error.message });
     }
 }
@@ -353,9 +366,9 @@ const getProfileEditUserPage = async (req, res, next) => {
 // CHECK THIS
 const getEditPostPage = async (req, res, next) => {
     try {
-        console.log("waiting EditPost");      
-        
-        
+        console.log("waiting EditPost");
+
+
         const response = await postsServices.getOnePostToUpdate(req.params.id);
 
         res.status(200).json(

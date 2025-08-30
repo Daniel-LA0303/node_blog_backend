@@ -4,37 +4,41 @@ const Schema = mongoose.Schema;
 const CategoriesSchema = new mongoose.Schema({
     name: {
         type: String,
-        required : true,
-        unique: true
-    }, 
-    value:{
-        type: String,
-        required : true,
+        required: true,
         unique: true
     },
-    label : {
+    value: {
         type: String,
-        required : true,
+        required: true,
         unique: true
     },
-    color:{
+    label: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    color: {
         type: String
     },
     desc: {
         type: String
     },
-    follows:{
-        countFollows:{
+    longDesc: {
+        type: String,
+        default: ''
+    },
+    follows: {
+        countFollows: {
             type: Number,
             default: 0
         },
-        users:[{
-                type: Schema.ObjectId,
-                ref: 'User'
+        users: [{
+            type: Schema.ObjectId,
+            ref: 'User'
         }]
     }
 },
-    {timestamps: true}
+    { timestamps: true }
 );
 
 const Categories = mongoose.model("Categories", CategoriesSchema);

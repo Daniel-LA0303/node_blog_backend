@@ -1,4 +1,5 @@
 import Categories from '../models/Categories.js'
+import categoriesServices from '../services/categoriesServices.js';
 
 /**
  * Add new category
@@ -23,19 +24,36 @@ const addCategory = async(req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-const updateCategories = async(req, res) => {  
-    console.log(req.params.id); 
-    const category = await Categories.findById(req.params.id);
-    try {
-        category.color = req.body.color;
-        category.desc = req.body.desc;
-        await category.save();
-        res.json({msg: 'cateogry update'})
+const updateCategories = async (req, res, next) => {
+try {
+        const updates = req.body; // espera [{ id: "...", longDesc: "..." }, ...]
+
+        if (!Array.isArray(updates)) {
+            return res.status(400).json({ msg: 'Body must be an array of updates' });
+        }
+
+        const results = [];
+
+        for (const item of updates) {
+            const category = await Categories.findById(item.id);
+            if (!category) {
+                results.push({ id: item.id, status: 'not found' });
+                continue;
+            }
+
+            if (item.longDesc !== undefined) category.longDesc = item.longDesc;
+
+            await category.save();
+            results.push({ id: item.id, status: 'updated', longDesc: category.longDesc });
+        }
+
+        res.json({ msg: 'Bulk update complete', results });
     } catch (error) {
-        console.log(error);
-        next();
+        console.error(error);
+        next(error);
     }
-}
+};
+
 
 /**
  * Get categories for new post
@@ -90,6 +108,10 @@ const getAllCategorisInfo = async(req, res) => {
  */
 const getOneCategory = async(id) => {
     try {
+
+
+        
+
         const category = await Categories.findOne({name : id})
         .populate('follows')
         .select('name color desc');

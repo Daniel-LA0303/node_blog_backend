@@ -363,6 +363,54 @@ const getAllPostsPaginatedService = async (page = 1, limit = 10) => {
 }
 
 
+const getPostsByCategoryPaginatedService = async (page = 1, limit = 5, categoryName) => {
+    
+  // 1. get category
+    const category = await Categories.findOne({ name: categoryName });
+    if (!category) {
+        return {
+            data: [],
+            meta: { total: 0, page, limit, totalPages: 0 }
+        };
+    }
+
+    // 2. calculate skip
+    const skip = (page - 1) * limit;
+
+    // 3. get post with category paginated
+    const posts = await Post.find({ categories: { $in: [category._id] } })
+        .skip(skip)
+        .limit(limit)
+        .populate({
+            path: "user",
+            select: "name _id profilePicture"
+        })
+        .populate({
+            path: "categories",
+            select: "_id name value label color"
+        })
+        .select("title createdAt numberComments usersSavedPost linkImage date commenstOnPost likePost")
+        .sort({ createdAt: -1 });
+
+    // 4. calculate total
+    const total = await Post.countDocuments({ categories: { $in: [category._id] } });
+
+    console.log("*******Total*******");
+    console.log(total);
+    
+    // 5. return info
+    return {
+        data: posts,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    };
+};
+
+
 
 
 export default {
@@ -375,5 +423,6 @@ export default {
   userUnsavePostService,
   getAllPostsPaginatedService,
   updatePostService,
-  getOnePostToUpdate
+  getOnePostToUpdate,
+  getPostsByCategoryPaginatedService
 }

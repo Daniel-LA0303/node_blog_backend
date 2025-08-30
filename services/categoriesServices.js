@@ -1,4 +1,5 @@
 import Categories from "../models/Categories.js";
+import User from "../models/User.js";
 
 /**
  * get categories paginated
@@ -6,15 +7,15 @@ import Categories from "../models/Categories.js";
  * @param {*} limit 
  * @returns 
  */
-const getCategoriesPaginatedService = async(page = 1, limit=10) => {
+const getCategoriesPaginatedService = async (page = 1, limit = 10) => {
     try {
-        const skip = (page -1) * limit;
+        const skip = (page - 1) * limit;
 
         const categories = await Categories.find()
             .skip(skip)
             .limit(limit)
-            .sort({ createdAt: -1 }); 
-        
+            .sort({ createdAt: -1 });
+
         const total = await Categories.countDocuments();
 
         return {
@@ -32,7 +33,58 @@ const getCategoriesPaginatedService = async(page = 1, limit=10) => {
     }
 }
 
+const getOneCategoryFullInfo = async (categoryName, userId) => {
+
+    // 1. search ctaegory
+    const category = await Categories.findOne({ name: categoryName })
+    if (!category) return null;
+
+    // 2. get users with info
+    const usersPopulated = await User.aggregate([
+        { $match: { _id: { $in: category.follows.users } } },
+        { $sample: { size: Math.min(category.follows.users.length, 5) } },
+        { $project: { name: 1, profilePicture: 1 } }
+    ]);
+
+    // 4. get categories relation with out category
+    const relatedCategories = await Categories.aggregate([
+        { $match: { _id: { $ne: category._id } } },
+        { $sample: { size: 5 } },
+        { $project: { name: 1, color: 1, desc: 1, follows: 1 } }
+    ]);
+
+    // 5. get a small user info
+    const userInfo = await User.findById(userId)
+        .select("posts")
+        .populate({
+            path: "posts",
+            select: "categories",
+        })
+        .lean();
+
+    const countsPosts = userInfo.posts.filter(post =>
+        post.categories.map(c => c.toString()).includes(category._id.toString())
+    ).length;
+
+
+    // 5. return info
+    return {
+        category: {
+            _id: category._id,
+            name: category.name,
+            color: category.color,
+            desc: category.desc,
+            longDesc: category.longDesc,
+            follows: category.follows,
+            countFollows: category.follows.countFollows,
+        },
+        users: usersPopulated,
+        relatedCategories,
+        countsPosts
+    };
+};
 
 export default {
-    getCategoriesPaginatedService
+    getCategoriesPaginatedService,
+    getOneCategoryFullInfo
 }
