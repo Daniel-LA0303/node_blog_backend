@@ -390,7 +390,7 @@ const getOneUserProfileInfoService = async (userId) => {
             path: "posts",
 
         }
-    }).select('profilePicture email createdAt info name _id followersUsers numberPost');
+    }).select('profilePicture email createdAt info name _id followersUsers numberPost posts');
 
     if (!user) {
         throw new ServiceException("User not found", 404);
@@ -644,6 +644,41 @@ const topUsersCategories = async () => {
     };
 }
 
+const getUsersByNameOrEmailPaginatedService = async (page = 1, limit = 5, search = "") => {
+  // 1. calcular skip
+  const skip = (page - 1) * limit;
+
+  // 2. query base (regex en name o email)
+  const query = {
+    $or: [
+      { name: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } }
+    ]
+  };
+
+  // 3. obtener usuarios paginados
+  const users = await User.find(query)
+    .skip(skip)
+    .limit(limit)
+    // .select("_id name email profilePicture createdAt")
+    .sort({ createdAt: -1 });
+
+  // 4. calcular total
+  const total = await User.countDocuments(query);
+
+  // 5. return info
+  return {
+    data: users,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
+
 
 export default {
     updateProfileService,
@@ -663,5 +698,6 @@ export default {
     userDashboardFollowedTagsPaginated,
     userDashboardFollowersPaginated,
     userDashboardFollowingPaginated,
-    topUsersCategories
+    topUsersCategories,
+    getUsersByNameOrEmailPaginatedService
 }

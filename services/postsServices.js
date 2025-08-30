@@ -136,7 +136,7 @@ const getViewPostInfoService = async (postId) => {
     })
     .populate({
       path: 'user',
-      select: 'name email followedUsers followersUsers profilePicture'
+      select: 'name email followedUsers followersUsers profilePicture posts'
     });
 
   // 2. validate if post exists
@@ -410,6 +410,44 @@ const getPostsByCategoryPaginatedService = async (page = 1, limit = 5, categoryN
     };
 };
 
+const getPostsByTitlePaginatedService = async (page = 1, limit = 5, title = "") => {
+  // 1. calcular skip
+  const skip = (page - 1) * limit;
+
+  // 2. query base (regex por título)
+  const query = { title: { $regex: title, $options: "i" } };
+
+  // 3. obtener posts paginados
+  const posts = await Post.find(query)
+    .skip(skip)
+    .limit(limit)
+    .populate({
+      path: "user",
+      select: "name _id profilePicture",
+    })
+    .populate({
+      path: "categories",
+      select: "_id name value label color",
+    })
+    // .select(
+    //   "title createdAt numberComments usersSavedPost linkImage date commenstOnPost likePost"
+    // )
+    .sort({ createdAt: -1 });
+
+  // 4. calcular total
+  const total = await Post.countDocuments(query);
+
+  // 5. return info
+  return {
+    data: posts,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
 
 
 
@@ -424,5 +462,6 @@ export default {
   getAllPostsPaginatedService,
   updatePostService,
   getOnePostToUpdate,
-  getPostsByCategoryPaginatedService
+  getPostsByCategoryPaginatedService,
+  getPostsByTitlePaginatedService
 }

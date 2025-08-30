@@ -3,6 +3,7 @@ import express from "express";
 import {
     getCategoriesNewPostPage,
     getCategoriesPage,
+    getCategoriesSearchController,
     getCategoryPostPage,
     getDashboardFollowedByUserPage,
     getDashboardFollowersByUserPage,
@@ -12,8 +13,11 @@ import {
     getDashboardPostsUserPage,
     getDashboardSavedPostUserPage,
     getDashboardTagsUserPage,
+    getGlobalSearchController,
     getPageHome,
+    getPostsSearchController,
     getProfileInfoPage,
+    getUsersSearchController,
     getViewPostPage,
 } from "../controllers/pagesController.js";
 import { getProfileEditUserPage } from "../controllers/pagesController.js";
@@ -60,6 +64,18 @@ router.get('/page-edit-post/:id',
     checkAuth,
     getEditPostPage );
 router.get('/page-view-post/:id',getViewPostPage );
+
+/**
+ * search routes
+ */
+// búsqueda global inicial
+router.get("/global/:q", getGlobalSearchController);
+
+// búsquedas individuales
+router.get("/posts/:q", getPostsSearchController);
+router.get("/categories/:q", getCategoriesSearchController);
+router.get("/users/:q", getUsersSearchController);
+
 /**
  *  pages routes privade end
  */

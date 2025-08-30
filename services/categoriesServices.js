@@ -84,7 +84,38 @@ const getOneCategoryFullInfo = async (categoryName, userId) => {
     };
 };
 
+const getCategoriesByNamePaginatedService = async (page = 1, limit = 5, name = "") => {
+  // 1. calcular skip
+  const skip = (page - 1) * limit;
+
+  // 2. query base (regex por nombre de categoría)
+  const query = { name: { $regex: name, $options: "i" } };
+
+  // 3. obtener categorías paginadas
+  const categories = await Categories.find(query)
+    .skip(skip)
+    .limit(limit)
+    // .select("_id name value label color createdAt")
+    .sort({ createdAt: -1 });
+
+  // 4. calcular total
+  const total = await Categories.countDocuments(query);
+
+  // 5. return info
+  return {
+    data: categories,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
+
 export default {
     getCategoriesPaginatedService,
-    getOneCategoryFullInfo
+    getOneCategoryFullInfo,
+    getCategoriesByNamePaginatedService
 }

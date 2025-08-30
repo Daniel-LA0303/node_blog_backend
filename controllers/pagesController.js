@@ -83,8 +83,8 @@ const getCategoryPostPage = async (req, res, next) => {
                 req.method,
                 "User info dashboard.",
                 {
-            fullCategoryInfo
-        },
+                    fullCategoryInfo
+                },
                 false
             )
         );
@@ -416,6 +416,77 @@ const getViewPostPage = async (req, res, next) => {
     }
 }
 
+/**
+ * Search controllers
+ */
+// controllers/searchController.js
+const getGlobalSearchController = async (req, res) => {
+    try {
+        const { q } = req.params; // texto de búsqueda
+        const page = 1; // siempre primera página
+        const limit = 5;
+
+        const [posts, categories, users] = await Promise.all([
+            postsServices.getPostsByTitlePaginatedService(page, limit, q),
+            categoriesServices.getCategoriesByNamePaginatedService(page, limit, q),
+            usersServices.getUsersByNameOrEmailPaginatedService(page, limit, q),
+        ]);
+
+        res.json({
+            posts: {
+                data: posts.data,
+                meta: posts.meta
+            },
+            categories: {
+                data: categories.data,
+                meta: categories.meta
+            },
+            users: {
+                data: users.data,
+                meta: users.meta
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: "Error in global search" });
+    }
+};
+
+const getPostsSearchController = async (req, res) => {
+    try {
+        const { q } = req.params;
+        const { page = 1, limit = 5 } = req.query;
+        const posts = await postsServices.getPostsByTitlePaginatedService(Number(page), Number(limit), q);
+        res.json(posts);
+    } catch (error) {
+        res.status(500).json({ msg: "Error searching posts" });
+    }
+};
+
+const getCategoriesSearchController = async (req, res) => {
+    try {
+        const { q } = req.params;
+        const { page = 1, limit = 5 } = req.query;
+        const categories = await categoriesServices.getCategoriesByNamePaginatedService(Number(page), Number(limit), q);
+        res.json(categories);
+    } catch (error) {
+        res.status(500).json({ msg: "Error searching categories" });
+    }
+};
+
+const getUsersSearchController = async (req, res) => {
+    try {
+        const { q } = req.params;
+        const { page = 1, limit = 5 } = req.query;
+        const users = await usersServices.getUsersByNameOrEmailPaginatedService(Number(page), Number(limit), q);
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ msg: "Error searching users" });
+    }
+};
+
+
+
 export {
     /**
      * 
@@ -441,5 +512,14 @@ export {
     getProfileInfoPage,
     getProfileEditUserPage,
     getEditPostPage,
-    getViewPostPage
+    getViewPostPage,
+
+    /**
+     * search controllers
+     */
+    getGlobalSearchController,
+    getPostsSearchController,
+    getCategoriesSearchController,
+    getUsersSearchController,
+
 }
