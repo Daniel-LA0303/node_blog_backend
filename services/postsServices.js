@@ -124,6 +124,8 @@ const deletePostService = async (postId, userId) => {
 }
 
 
+
+
 // get a post with info
 const getViewPostInfoService = async (postId) => {
 
@@ -154,13 +156,22 @@ const getViewPostInfoService = async (postId) => {
     .populate({
       path: 'replies',
       select: 'reply dateReply',
+      options: { 
+        sort: { dateReply: -1 }, // Ordenar replies por más reciente
+        limit: 1 // Solo traer 1 reply (la más reciente)
+      },
       populate: {
         path: 'userID',
         select: 'name profilePicture'
       }
-    }).sort({ dateComment: -1 });
+    })
+    .sort({ dateComment: -1 }) // Ordenar comentarios por más reciente
+    .limit(5); // ← SOLO 5 COMENTARIOS MÁS RECIENTES
 
-  return { post, comments };
+    // get total coments
+     const totalComments = await Comment.countDocuments({ postID: postId });
+
+  return { post, comments, totalComments };
 }
 
 const userLikePostService = async (postId, userId) => {

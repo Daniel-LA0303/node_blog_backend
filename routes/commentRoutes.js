@@ -1,5 +1,5 @@
 import express from "express";
-import { addComment, getOneComment, deleteComment, editComment, getAllComments, getAllCommentsByPost  } from "../controllers/commentsController.js";
+import { addComment, getOneComment, deleteComment, editComment, getAllComments, getAllCommentsByPost, getCommentsPaginatedByBlogId  } from "../controllers/commentsController.js";
 import checkAuth from "../middleware/checkAuth.js";
 
 const router = express.Router();
@@ -18,6 +18,11 @@ router.put('/edit-comment/:id',
 router.delete('/delete-comment/:id', 
     checkAuth,
     deleteComment);
+
+/**
+ * get comments paginated by post or blog
+ */
+router.get('/get-comments-paginated-by-blog/:id', getCommentsPaginatedByBlogId);
 /**
  * comments routes end
  */

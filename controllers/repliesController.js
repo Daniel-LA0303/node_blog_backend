@@ -1,5 +1,7 @@
 import Comment from "../models/Comments.js";
 import Replies from "../models/Replies.js";
+import repliesServices from "../services/repliesServices.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 const getAllReplies = async (req, res) => {
   try {
@@ -16,120 +18,126 @@ const getReply = async (req, res) => {
     res.json(reply);
   } catch (error) {
     res.status(500).json({ message: error.message });
-  } 
-};
-
-const createReply = async (req, res) => {
-  try {
-      
-      // throw new Error("Simulated error in getUserPosts");
-      const comment = await Comment.findById(req.params.id);
-      if (!comment) {
-          return res.status(404).json({ error: 'Error', msg: "Comment not found" });
-      }
-
-      const reply = new Replies({
-          reply: req.body.reply,
-          commentID: req.params.id,
-          userID: req.body.userID,
-          postID: req.body.postID,
-          dateReply: new Date()
-      });
-
-      const newReply = await reply.save();
-
-      comment.replies.push(newReply._id);
-      await comment.save();
-
-      const comment2 = await Comment.findById(req.params.id)
-        .select('comment dateComment ')  
-        .populate({
-            path: 'userID',
-            select: 'name profilePicture'  
-        }).populate({
-            path: 'replies',
-            select: 'reply dateReply',
-            populate: {
-                path: 'userID',
-                select: 'name profilePicture'
-            }
-        })
-        res.json(comment2);
-  } catch (error) {
-      res.status(400).json({  error: 'Error', msg: error.message });
   }
 };
 
-
-const updateReply = async (req, res) => {
+const createReply = async (req, res, next) => {
   try {
-    // throw new Error("Simulated error in getUserPosts");
-    const reply = await Replies.findById(req.params.id);
 
-    if(!reply) {
-      return res.status(404).json({ error: 'Error', msg: "Reply not found" });
-    }
-
-    if (reply.userID.toString() !== req.query.user) {
-        return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
-    }
-
-    if (req.body.reply) {
-      reply.reply = req.body.reply;
-    }
-    const updatedReply = await reply.save();
-    const comment2 = await Comment.findById(req.body.commentID)
-        .select('comment dateComment ')  
-        .populate({
-            path: 'userID',
-            select: 'name profilePicture'  
-        }).populate({
-            path: 'replies',
-            select: 'reply dateReply',
-            populate: {
-                path: 'userID',
-                select: 'name profilePicture'
-            }
-        })
-        res.json(comment2);
-  } catch (error) {
-    res.status(500).json({ error: 'Error', msg: error.message });
-  }
-};
-
-const deleteReply = async (req, res) => {
-  try {
+    const result = await repliesServices.newReplyService(req.params.id, req.body);
 
     // throw new Error("Simulated error in getUserPosts");
-    const reply = await Replies.findById(req.params.id);
-
-    if(!reply) {
-      return res.status(404).json({ error: 'Error', msg: "Reply not found" });
-    }
-
-    if (reply.userID.toString() !== req.query.user) {
-        return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
-    }
-
-    await Replies.findByIdAndDelete(req.params.id);
-    const comment2 = await Comment.findById(req.body.commentID)
-        .select('comment dateComment ')  
-        .populate({
-            path: 'userID',
-            select: 'name profilePicture'  
-        }).populate({
-            path: 'replies',
-            select: 'reply dateReply',
-            populate: {
-                path: 'userID',
-                select: 'name profilePicture'
-            }
-        })
-        res.json(comment2);
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        "/api" + req.path,
+        req.method,
+        "Rpely created successfully",
+        result,
+        false
+      )
+    );
   } catch (error) {
-    res.status(500).json({  error: 'Error', msg: error.message});
+    console.log(error);
+    next(error);
   }
 };
+
+
+const updateReply = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { user } = req.query;
+    const { reply: newReplyText, commentID } = req.body;
+
+    const updatedReply = await repliesServices.updateReplyService(
+      id, 
+      user, 
+      { reply: newReplyText }
+    );
+
+    res.status(200).json(new ApiResponse(
+      200,
+      req.originalUrl,
+      req.method,
+      "Reply updated successfully",
+      updatedReply,
+      false
+    ));
+
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
+const deleteReply = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { user } = req.query;
+    const { commentID } = req.body;
+
+    const result = await repliesServices.deleteReplyService(id, user, commentID);
+
+    res.status(200).json(new ApiResponse(
+      200,
+      req.originalUrl,
+      req.method,
+      "Reply deleted successfully",
+      result,
+      false
+    ));
+
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
+const getRepliesPaginatedByCommentId = async (req, res, next) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 5;
+    const commentId = req.params.commentId;
+
+    const result = await repliesServices.getRepliesByCommentPaginatedService(commentId, page, limit);
+    
+    res.status(200).json(new ApiResponse(
+      200,
+      req.originalUrl,
+      req.method,
+      "Get replies paginated successfully",
+      result,
+      false
+    ));
+
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+}
+
+const countRepliesByCommentId = async (req, res, next) => {
+  try {
+    const commentId = req.params.commentId;
+    const result = await repliesServices.countRepliesByCommentService(commentId);
+    
+    res.status(200).json(new ApiResponse(
+      200,
+      req.originalUrl,
+      req.method,
+      "Count replies successfully",
+      result,
+      false
+    ));
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+}
+
+
+
 
 export {
   getAllReplies,
@@ -137,4 +145,6 @@ export {
   createReply,
   updateReply,
   deleteReply,
+  getRepliesPaginatedByCommentId,
+  countRepliesByCommentId
 };

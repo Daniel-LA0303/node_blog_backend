@@ -397,7 +397,7 @@ const getViewPostPage = async (req, res, next) => {
         console.log("waiting ViewPost");
 
         const postInfo = await postsServices.getViewPostInfoService(req.params.id)
-        const { post, comments } = postInfo;
+        const { post, comments,  totalComments} = postInfo;
 
         res.status(200).json(new ApiResponse(
             200,
@@ -406,7 +406,8 @@ const getViewPostPage = async (req, res, next) => {
             "Post info successfully",
             {
                 post,
-                comments
+                comments,
+                totalComments
             },
             false
         ));

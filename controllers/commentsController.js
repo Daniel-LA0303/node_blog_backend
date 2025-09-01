@@ -1,6 +1,7 @@
 import Comment from "../models/Comments.js";
 import Post from "../models/Post.js";
 import commentsService from "../services/commentsService.js";
+import repliesServices from "../services/repliesServices.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 
@@ -158,6 +159,31 @@ const deleteComment = async (req, res, next) => {
     }
 }
 
+const getCommentsPaginatedByBlogId = async (req, res, next) => {
+
+    try {
+
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 5;
+        const postId = req.params.id;
+
+        const result = await commentsService.getCommentsByPostPaginatedService(postId, page, limit);
+        res.status(200).json(new ApiResponse(
+            200,
+            req.originalUrl,
+            req.method,
+            "Get comments paginated successfully",
+            result,
+            false
+        ));
+
+
+    } catch (error) {
+        console.log(error);
+        next(error);
+    }
+}
+
 export {
     getAllComments,
     getAllCommentsByPost,
@@ -165,5 +191,6 @@ export {
     addComment,
     getOneComment,
     editComment,
-    deleteComment
+    deleteComment,
+    getCommentsPaginatedByBlogId
 }

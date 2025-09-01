@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Comment from "../models/Comments.js";
 import Post from "../models/Post.js";
 import User from "../models/User.js";
@@ -121,7 +122,7 @@ const updateCommentService = async (commentId, userId, commentNewData) => {
                 select: 'name profilePicture'
             }
         });
-    
+
     return populatedComment;
 }
 
@@ -159,9 +160,128 @@ const deleteCommentService = async (commentId, userId, postId) => {
 
 }
 
+// const getCommentsByPostPaginatedService = async (postId, page = 1, limit = 10) => {
+//   try {
+//     const skip = (page - 1) * limit;
+
+//     // 1. Obtener comentarios paginados
+//     const comments = await Comment.find({ postID: postId })
+//       .select('comment dateComment postID')
+//       .populate({
+//         path: 'userID',
+//         select: 'name profilePicture'
+//       })
+//       .populate({
+//         path: 'replies',
+//         select: 'reply dateReply',
+//         options: { 
+//           sort: { dateReply: -1 }, // Ordenar replies por fecha (más reciente primero)
+//           limit: 1 // Solo traer 1 reply (la más reciente)
+//         },
+//         populate: {
+//           path: 'userID',
+//           select: 'name profilePicture'
+//         }
+//       })
+//       .sort({ dateComment: -1 })
+//       .skip(skip)
+//       .limit(limit);
+
+//     // 2. Contar total de comentarios para este post
+//     const total = await Comment.countDocuments({ postID: postId });
+
+//     return {
+//       data: comments,
+//       meta: {
+//         total,
+//         page,
+//         limit,
+//         totalPages: Math.ceil(total / limit)
+//       }
+//     }
+
+//   } catch (error) {
+//     throw new Error("Error obteniendo comentarios: " + error.message);
+//   }
+// }
+
+const getCommentsByPostPaginatedService = async (postId, page = 1, limit = 5) => {
+
+    const skip = (page - 1) * limit;
+
+    const comments = await Comment.aggregate([
+        // Filtro por post
+        { $match: { postID: new mongoose.Types.ObjectId(postId) } },
+
+        // Ordenar comentarios (más recientes primero)
+        { $sort: { dateComment: -1 } },
+
+        // Paginación
+        { $skip: skip },
+        { $limit: limit },
+
+        // Populate userID
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'userID',
+                foreignField: '_id',
+                as: 'userID',
+                pipeline: [
+                    { $project: { name: 1, profilePicture: 1 } }
+                ]
+            }
+        },
+        { $unwind: '$userID' },
+
+        // Populate replies (solo la más reciente)
+        {
+            $lookup: {
+                from: 'replies',
+                localField: 'replies',
+                foreignField: '_id',
+                as: 'replies',
+                pipeline: [
+                    { $sort: { dateReply: -1 } },
+                    // { $limit: 1 }, // Solo la reply más reciente
+                    // Populate userID de la reply
+                    {
+                        $lookup: {
+                            from: 'users',
+                            localField: 'userID',
+                            foreignField: '_id',
+                            as: 'userID',
+                            pipeline: [
+                                { $project: { name: 1, profilePicture: 1 } }
+                            ]
+                        }
+                    },
+                    { $unwind: '$userID' }
+                ]
+            }
+        }
+    ]);
+
+    const total = await Comment.countDocuments({ postID: postId });
+
+    return {
+        data: comments,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
+
+}
+
+
+
 export default {
     getAllCommentsByOnePost,
     newCommentService,
     updateCommentService,
-    deleteCommentService
+    deleteCommentService,
+    getCommentsByPostPaginatedService
 }
