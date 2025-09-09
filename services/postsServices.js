@@ -40,7 +40,7 @@ const updatePostService = async (postId, body) => {
   const post = await Post.findById(postId);
 
   if (!post) {
-    throw new ServiceException("This post not exists", 400);
+    throw new ServiceException("This post not exists", 404);
   }
 
   // 2. if there is a previous name, then user change image, we need to delete img
@@ -68,10 +68,10 @@ const getOnePostToUpdate = async (postId) => {
 
   // 1. get one post to update
   const post = await Post.findById(postId).populate({
-      path: 'categories',
-      select: '_id name value label color'
-    })
-    // .select('user');
+    path: 'categories',
+    select: '_id name value label color'
+  })
+  // .select('user');
 
   // 2. check if post exists
   if (!post) {
@@ -156,7 +156,7 @@ const getViewPostInfoService = async (postId) => {
     .populate({
       path: 'replies',
       select: 'reply dateReply',
-      options: { 
+      options: {
         sort: { dateReply: -1 }, // Ordenar replies por más reciente
         limit: 1 // Solo traer 1 reply (la más reciente)
       },
@@ -168,8 +168,8 @@ const getViewPostInfoService = async (postId) => {
     .sort({ dateComment: -1 }) // Ordenar comentarios por más reciente
     .limit(5); // ← SOLO 5 COMENTARIOS MÁS RECIENTES
 
-    // get total coments
-     const totalComments = await Comment.countDocuments({ postID: postId });
+  // get total coments
+  const totalComments = await Comment.countDocuments({ postID: postId });
 
   return { post, comments, totalComments };
 }
@@ -348,77 +348,79 @@ const userUnsavePostService = async (postId, userId) => {
  * @returns 
  */
 const getAllPostsPaginatedService = async (page = 1, limit = 10) => {
-  try {
-    const skip = (page - 1) * limit;
-    const posts = await Post.find()
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 })
-      .populate("user")
-      .populate("categories");
-    const total = await Post.countDocuments();
 
-    return {
-      data: posts,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit)
-      }
+  // get posts
+  const skip = (page - 1) * limit;
+  const posts = await Post.find()
+    .skip(skip)
+    .limit(limit)
+    .select("title linkImage comments _id user categories createdAt usersSavedPost likePost")
+    .sort({ createdAt: -1 })
+        .populate({
+      path: "user",
+      select: "name _id profilePicture",
+    })
+    .populate({
+      path: "categories",
+      select: "_id name value label color",
+    })
+  const total = await Post.countDocuments();
+
+  return {
+    data: posts,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
     }
-
-  } catch (error) {
-    throw new Error("Error obteniendo posts: " + err.message);
   }
 }
 
 
 const getPostsByCategoryPaginatedService = async (page = 1, limit = 5, categoryName) => {
-    
+
   // 1. get category
-    const category = await Categories.findOne({ name: categoryName });
-    if (!category) {
-        return {
-            data: [],
-            meta: { total: 0, page, limit, totalPages: 0 }
-        };
-    }
-
-    // 2. calculate skip
-    const skip = (page - 1) * limit;
-
-    // 3. get post with category paginated
-    const posts = await Post.find({ categories: { $in: [category._id] } })
-        .skip(skip)
-        .limit(limit)
-        .populate({
-            path: "user",
-            select: "name _id profilePicture"
-        })
-        .populate({
-            path: "categories",
-            select: "_id name value label color"
-        })
-        .select("title createdAt numberComments usersSavedPost linkImage date commenstOnPost likePost")
-        .sort({ createdAt: -1 });
-
-    // 4. calculate total
-    const total = await Post.countDocuments({ categories: { $in: [category._id] } });
-
-    console.log("*******Total*******");
-    console.log(total);
-    
-    // 5. return info
+  const category = await Categories.findOne({ name: categoryName });
+  if (!category) {
     return {
-        data: posts,
-        meta: {
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit)
-        }
+      data: [],
+      meta: { total: 0, page, limit, totalPages: 0 }
     };
+  }
+
+  // 2. calculate skip
+  const skip = (page - 1) * limit;
+
+  // 3. get post with category paginated
+  const posts = await Post.find({ categories: { $in: [category._id] } })
+    .skip(skip)
+    .limit(limit)
+    .select("title linkImage comments _id user categories createdAt usersSavedPost likePost")
+    .sort({ createdAt: -1 })
+        .populate({
+      path: "user",
+      select: "name _id profilePicture",
+    })
+    .populate({
+      path: "categories",
+      select: "_id name value label color",
+    })
+
+  // 4. calculate total
+  const total = await Post.countDocuments({ categories: { $in: [category._id] } });
+
+
+  // 5. return info
+  return {
+    data: posts,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+  };
 };
 
 const getPostsByTitlePaginatedService = async (page = 1, limit = 5, title = "") => {

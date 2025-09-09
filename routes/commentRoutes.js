@@ -9,12 +9,18 @@ const router = express.Router();
 router.get('/get-all-comments', getAllComments);
 router.get('/get-all-comments-by-post/:id', getAllCommentsByPost);
 router.get('/get-one-comment/:id', getOneComment);
+
+// new comment --
 router.post('/new-comment/:id', 
     checkAuth,
     addComment);
+
+// edit comment --
 router.put('/edit-comment/:id', 
     checkAuth,
     editComment);
+
+// delete comment --
 router.delete('/delete-comment/:id', 
     checkAuth,
     deleteComment);

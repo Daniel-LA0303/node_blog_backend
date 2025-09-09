@@ -76,5 +76,4 @@ app.use(errorHandler)
 //1. server
 const server = app.listen(PORT, () => {
     console.log("server on 4000");
-
-})
+});

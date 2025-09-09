@@ -25,17 +25,13 @@ class NotFoundError extends Error {
  */
 const getPageHome = async (req, res) => {
     try {
-        console.log("waiting Home");
-        // throwError();
         const info = await usersServices.topUsersCategories();
         res.status(200).json(
-            new ApiResponse(200, "/api/page" + req.path, req.method, "Success get categories paginated", info, false)
+            new ApiResponse(200, "/api/page" + req.path, req.method, "Success get home info page", info, false)
         );
 
-        console.log("success Home");
     } catch (error) {
-        console.error("Error in getPageHome:", error);
-        res.status(404).json({ error: 'Error', message: error.message });
+        console.log(error);
     }
 }
 
@@ -47,7 +43,6 @@ const getPageHome = async (req, res) => {
  */
 const getCategoriesPage = async (req, res) => {
     try {
-        console.log("waiting Categories");
 
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 10;
@@ -59,8 +54,9 @@ const getCategoriesPage = async (req, res) => {
             new ApiResponse(200, "/api/page" + req.path, req.method, "Success get categories paginated", result, false)
         );
 
-        console.log("success Categories");
     } catch (error) {
+        console.log(error);
+        next(error);
         res.status(500).json(new ApiResponse(500, "/api/page" + req.path, req.method, error.message, null, true));
     }
 }
@@ -73,7 +69,6 @@ const getCategoriesPage = async (req, res) => {
 const getCategoryPostPage = async (req, res, next) => {
     try {
 
-        // console.log("waiting CategoryPost");
         const fullCategoryInfo = await categoriesServices.getOneCategoryFullInfo(req.params.id, req.query.userId);
 
         res.status(200).json(
@@ -89,11 +84,10 @@ const getCategoryPostPage = async (req, res, next) => {
             )
         );
 
-        // console.log("success CategoryPost");
     } catch (error) {
         console.log(error);
         next(error);
-        res.status(500).json({ error: 'Error', msg: error.message });
+        res.status(500).json(new ApiResponse(500, "/api/page" + req.path, req.method, error.message, null, true));
     }
 }
 
@@ -105,10 +99,7 @@ const getCategoryPostPage = async (req, res, next) => {
 const getDashboardPage = async (req, res, next) => {
     try {
 
-        console.log("waiting Dashboard");
         const user = await usersServices.userDashboardInfoService(req.params.id);
-
-        console.log(user);
 
         res.status(200).json(
             new ApiResponse(
@@ -120,7 +111,6 @@ const getDashboardPage = async (req, res, next) => {
                 false
             )
         );
-        console.log("success Dashboard");
     } catch (error) {
         next(error);
     }
@@ -134,7 +124,6 @@ const getDashboardPage = async (req, res, next) => {
  */
 const getDashboardPostsUserPage = async (req, res, next) => {
     try {
-        console.log("waiting DashboardPosts");
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
         const userId = req.params.id;
@@ -144,7 +133,7 @@ const getDashboardPostsUserPage = async (req, res, next) => {
         res.status(200).json(
             new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts by user paginated", result, false)
         );
-        console.log("success DashboardPosts");
+
     } catch (error) {
         next(error);
     }
@@ -156,7 +145,6 @@ const getDashboardPostsUserPage = async (req, res, next) => {
  */
 const getDashboardFollowUserPage = async (req, res) => {
     try {
-        console.log("waiting DashboardFollow");
         if (req.params.id !== req.query.user) {
             return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
         }
@@ -165,7 +153,6 @@ const getDashboardFollowUserPage = async (req, res) => {
             followers: userInfo.followers,
             followed: userInfo.followed
         });
-        console.log("success DashboardFollow");
     } catch (error) {
         res.status(404).json({ error: 'Error', msg: error.message });
     }
@@ -178,7 +165,7 @@ const getDashboardFollowUserPage = async (req, res) => {
  */
 const getDashboardFollowersByUserPage = async (req, res) => {
     try {
-        console.log("waiting DashboardFollow");
+
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
         const userId = req.params.id;
@@ -188,7 +175,7 @@ const getDashboardFollowersByUserPage = async (req, res) => {
         res.status(200).json(
             new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts liked by user paginated", result, false)
         );
-        console.log("success DashboardFollow");
+
     } catch (error) {
         res.status(404).json({ error: 'Error', msg: error.message });
     }
@@ -196,18 +183,16 @@ const getDashboardFollowersByUserPage = async (req, res) => {
 
 const getDashboardFollowedByUserPage = async (req, res) => {
     try {
-        console.log("waiting DashboardFollow");
+
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
         const userId = req.params.id;
         const result = await usersServices.userDashboardFollowingPaginated(page, limit, userId);
 
-
-        // mapping response
         res.status(200).json(
             new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts liked by user paginated", result, false)
         );
-        console.log("success DashboardFollow");
+
     } catch (error) {
         res.status(404).json({ error: 'Error', msg: error.message });
     }
@@ -220,7 +205,7 @@ const getDashboardFollowedByUserPage = async (req, res) => {
  */
 const getDashboardLikePostUserPage = async (req, res, next) => {
     try {
-        console.log("waiting DashboardLike");
+
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
         const userId = req.params.id;
@@ -230,7 +215,7 @@ const getDashboardLikePostUserPage = async (req, res, next) => {
         res.status(200).json(
             new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts liked by user paginated", result, false)
         );
-        console.log("success DashboardLike");
+
     } catch (error) {
         next(error);
     }
@@ -243,7 +228,7 @@ const getDashboardLikePostUserPage = async (req, res, next) => {
  */
 const getDashboardSavedPostUserPage = async (req, res, next) => {
     try {
-        console.log("waiting DashboardSaved");
+
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
         const userId = req.params.id;
@@ -253,7 +238,6 @@ const getDashboardSavedPostUserPage = async (req, res, next) => {
         res.status(200).json(
             new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts liked by user paginated", result, false)
         );
-        console.log("success DashboardSaved");
     } catch (error) {
         next(error);
     }
@@ -276,7 +260,6 @@ const getDashboardTagsUserPage = async (req, res) => {
         res.status(200).json(
             new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts liked by user paginated", result, false)
         );
-        console.log("success DashboardTags");
     } catch (error) {
         res.status(404).json({ error: 'Error', msg: error.message });
     }
@@ -289,7 +272,6 @@ const getDashboardTagsUserPage = async (req, res) => {
  */
 const getProfileInfoPage = async (req, res) => {
     try {
-        console.log("waiting ProfileInfo");
         // throwError();
         const user = await usersServices.getOneUserProfileInfoService(req.params.id);
         res.status(200).json(
@@ -302,7 +284,6 @@ const getProfileInfoPage = async (req, res) => {
                 false
             )
         );
-        console.log("success ProfileInfo");
     } catch (error) {
         console.error("Error in getProfilePage:", error);
         res.status(404).json({ error: 'Error', message: error.message });
@@ -318,13 +299,11 @@ const getProfileInfoPage = async (req, res) => {
  */
 const getCategoriesNewPostPage = async (req, res) => {
     try {
-        console.log("waiting CategoriesNewPost");
         // throwError();
         const categories = await getCategories();
         res.status(200).json({
             categories
         });
-        console.log("success CategoriesNewPost");
     } catch (error) {
         console.error("Error in getCategoriesNewPostPage:", error);
         res.status(404).json({ error: 'Error', message: error.message });
@@ -338,7 +317,6 @@ const getCategoriesNewPostPage = async (req, res) => {
  */
 const getProfileEditUserPage = async (req, res, next) => {
     try {
-        console.log("waiting ProfileEdit");
         const userAuth = req.user;
 
         const user = await usersServices.getUserInfoToEdit(req.params.id, userAuth._id);
@@ -352,7 +330,6 @@ const getProfileEditUserPage = async (req, res, next) => {
                 false
             )
         );
-        console.log("success ProfileEdit");
     } catch (error) {
         next(error);
     }
@@ -366,9 +343,6 @@ const getProfileEditUserPage = async (req, res, next) => {
 // CHECK THIS
 const getEditPostPage = async (req, res, next) => {
     try {
-        console.log("waiting EditPost");
-
-
         const response = await postsServices.getOnePostToUpdate(req.params.id);
 
         res.status(200).json(
@@ -381,7 +355,7 @@ const getEditPostPage = async (req, res, next) => {
                 false
             )
         );
-        console.log("success EditPost");
+
     } catch (error) {
         console.log(error);
         next(error);
@@ -394,10 +368,9 @@ const getEditPostPage = async (req, res, next) => {
  */
 const getViewPostPage = async (req, res, next) => {
     try {
-        console.log("waiting ViewPost");
 
         const postInfo = await postsServices.getViewPostInfoService(req.params.id)
-        const { post, comments,  totalComments} = postInfo;
+        const { post, comments, totalComments } = postInfo;
 
         res.status(200).json(new ApiResponse(
             200,
@@ -411,7 +384,6 @@ const getViewPostPage = async (req, res, next) => {
             },
             false
         ));
-        console.log("success ViewPost");
     } catch (error) {
         next(error);
     }

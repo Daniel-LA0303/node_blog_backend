@@ -79,7 +79,6 @@ const getAllCommentsByPostFunction = async (id) => {
 const addComment = async (req, res, next) => {
 
     try {
-        console.log("NEW COMMENT");
 
         const newComment = await commentsService.newCommentService(req.params.id, req.body);
         res.status(201).json(new ApiResponse(
@@ -90,11 +89,8 @@ const addComment = async (req, res, next) => {
             newComment,
             false
         ));
-
-        console.log("NEW COMMENT SUCCESS");
-
+        
     } catch (error) {
-        console.log("NEW COMMENT EROR");
         console.error(error);
         next(error);
     }

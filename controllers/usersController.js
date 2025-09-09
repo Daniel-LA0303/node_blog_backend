@@ -274,9 +274,6 @@ const followUser = async (req, res, next) => {
         const { userFollow } = req.query;  // ID of the user to follow
         const userProfileId = req.params.id;    // ID of the current logged user
 
-        console.log("query user to unfollow: ", req.query);
-        console.log("params user logged: ", req.params.id);
-
         await usersServices.followUserService(userFollow, userProfileId);
 
         res.status(200).json(
@@ -299,11 +296,7 @@ const unfollowUser = async (req, res, next) => {
     try {
         const { userUnfollow } = req.query;  // ID of the user to unfollow
         const userProfileId = req.params.id;    // ID of the current logged user
-
-        console.log("query user to unfollow: ", req.query);
-        console.log("params user logged: ", req.params.id);
-
-
+        
         await usersServices.unfollowUserService(userUnfollow, userProfileId);
 
         res.status(200).json(
@@ -326,7 +319,6 @@ const unfollowUser = async (req, res, next) => {
 const getPostsByUserPaginated = async (req, res, next) => {
 
     try {
-        console.log("waiting Posts by user");
 
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
@@ -339,7 +331,6 @@ const getPostsByUserPaginated = async (req, res, next) => {
             new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts by user paginated", result, false)
         );
 
-        console.log("success Posts by user");
     } catch (error) {
         console.log(error);
         next(error);

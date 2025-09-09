@@ -95,7 +95,7 @@ const getOnePost = async (req, res, next) => {
 const updatePost = async (req, res, next) => {
   try {
 
-
+    // 1. get service
     await postsServices.updatePostService(req.params.id, req.body);
 
     // 2. assamble success response
@@ -109,35 +109,10 @@ const updatePost = async (req, res, next) => {
         false
       )
     );
-
-
-    // const post1 = await Post.findById(req.params.id)
-    //   .select('user');
-
-    // if (post1.user.toString() !== req.query.user) {
-    //   return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
-    // }
-    // if (req.body.previousName) {
-    //   if ((req.body.previousName !== "")) {
-    //     await deleteImage(req.body.previousName)
-    //   }
-    // }
-    // await Post.findByIdAndUpdate(
-    //   { _id: req.params.id }, {
-    //   title: req.body.title,
-    //   desc: req.body.desc,
-    //   content: req.body.content,
-    //   linkImage: req.body.linkImage,
-    //   categoriesPost: req.body.categoriesPost,
-    //   categoriesSelect: req.body.categoriesSelect,
-    // },
-    //   { new: true }
-    // )
-    // res.status(201).json({ msg: 'Post has been edited' });
   } catch (error) {
     console.log(error);
     next(error);
-    // res.status(500).json({ error: 'Error', msg: error.message });
+    res.status(500).json({ error: 'Error', msg: error.message });
   }
 }
 
@@ -550,31 +525,29 @@ const filterPostByCategory = async (id) => {
 
 
 const getPostsByCategoryPaginated = async (req, res, next) => {
-    try {
-        console.log("waiting Posts by category");
+  try {
+  
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 5;
+    const categoryName = req.params.id;
 
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 5;
-        const categoryName = req.params.id; 
+    const result = await postsServices.getPostsByCategoryPaginatedService(page, limit, categoryName);
 
-        const result = await postsServices.getPostsByCategoryPaginatedService(page, limit, categoryName);
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        "/api/categories" + req.path,
+        req.method,
+        "Success get posts by category paginated",
+        result,
+        false
+      )
+    );
 
-        res.status(200).json(
-            new ApiResponse(
-                200,
-                "/api/categories" + req.path,
-                req.method,
-                "Success get posts by category paginated",
-                result,
-                false
-            )
-        );
-
-        console.log("success Posts by category");
-    } catch (error) {
-        console.error(error);
-        next(error);
-    }
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
 };
 
 //get all posts
@@ -641,7 +614,6 @@ const getEditOnePost = async (id) => {
  */
 const getPostPaginated = async (req, res, next) => {
   try {
-    console.log("waiting Categories");
 
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
@@ -650,13 +622,20 @@ const getPostPaginated = async (req, res, next) => {
 
     // mapping response
     res.status(200).json(
-      new ApiResponse(200, "/api/post" + req.path, req.method, "Success get categories paginated", result, false)
+      new ApiResponse(
+        200,
+        "/api/post" + req.path,
+        req.method,
+        "Success get posts paginated",
+        result,
+        false
+      )
     );
 
-    console.log("success Categories");
   } catch (error) {
+    console.log(error);
     next(error);
-    res.status(500).json(new ApiResponse(500, "/api/post" + req.path, req.method, error.message, null, true));
+    res.status(500).json(new ApiResponse(500, "/api/page" + req.path, req.method, error.message, null, true));
   }
 }
 

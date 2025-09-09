@@ -32,10 +32,13 @@ import {
 const router = express.Router();
 
 
-//add new user
+//add new user --
 router.post('/', registerUser); 
-// // auth user
+
+// auth user login --
 router.post('/login', authUser);
+
+
 // //confirm user
 router.get('/confirm/:token', confirm);
 //forget password
@@ -60,23 +63,29 @@ router.get('/get-profile-follows/:id', getOneUserFollow);
 //-- Dashboard end --//
 
 //-- User actions start --//
+
+// user follow a tag --
 router.post('/follow-tag/:id', 
     checkAuth,
     followTag);
+
+// user unfollow a tag --
 router.post('/unfollow-tag/:id', 
     checkAuth,
     unFollowTag);
 
+// user follor others users -- 
 router.post('/user-follow/:id', 
     checkAuth,
     followUser);
+
+// user unfollow other user --
 router.post('/user-unfollow/:id', 
     checkAuth,
     unfollowUser);
-// router.post('/user-follow/:id', followAndFollowed);
 //-- User actions end --//
 
-// posts by user paginated
+// posts by user paginated --
 router.get("/posts-by-user/:id", getPostsByUserPaginated);
 
 router.get('/all-users', getAllUsers);

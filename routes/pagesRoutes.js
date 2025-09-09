@@ -34,9 +34,17 @@ const router = express.Router();
 /**
  * pages routes general start
  */
+
+// Home page --
 router.get('/page-home', getPageHome); 
+
+// Page categories --
 router.get('/page-categories', getCategoriesPage);
+
+// Posts by category page --
 router.get('/page-category-post/:id', getCategoryPostPage);
+
+// Get info by user 
 router.get('/page-profile-user/:id', getProfileInfoPage);
 /**
  * pages routes general end
@@ -45,33 +53,67 @@ router.get('/page-profile-user/:id', getProfileInfoPage);
 /**
  * pages routes privade start
  */
+
+// page dashboar by user -- 
 router.get('/page-dashboard/:id', 
     checkAuth,
     getDashboardPage);
-router.get('/page-dashboard-post-user/:id', getDashboardPostsUserPage);
+
+
+// get post by user --
+router.get('/page-dashboard-post-user/:id', 
+    checkAuth,
+    getDashboardPostsUserPage);
+
 router.get('/page-dashboard-follow-user/:id', getDashboardFollowUserPage);
-router.get('/page-dashboard-followers-user/:id', getDashboardFollowersByUserPage);
-router.get('/page-dashboard-followed-user/:id', getDashboardFollowedByUserPage);
-router.get('/page-dashboard-liked-post-user/:id', getDashboardLikePostUserPage);
-router.get('/page-dashboard-saved-post-user/:id', getDashboardSavedPostUserPage);
-router.get('/page-dashboard-tag-user/:id', getDashboardTagsUserPage);
+
+// page get followers --
+router.get('/page-dashboard-followers-user/:id', 
+    checkAuth,
+    getDashboardFollowersByUserPage);
+
+// page get followed --
+router.get('/page-dashboard-followed-user/:id', 
+    checkAuth,
+    getDashboardFollowedByUserPage);
+
+// page get post liked --
+router.get('/page-dashboard-liked-post-user/:id', 
+    checkAuth,
+    getDashboardLikePostUserPage);
+
+// get post saved by user --
+router.get('/page-dashboard-saved-post-user/:id', 
+    checkAuth,
+    getDashboardSavedPostUserPage);
+
+// page tags user followed --
+router.get('/page-dashboard-tag-user/:id', 
+    checkAuth,
+    getDashboardTagsUserPage);
 
 router.get('/page-new-post', getCategoriesNewPostPage);
+
+// page edit profile --
 router.get('/page-edit-profile/:id', 
     checkAuth,
     getProfileEditUserPage);
+
+// get info to edit post --
 router.get('/page-edit-post/:id',
     checkAuth,
     getEditPostPage );
-router.get('/page-view-post/:id',getViewPostPage );
+
+// get one post view --
+router.get('/page-view-post/:id', getViewPostPage );
 
 /**
  * search routes
  */
-// búsqueda global inicial
+// search global first --
 router.get("/global/:q", getGlobalSearchController);
 
-// búsquedas individuales
+// Search routes ---
 router.get("/posts/:q", getPostsSearchController);
 router.get("/categories/:q", getCategoriesSearchController);
 router.get("/users/:q", getUsersSearchController);

@@ -50,17 +50,17 @@ const getRepliesByCommentPaginatedService = async (commentId, page = 1, limit = 
         const skip = (page - 1) * limit;
 
         const replies = await Replies.aggregate([
-            // Filtro por comentario
+            // filte by comment
             { $match: { commentID: new mongoose.Types.ObjectId(commentId) } },
 
-            // Ordenar replies (más recientes primero)
+            // sort replies
             { $sort: { dateReply: -1 } },
 
-            // Paginación
+            // pagination
             { $skip: skip },
             { $limit: limit },
 
-            // Populate userID
+            // populate
             {
                 $lookup: {
                     from: 'users',
@@ -75,7 +75,7 @@ const getRepliesByCommentPaginatedService = async (commentId, page = 1, limit = 
             { $unwind: '$userID' }
         ]);
 
-        // Contar total de replies para este comentario
+        // count replies
         const total = await Replies.countDocuments({ commentID: commentId });
 
         return {

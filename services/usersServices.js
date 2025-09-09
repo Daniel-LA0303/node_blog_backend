@@ -48,10 +48,6 @@ const updateProfileService = async (userId, previousName, files, profilePicture,
         user.profilePicture = profilePicture2
     }
 
-    console.log("********");
-    console.log(body.social);
-
-
     // 5. assamble info and save
     user.info = {
         desc: body.desc,
@@ -279,11 +275,6 @@ const login = async (email, password) => {
         name: user.name,
         email: user.email,
         profileImage: user.profilePicture.secure_url,
-        likePost: user.likePost,
-        postsSaved: user.postsSaved,
-        followsTags: user.followsTags,
-        followersUsers: user.followersUsers,
-        followedUsers: user.followedUsers,
         token: generateJWT(user._id)
     }
 
@@ -347,7 +338,7 @@ const getPostByUserPaginatedService = async (page = 1, limit = 5, userId) => {
             path: 'categories',
             select: '_id name value label color'
         })
-        .select('title createdAt numberComments usersSavedPost linkImage date commenstOnPost likePost')
+        .select('title createdAt numberComments usersSavedPost linkImage date comments likePost')
         .sort({ createdAt: -1 });
 
 
@@ -364,9 +355,7 @@ const getPostByUserPaginatedService = async (page = 1, limit = 5, userId) => {
             totalPages: Math.ceil(total / limit)
         }
     }
-
 }
-
 
 const getOneUserProfileInfoService = async (userId) => {
 
@@ -449,7 +438,7 @@ const userDashboardPostSavedPaginated = async (page = 1, limit = 5, userId) => {
                 { path: "user", select: "name _id profilePicture" },
                 { path: "categories", select: "_id name value label color" }
             ],
-            select: "title createdAt numberComments usersSavedPost linkImage date commenstOnPost likePost"
+            select: "title createdAt numberComments usersSavedPost linkImage date comments likePost"
         });
 
     if (!user) {
@@ -495,7 +484,7 @@ const userDashboardPostLikedPaginated = async (page = 1, limit = 5, userId) => {
                 { path: "user", select: "name _id profilePicture" },
                 { path: "categories", select: "_id name value label color" }
             ],
-            select: "title createdAt numberComments usersSavedPost linkImage date commenstOnPost likePost"
+            select: "title createdAt numberComments usersSavedPost linkImage date comments likePost"
         });
 
     if (!user) {
@@ -542,7 +531,7 @@ const userDashboardFollowedTagsPaginated = async (
                 limit,
                 sort: { createdAt: -1 },
             },
-            //   select: "name value label color desc",
+              select: "name color desc follows _id",
         });
 
     // 4. sort tags
@@ -576,7 +565,7 @@ const userDashboardFollowersPaginated = async (page = 1, limit = 10, userId) => 
         .populate({
             path: "followersUsers.followers",
             options: { skip, limit },
-            //   select: "name email profilePicture",
+            select: "name email profilePicture followersUsers followedUsers posts",
         });
 
     // 3. sort users
@@ -610,7 +599,7 @@ const userDashboardFollowingPaginated = async (page = 1, limit = 10, userId) => 
         .populate({
             path: "followedUsers.followed",
             options: { skip, limit },
-            //   select: "name email profilePicture",
+            select: "name email profilePicture followersUsers followedUsers posts",
         });
 
     // 3. new order
@@ -628,15 +617,18 @@ const userDashboardFollowingPaginated = async (page = 1, limit = 10, userId) => 
 };
 
 const topUsersCategories = async () => {
+
+    // 1. get users top
     const users = await User.find()
         .sort({ numberPost: -1 }) 
         .limit(5)                 
-        // .select("name profilePicture numberPost"); 
+        .select("name profilePicture numberPost email"); 
 
+    // 2. get categories top        
     const categories = await Categories.find()
         .sort({ "follows.countFollows": -1 }) 
         .limit(5)                             
-        // .select("name value label color follows"); 
+        .select("name _id color follows"); 
 
     return {
         users,
