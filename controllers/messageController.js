@@ -62,11 +62,15 @@ export const sendMessage = async (req, res) => {
 };
 
 
+// routes/message.js
 export const getMessages = async (req, res) => {
   try {
     const { id: otherUserId } = req.params;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    
     const currentUserId = req.user._id;
-
     const otherUserObjectId = new mongoose.Types.ObjectId(otherUserId);
 
     const conversation = await Conversation.findOne({
@@ -74,25 +78,45 @@ export const getMessages = async (req, res) => {
     });
 
     if (!conversation) {
-      return res.status(200).json([]);
+      return res.status(200).json({
+        messages: [],
+        meta: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0
+        }
+      });
     }
 
+    // Obtener el total de mensajes
+    const total = await Message.countDocuments({ 
+      conversationId: conversation._id 
+    });
+
+    // Obtener mensajes paginados (más recientes primero)
     const messages = await Message.find({ conversationId: conversation._id })
       .populate("senderId", "name email profilePicture")
-      .sort({ createdAt: 1 });
-
-    
+      .sort({ createdAt: -1 }) // Orden descendente para obtener los más recientes primero
+      .skip(skip)
+      .limit(limit);
 
     await markMessagesAsRead(currentUserId);
 
-    res.status(200).json(messages);
+    res.status(200).json({
+      messages: messages,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.log("Error al obtener mensajes", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 };
-
-
 
 
 export const getUnreadMessagesCount = async (req, res) => {

@@ -59,6 +59,13 @@ const updateProfileService = async (userId, previousName, files, profilePicture,
         social: body.social ? JSON.parse(body.social) : {}
     };
     await user.save();
+    return {
+        profilePicture: user.profilePicture,
+        info: user.info,
+        username: user.username,
+        email: user.email,
+        _id: user._id
+    };
 }
 
 // user unfollow a ta or category

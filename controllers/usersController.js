@@ -157,7 +157,7 @@ const newInfoUser = async (req, res, next) => {
         console.log(req.body);
 
         // 1. call service
-        await usersServices.updateProfileService(
+        const response = await usersServices.updateProfileService(
             id,
             req.body.previousName,
             req.files,
@@ -170,7 +170,7 @@ const newInfoUser = async (req, res, next) => {
                 "/api" + req.path,
                 req.method,
                 "User updated successfully",
-                "User updated",
+                response,
                 false
             )
         );
