@@ -3,6 +3,7 @@ import generateID from '../helpers/generateID.js'
 import { emailNewPassword } from '../helpers/email.js'
 import usersServices from '../services/usersServices.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
+import Conversation from '../models/Conversation.js';
 
 
 // --- Auth Users start --//
@@ -390,6 +391,59 @@ const getOneUserEditProfile = async (id) => {
 }
 
 
+const allUsers = async (req, res) => {
+  try {
+
+    const loggedInUser = req.user._id;
+    // 1. Buscar todas las conversaciones donde participa el usuario
+    const conversations = await Conversation.find({
+     members: { $in: [loggedInUser] },
+    })
+      .populate("members", "name email profilePicture") // obtenemos info básica de los miembros
+      .sort({ updatedAt: -1 }); // opcional: ordenarlas por última actividad
+
+    // 2. Mapear para obtener solo los otros miembros de la conversación
+    const users = conversations.map((conv) => {
+      return conv.members.find(
+        (member) => member._id.toString() !== loggedInUser.toString()
+      );
+    });
+
+    // 3. Filtrar duplicados en caso de varias conversaciones con la misma persona
+    const uniqueUsers = Array.from(
+      new Map(users.map((user) => [user._id.toString(), user])).values()
+    );
+
+    res.status(200).json(uniqueUsers);
+  } catch (error) {
+    console.log("Error in allUsers Controller: " + error);
+  }
+};
+
+
+const searchUsers = async (req, res) => {
+  try {
+    const { q, currentUserId } = req.query; // q = texto de búsqueda
+
+    if (!currentUserId) return res.status(400).json({ error: "currentUserId required" });
+
+    const regex = new RegExp(q, "i"); // búsqueda insensible a mayúsculas
+
+    // Buscar coincidencias en fullname o email, excluyendo al usuario logeado
+    const users = await User.find({
+      _id: { $ne: currentUserId },
+      $or: [{ name: regex }, { email: regex }],
+    }).select("name email profilePicture");
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.log("Error in searchUsers:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+
 //-- Dashboard end --//
 
 export {
@@ -418,5 +472,7 @@ export {
     // getOneUserShortInfo,
     getOneUserEditProfile,
     //-- actions user end --//
-    getPostsByUserPaginated
+    getPostsByUserPaginated,
+    allUsers,
+    searchUsers
 }

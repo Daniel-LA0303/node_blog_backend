@@ -26,6 +26,8 @@ import {
     followUser,
     unfollowUser,
     getPostsByUserPaginated,
+    allUsers,
+    searchUsers,
     //-- User actions end --//
 } from "../controllers/usersController.js";
 
@@ -93,5 +95,8 @@ router.get('/all-users', getAllUsers);
 router.get('/profile', 
         checkAuth, 
         profile);
+
+router.get("/allusers", checkAuth, allUsers);
+router.get("/search", searchUsers);
 
 export default router

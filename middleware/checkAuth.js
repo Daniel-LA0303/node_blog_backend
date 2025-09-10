@@ -5,7 +5,7 @@ import { error } from "console";
 
 //aqui se auntentica todo antes de mandar la info del perfil
 const checkAuth = async (req, res, next) => {
-    console.log("middleware checkAuth");
+    // console.log("middleware checkAuth");
     let token;
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {

@@ -12,10 +12,13 @@ import categoriesRoutes from './routes/categoriesRoutes.js'
 import pagesRoutes from './routes/pagesRoutes.js'
 import commentsRoutes from './routes/commentRoutes.js'
 import repliesRoutes from './routes/repliesRoutes.js'
+import messageRoutes from './routes/messageRoutes.js'
 import { errorHandler } from "./utils/exception/errorHandler.js";
 
+import { app, server } from "./socketIO/server.js";
 
-const app = express();
+// const app = express();
+
 
 connectDB();
 
@@ -68,12 +71,12 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/pages', pagesRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/replies', repliesRoutes);
+app.use('/api/message', messageRoutes)
 
-app.use(errorHandler)
-
+app.use(errorHandler);
 
 
 //1. server
-const server = app.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
     console.log("server on 4000");
 });
