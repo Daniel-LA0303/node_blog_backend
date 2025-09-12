@@ -1,0 +1,111 @@
+# ==========================================
+# Namespace opcional (aisla recursos)
+# ==========================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: backend-kubernates
+
+---
+# ==========================================
+# ConfigMap: variables de configuración
+# ==========================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: backend-kubernates
+data:
+  # Insert ENV
+  APP_ENV: "production"
+  LOG_LEVEL: "info"
+  API_URL: "https://api.miapp.com"
+  MONGO_URL_WEB: ""
+  CLOUDINARY_API_KEY: ""
+  CLOUDINARY_API_SECRET: ""
+  MAILTRAP_HOST: ""
+  MAILTRAP_PORT: ""
+  MAILTRAP_USER: ""
+  MAILTRAP_PASS: ""
+  JWT_SECRET: ""
+  FRONTEND_URL: "http://192.168.100.3:5173"
+
+---
+# ==========================================
+# Secret: información sensible
+# ==========================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secret
+  namespace: backend-kubernates
+type: Opaque
+data:
+  DB_PASSWORD: cGFzc3dvcmQ=  # 'password' en base64
+
+---
+# ==========================================
+# Deployment: define el ReplicaSet y Pods
+# ==========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: backend-kubernates
+spec:
+  replicas: 1  # Número de réplicas
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: daniella03/pp_007_mern_blog_backend
+          ports:
+            - containerPort: 4000
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+          # Volumen comentado porque la DB es externa
+          # volumeMounts:
+          #   - name: backend-storage
+          #     mountPath: /data
+      # volumes:
+      #   - name: backend-storage
+      #     emptyDir: {}
+
+---
+# ==========================================
+# Service: expone el Deployment
+# ==========================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: backend-kubernates
+spec:
+  selector:
+    app: backend
+  type: NodePort  # Cambiar a LoadBalancer si es en la nube
+  ports:
+    - port: 4000
+      targetPort: 4000
+      protocol: TCP
+
+# ==========================================
+# NOTAS SOBRE OTROS RECURSOS
+# ==========================================
+# StatefulSet: útil solo si los Pods necesitan identidad persistente. No es necesario aquí.
+# DaemonSet: ejecuta un Pod en todos los nodos. Solo necesario para logging/monitoring.
+# Job / CronJob: para tareas puntuales o programadas. Depende de la app.
+# HPA: HorizontalPodAutoscaler. Se activa si quieres autoescalar según CPU/memoria.
+# NetworkPolicy: controla tráfico entre Pods. Recomendable en producción.
+# Ingress: gestiona acceso externo con rutas/hostnames. Necesario si quieres exponer el backend al mundo.
+# PersistentVolume / PersistentVolumeClaim: para almacenamiento persistente. Comentado porque la DB es externa.
+# LimitRange: define límites de recursos en el Namespace. Útil para controlar consumo.
