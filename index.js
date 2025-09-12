@@ -20,16 +20,10 @@ import { errorHandler } from "./utils/exception/errorHandler.js";
 import { app, server } from "./socketIO/server.js";
 
 // const app = express();
-
-
 connectDB();
-
 app.use(cors());
 
-
-
-
-//pat
+//path
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads-profile", express.static(path.join(__dirname,"/uploads-profile")))

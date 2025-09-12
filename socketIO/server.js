@@ -25,6 +25,7 @@ const users = {};
 // const users = {}; // { userId: socketId }
 
 io.on("connection", (socket) => {
+  
   const userId = socket.handshake.query.userId;
   if (!userId) return;
 
