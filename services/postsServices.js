@@ -354,7 +354,7 @@ const getAllPostsPaginatedService = async (page = 1, limit = 10) => {
   const posts = await Post.find()
     .skip(skip)
     .limit(limit)
-    .select("title linkImage comments _id user categories createdAt usersSavedPost likePost")
+    .select("title linkImage comments _id user categories createdAt date usersSavedPost likePost")
     .sort({ createdAt: -1 })
         .populate({
       path: "user",
@@ -396,7 +396,7 @@ const getPostsByCategoryPaginatedService = async (page = 1, limit = 5, categoryN
   const posts = await Post.find({ categories: { $in: [category._id] } })
     .skip(skip)
     .limit(limit)
-    .select("title linkImage comments _id user categories createdAt usersSavedPost likePost")
+    .select("title linkImage comments _id user categories createdAt date usersSavedPost likePost")
     .sort({ createdAt: -1 })
         .populate({
       path: "user",
