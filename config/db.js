@@ -1,10 +1,11 @@
+import dotenv from "dotenv"; 
+dotenv.config();
 import mongoose from "mongoose";
-
 
 //2. conexion a la db
 const connectDB = async () => {
     try {
-            await mongoose.connect("mongodb+srv://root:root@cluster0.odotr.mongodb.net/1_blog", 
+            await mongoose.connect(process.env.MONGO_URL_WEB, 
             {useNewUrlParser: true,
                 useUnifiedTopology: true}
         );

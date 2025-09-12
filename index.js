@@ -1,6 +1,8 @@
+import dotenv from "dotenv"; 
+dotenv.config();
+
 import express  from "express";
 import connectDB from "./config/db.js";
-import dotenv from "dotenv"; 
 import cors from "cors"
 import multer from "multer";
 import path from "path"
@@ -25,7 +27,7 @@ connectDB();
 app.use(cors());
 
 
-dotenv.config();
+
 
 //pat
 const __filename = fileURLToPath(import.meta.url);
@@ -79,4 +81,7 @@ app.use(errorHandler);
 //1. server
 server.listen(PORT, "0.0.0.0", () => {
     console.log("server on 4000");
+
+    console.log("CLOUDINARY_API_KEY:", process.env.CLOUDINARY_API_KEY);
+
 });
