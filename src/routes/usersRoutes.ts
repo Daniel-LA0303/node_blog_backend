@@ -1,0 +1,104 @@
+import express from "express";
+import fileUpload from "express-fileupload";
+import checkAuth from "../middleware/checkAuth.js"
+import { 
+    //-- auth user start --//
+    registerUser, 
+    authUser, 
+    confirm,
+    forgetPassword,
+    checkToken,
+    newPassword,
+    profile,
+    //-- auth user end --//
+    //-- crud user start --//
+    newInfoUser,
+    getOneUser,
+    getAllUsers,
+    //-- crud user end --//
+
+    //-- Dashboard start --//
+    getOneUserFollow,
+    //-- Dashboard end --//
+    //-- User actions start --//
+    followTag,
+    unFollowTag,
+    followUser,
+    unfollowUser,
+    getPostsByUserPaginated,
+    allUsers,
+    searchUsers,
+    //-- User actions end --//
+} from "../controllers/usersController.js";
+
+const router = express.Router();
+
+
+//add new user --
+router.post('/', registerUser); 
+
+// auth user login --
+router.post('/login', authUser);
+
+
+// //confirm user
+router.get('/confirm/:token', confirm);
+//forget password
+router.post('/new-password', forgetPassword);
+
+router.route('/new-password/:token')
+    .get(checkToken) //comprueba el token que se manda cuando se ejecuta olvidePassword
+    .post(newPassword) //redirije a una pestaña para nuevo password
+
+router.post('/new-info/:id', 
+    checkAuth,    
+    fileUpload({
+        useTempFiles: true,
+        tempFileDir: "./uploads_pro",
+    }),newInfoUser);
+
+router.get('/get-profile/:id', getOneUser);
+
+//-- Dashboard start --//
+
+router.get('/get-profile-follows/:id', getOneUserFollow);
+//-- Dashboard end --//
+
+//-- User actions start --//
+
+// user follow a tag --
+router.post('/follow-tag/:id', 
+    checkAuth,
+    followTag);
+
+// user unfollow a tag --
+router.post('/unfollow-tag/:id', 
+    checkAuth,
+    unFollowTag);
+
+// user follor others users -- 
+router.post('/user-follow/:id', 
+    checkAuth,
+    followUser);
+
+// user unfollow other user --
+router.post('/user-unfollow/:id', 
+    checkAuth,
+    unfollowUser);
+//-- User actions end --//
+
+// posts by user paginated --
+router.get("/posts-by-user/:id", getPostsByUserPaginated);
+
+router.get('/all-users', getAllUsers);
+
+router.get('/profile', 
+        checkAuth, 
+        profile);
+
+router.get("/allusers", 
+    checkAuth, 
+    allUsers);
+router.get("/search", searchUsers);
+
+export default router
