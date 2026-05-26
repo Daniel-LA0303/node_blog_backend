@@ -23,6 +23,10 @@ import { app, server } from "./socketIO/server";
 connectDB();
 app.use(cors());
 
+// alow more mb
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ limit: '1mb', extended: true }));
+
 //path
 const __dirname = path.resolve();
 app.use("/uploads-profile", express.static(path.join(__dirname,"/uploads-profile")))
@@ -37,6 +41,8 @@ const storage = multer.diskStorage({
         cb(null, req.body.name)
     }  
 });
+
+
 const upload = multer({storage:storage});
 app.post("/api/users/uploads-profile", upload.single("image"), (req, res) => {
     res.status(200).json("File has been uploaded")
@@ -57,7 +63,6 @@ app.post("/api/post/uploads-post", upload2.single("image"), (req, res) => {
 const PORT = Number(process.env.PORT) || 4000;
 
 
-app.use(express.json());
 
 //ROUNTING
 app.use('/api/users', usersRoutes);
