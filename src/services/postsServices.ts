@@ -4,6 +4,8 @@ import Comment from "../models/Comments";
 import Post from "../models/Post";
 import User from "../models/User";
 import { ServiceException } from "../utils/exception/ServiceException";
+import notificationsService from "../services/notificationsServices";
+import { NewNotificationI } from "../interfaces/notification.interfaces";
 
 
 // save new post
@@ -214,6 +216,20 @@ const userLikePostService = async (postId: any, userId: any) => {
     },
     { new: true }
   );
+
+  // 6. create notification
+  if (userId === post.user.toString()) { // its the same user, not send notification
+    return;
+  }
+
+  const notificationData: NewNotificationI = {
+    recipientId: post.user,
+    senderId: userId,
+    entityId: post._id
+  };
+
+  await notificationsService.likeNotification(notificationData)
+
 };
 
 const userDisikePostService = async (postId: any, userId: any) => {
@@ -356,7 +372,7 @@ const getAllPostsPaginatedService = async (page = 1, limit = 10) => {
     .limit(limit)
     .select("title linkImage comments _id user categories createdAt date usersSavedPost likePost")
     .sort({ createdAt: -1 })
-        .populate({
+    .populate({
       path: "user",
       select: "name _id profilePicture",
     })
@@ -398,7 +414,7 @@ const getPostsByCategoryPaginatedService = async (page = 1, limit = 5, categoryN
     .limit(limit)
     .select("title linkImage comments _id user categories createdAt date usersSavedPost likePost")
     .sort({ createdAt: -1 })
-        .populate({
+    .populate({
       path: "user",
       select: "name _id profilePicture",
     })

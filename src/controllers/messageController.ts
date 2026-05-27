@@ -50,6 +50,7 @@ export const sendMessage = async (req: any, res: any) => {
     // 4. Emitir al receptor si está conectado
     const receiverSocketId = getReceiverSocketId(receiverObjectId.toString());
     if (receiverSocketId) {
+      // WE SEND MESSAGE ONLY TO RECEIVER
       io.to(receiverSocketId).emit("newMessage", populatedMessage.toJSON());
       // console.log("1. EMITIENDO DESDE SERVICIO EL MENSAJE");
     }

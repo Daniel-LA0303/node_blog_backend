@@ -29,7 +29,7 @@ import {
     allUsers,
     searchUsers,
     //-- User actions end --//
-} from "../controllers/usersController.js";
+} from "../controllers/usersController";
 
 const router = express.Router();
 
