@@ -8,6 +8,8 @@ import fs from "fs-extra"
 import generateJWT from "../helpers/generateJWT";
 import generateID from "../helpers/generateID";
 import { emailRegister } from "../helpers/email";
+import PlanSuscription from "../models/Plan";
+import Subscriptions from "../models/Subscriptions";
 
 
 const updateProfileService = async (userId: any, previousName: any, files: any, profilePicture: any, body: any) => {
