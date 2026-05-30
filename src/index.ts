@@ -15,6 +15,7 @@ import pagesRoutes from './routes/pagesRoutes'
 import commentsRoutes from './routes/commentRoutes'
 import repliesRoutes from './routes/repliesRoutes'
 import messageRoutes from './routes/messageRoutes'
+import paymentRoutes from './routes/paymentsRoutes'
 import { errorHandler } from "./utils/exception/errorHandler";
 
 import { app, server } from "./socketIO/server";
@@ -71,7 +72,8 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/pages', pagesRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/replies', repliesRoutes);
-app.use('/api/message', messageRoutes)
+app.use('/api/message', messageRoutes);
+app.use('/api/payment', paymentRoutes);
 
 app.use(errorHandler);
 
@@ -79,7 +81,4 @@ app.use(errorHandler);
 //1. server
 server.listen(PORT, "0.0.0.0", () => {
     console.log("server on 4000");
-
-    console.log("CLOUDINARY_API_KEY:", process.env.CLOUDINARY_API_KEY);
-
 });
