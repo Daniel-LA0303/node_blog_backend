@@ -1,36 +1,32 @@
 import mongoose from "mongoose";
-import { EntityType, NotificationType } from "../enums/notifications.enums";
 import { NewNotificationI } from "../interfaces/notification.interfaces";
 import Notification from "../models/Notification";
-import Post from "../models/Post";
 import { getReceiverSocketId, io } from "../socketIO/server";
-import User from "../models/User";
 
 
-const likeNotification = async (data: NewNotificationI) => {
+
+const sendNotification = async (data: NewNotificationI) => {
 
     // check if user doesn't put like before
-    const existing = await Notification.findOne({
-        recipientId: data.recipientId,
-        senderId:    data.senderId,
-        entityId:    data.entityId,
-        type:        NotificationType.LIKE_POST,
-    });
+    if(data.isCheck){
+        const existing = await Notification.findOne({
+            recipientId: data.recipientId,
+            senderId:    data.senderId,
+            entityId:    data.entityId,
+            type:        data.type,
+        });
 
-    if (existing) return null;
-
-    const user = await User.findById(data.recipientId);
-
-    const post = await Post.findById(data.entityId);
+        if (existing) return null;
+    }
 
     // 1. build a notification like and save
     const newNotification = await Notification.create({
         recipientId: data.recipientId,
         senderId: data.senderId,
-        type: NotificationType.LIKE_POST,
+        type: data.type,
         entityId: data.entityId,
-        entityType: EntityType.POST,
-        message: user?.name + " like your post " + post?.title + "!",
+        entityType: data.entityType,
+        message: data.message,
         isRead: false
     });
 
@@ -83,6 +79,6 @@ const getNotificationsByUserService = async (page: number = 1, limit: number = 5
 }
 
 export default {
-    likeNotification,
+    sendNotification,
     getNotificationsByUserService
 }

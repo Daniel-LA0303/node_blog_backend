@@ -6,6 +6,7 @@ import User from "../models/User";
 import { ServiceException } from "../utils/exception/ServiceException";
 import notificationsService from "../services/notificationsServices";
 import { NewNotificationI } from "../interfaces/notification.interfaces";
+import { EntityType, NotificationType } from "../enums/notifications.enums";
 
 
 // save new post
@@ -225,10 +226,14 @@ const userLikePostService = async (postId: any, userId: any) => {
   const notificationData: NewNotificationI = {
     recipientId: post.user,
     senderId: userId,
-    entityId: post._id
+    entityId: post._id,
+    message: user.name + " like your post " + post.title + "!",
+    entityType: EntityType.POST,
+    type: NotificationType.LIKE_POST,
+    isCheck: true
   };
 
-  await notificationsService.likeNotification(notificationData)
+  await notificationsService.sendNotification(notificationData);
 
 };
 

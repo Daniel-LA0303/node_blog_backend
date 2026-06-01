@@ -17,4 +17,8 @@ export interface NewNotificationI {
     recipientId: Types.ObjectId;
     senderId: Types.ObjectId;
     entityId: Types.ObjectId; 
+    message: string;
+    entityType: EntityType;
+    type: NotificationType;
+    isCheck: boolean; // check if is a type notification can not repeat like when user get like or follow a user
 }

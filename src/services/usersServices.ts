@@ -8,6 +8,9 @@ import fs from "fs-extra"
 import generateJWT from "../helpers/generateJWT";
 import generateID from "../helpers/generateID";
 import { emailRegister } from "../helpers/email";
+import { NewNotificationI } from "../interfaces/notification.interfaces";
+import notificationsServices from "./notificationsServices";
+import { EntityType, NotificationType } from "../enums/notifications.enums";
 
 
 const updateProfileService = async (userId: any, previousName: any, files: any, profilePicture: any, body: any) => {
@@ -156,6 +159,7 @@ const userFollowATag = async (categoryId: any, userId: any) => {
 
 // Follow a user
 const followUserService = async (userFollowedId: any, userProfileId: any) => {
+
     // 1. check if userProfile exists
     const userProfile = await User.findById(userProfileId);
     if (!userProfile) throw new ServiceException("User (follower) not found", 404);
@@ -194,6 +198,18 @@ const followUserService = async (userFollowedId: any, userProfileId: any) => {
         },
         { new: true }
     );
+
+      const notificationData: NewNotificationI = {
+        recipientId: userFollowedId,
+        senderId: userProfileId,
+        entityId: userFollowedId,
+        message: userProfile.name + " followed you!",
+        entityType: EntityType.USER,
+        type: NotificationType.FOLLOW_USER,
+        isCheck: true
+      };
+    
+      await notificationsServices.sendNotification(notificationData);
 };
 
 // Unfollow a user
