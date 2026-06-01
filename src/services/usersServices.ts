@@ -199,7 +199,7 @@ const followUserService = async (userFollowedId: any, userProfileId: any) => {
         { new: true }
     );
 
-      const notificationData: NewNotificationI = {
+    const notificationData: NewNotificationI = {
         recipientId: userFollowedId,
         senderId: userProfileId,
         entityId: userFollowedId,
@@ -207,9 +207,9 @@ const followUserService = async (userFollowedId: any, userProfileId: any) => {
         entityType: EntityType.USER,
         type: NotificationType.FOLLOW_USER,
         isCheck: true
-      };
-    
-      await notificationsServices.sendNotification(notificationData);
+    };
+
+    await notificationsServices.sendNotification(notificationData);
 };
 
 // Unfollow a user
@@ -554,7 +554,7 @@ const userDashboardFollowedTagsPaginated = async (
                 limit,
                 sort: { createdAt: -1 },
             },
-              select: "name color desc follows _id",
+            select: "name color desc follows _id",
         });
 
     // 4. sort tags
@@ -643,15 +643,15 @@ const topUsersCategories = async () => {
 
     // 1. get users top
     const users = await User.find()
-        .sort({ numberPost: -1 }) 
-        .limit(5)                 
-        .select("name profilePicture numberPost email"); 
+        .sort({ numberPost: -1 })
+        .limit(5)
+        .select("name profilePicture numberPost email");
 
     // 2. get categories top        
     const categories = await Categories.find()
-        .sort({ "follows.countFollows": -1 }) 
-        .limit(5)                             
-        .select("name _id color follows"); 
+        .sort({ "follows.countFollows": -1 })
+        .limit(5)
+        .select("name _id color follows");
 
     return {
         users,
@@ -660,37 +660,37 @@ const topUsersCategories = async () => {
 }
 
 const getUsersByNameOrEmailPaginatedService = async (page = 1, limit = 5, search = "") => {
-  // 1. calcular skip
-  const skip = (page - 1) * limit;
+    // 1. calcular skip
+    const skip = (page - 1) * limit;
 
-  // 2. query base (regex en name o email)
-  const query = {
-    $or: [
-      { name: { $regex: search, $options: "i" } },
-      { email: { $regex: search, $options: "i" } }
-    ]
-  };
+    // 2. query base (regex en name o email)
+    const query = {
+        $or: [
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } }
+        ]
+    };
 
-  // 3. obtener usuarios paginados
-  const users = await User.find(query)
-    .skip(skip)
-    .limit(limit)
-    // .select("_id name email profilePicture createdAt")
-    .sort({ createdAt: -1 });
+    // 3. obtener usuarios paginados
+    const users = await User.find(query)
+        .skip(skip)
+        .limit(limit)
+        // .select("_id name email profilePicture createdAt")
+        .sort({ createdAt: -1 });
 
-  // 4. calcular total
-  const total = await User.countDocuments(query);
+    // 4. calcular total
+    const total = await User.countDocuments(query);
 
-  // 5. return info
-  return {
-    data: users,
-    meta: {
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    },
-  };
+    // 5. return info
+    return {
+        data: users,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        },
+    };
 };
 
 

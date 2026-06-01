@@ -3,6 +3,9 @@ import Comment from "../models/Comments";
 import Post from "../models/Post";
 import User from "../models/User";
 import { ServiceException } from "../utils/exception/ServiceException";
+import { NewNotificationI } from "../interfaces/notification.interfaces";
+import { EntityType, NotificationType } from "../enums/notifications.enums";
+import notificationsServices from "./notificationsServices";
 
 const getAllCommentsByOnePost = async (postId: any) => {
 
@@ -73,6 +76,32 @@ const newCommentService = async (postId: any, commentBody: any) => {
                 select: 'name profilePicture'
             }
         });
+
+    // check don't send to a notification to same user himself
+    console.log("send noti to: " + post.user);
+    console.log("noti received from: " + userID);
+    console.log(post.user);
+    console.log(typeof post.user);
+
+    console.log(userID);
+    console.log(typeof userID);
+
+    if (post.user.toString() !== userID.toString()) {
+        const notificationData: NewNotificationI = {
+            recipientId: post.user,
+            senderId: userID,
+            entityId: postId,
+            message: user.name + " comment your post: " + (
+                post.title.length > 10 ? post.title.slice(0, 10) + "..." : post.title),
+            entityType: EntityType.COMMENT,
+            type: NotificationType.COMMENT_POST,
+            isCheck: false
+        };
+
+        await notificationsServices.sendNotification(notificationData);
+
+    }
+
 
     return populatedComment;
 
