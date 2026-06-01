@@ -78,14 +78,6 @@ const newCommentService = async (postId: any, commentBody: any) => {
         });
 
     // check don't send to a notification to same user himself
-    console.log("send noti to: " + post.user);
-    console.log("noti received from: " + userID);
-    console.log(post.user);
-    console.log(typeof post.user);
-
-    console.log(userID);
-    console.log(typeof userID);
-
     if (post.user.toString() !== userID.toString()) {
         const notificationData: NewNotificationI = {
             recipientId: post.user,

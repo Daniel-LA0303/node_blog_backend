@@ -202,7 +202,7 @@ const followUserService = async (userFollowedId: any, userProfileId: any) => {
     const notificationData: NewNotificationI = {
         recipientId: userFollowedId,
         senderId: userProfileId,
-        entityId: userFollowedId,
+        entityId: userProfileId,
         message: userProfile.name + " followed you!",
         entityType: EntityType.USER,
         type: NotificationType.FOLLOW_USER,
