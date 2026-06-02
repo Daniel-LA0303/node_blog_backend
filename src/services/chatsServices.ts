@@ -21,8 +21,23 @@ const getUnreadMessagesCount = async (userId: string) => {
     return unreadMessagesCount;
 }
 
+const sendNotificationNewConversation = async (receiver: string, conversationId: string) => {
+    const receiverSocketId = getReceiverSocketId(receiver);
+
+    const conversation = await Conversation.findById(conversationId)
+        .select("_id lastMessage isGroup groupName members createdAt lastMessage")
+        .populate("members", "name email profilePicture")
+        .populate("lastMessage", "message read createdAt")
+
+    if (receiverSocketId) {
+        io.to(receiverSocketId).emit("newConversation", conversation?.toJSON());
+        // console.log("1. EMITIENDO DESDE SERVICIO EL MENSAJE");
+    }
+}
+
 const sendMessage = async (senderId: string, receiverId: string, message: string) => {
 
+    let isNew = false;
 
     const receiverObjectId = new mongoose.Types.ObjectId(receiverId); // <-- convertir
 
@@ -35,6 +50,7 @@ const sendMessage = async (senderId: string, receiverId: string, message: string
         conversation = await Conversation.create({
             members: [senderId, receiverObjectId],
         });
+        isNew = true;
     }
 
     // 2. Crear mensaje vinculado a la conversación
@@ -51,9 +67,15 @@ const sendMessage = async (senderId: string, receiverId: string, message: string
     const populatedMessage = await newMessage.populate("senderId", "name email profilePicture");
 
     // 3. Actualizar última actividad de la conversación
-    await Conversation.findByIdAndUpdate(conversation._id, {
+    const newConversation = await Conversation.findByIdAndUpdate(conversation._id, {
         updatedAt: new Date(),
-    });
+        lastMessage: newMessage._id
+    },
+    { new: true});
+
+    if(isNew && newConversation?._id){
+        await sendNotificationNewConversation(receiverObjectId.toString(), newConversation._id.toString());
+    }
 
     // 4. Emitir al receptor si está conectado
     const receiverSocketId = getReceiverSocketId(receiverObjectId.toString());
@@ -129,6 +151,7 @@ const getChatsByUserId = async (userId: string, page: number, limit: number) => 
     })
         .select("_id lastMessage isGroup groupName members createdAt")
         .populate("members", "name email profilePicture") // obtenemos info básica de los miembros
+        .populate("lastMessage", "message read createdAt _id")
         .sort({ updatedAt: -1 }) // opcional: ordenarlas por última actividad
         .skip(skip)
         .limit(limit);

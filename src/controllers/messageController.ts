@@ -1,3 +1,4 @@
+import Message from "../models/Message.js";
 import chatsServices from "../services/chatsServices.js";
 
 export const sendMessage = async (req: any, res: any) => {
@@ -68,6 +69,21 @@ export const getUnreadMessagesCount = async (req: any, res: any) => {
     res.status(500).json({ error: "Error interno del servidor" });
   }
 };
+
+export const markAsRead = async (req: any, res: any) => {
+  try {
+    const currentUserId = req.user._id
+    const { conversationId } = req.params
+    
+    await Message.updateMany(
+      { conversationId, receiverId: currentUserId, read: false },
+      { $set: { read: true } }
+    )
+    res.status(200).json({ success: true })
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' })
+  }
+}
 
 
 export const getMemoryUsage = (req: any, res: any) => {

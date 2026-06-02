@@ -20,12 +20,18 @@ const conversationSchema = new Schema<IConversation>(
     ],
     lastMessage: {
       type: Schema.Types.ObjectId,
+      ref: "Message",
       required: false,
     },
     isGroup: {
       type: Boolean,
       required: false,
       default: false
+    },
+    groupImage: {
+      type: String,
+      required: false,
+      default: "default"
     },
     groupName: {
       type: String,

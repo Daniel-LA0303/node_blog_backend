@@ -154,8 +154,6 @@ const newInfoUser = async (req: any, res: any, next: any) => {
     try {
         const { id } = req.params;
 
-        console.log(req.body);
-
         // 1. call service
         const response = await usersServices.updateProfileService(
             id,
@@ -393,8 +391,6 @@ const getOneUserEditProfile = async (id: any) => {
 
 const allUsers = async (req: any, res: any) => {
   try {
-
-    console.log(req.user)
     const loggedInUser = req.user._id;
     // 1. Buscar todas las conversaciones donde participa el usuario
     const conversations = await Conversation.find({

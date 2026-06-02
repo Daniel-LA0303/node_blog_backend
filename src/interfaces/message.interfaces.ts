@@ -7,6 +7,7 @@ export interface IConversation extends Document {
   isGroup: boolean;
   groupName?: string;
   createdBy?: Types.ObjectId;
+  groupImage?: string;
 }
 
 export interface IMessage extends Document {

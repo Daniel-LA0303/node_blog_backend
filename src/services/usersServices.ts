@@ -25,8 +25,6 @@ const updateProfileService = async (userId: any, previousName: any, files: any, 
 
     // 2. when user inserts a new image, we need to delete 
     if (previousName) {
-        console.log("******DELETE IMAGE*****");
-
         if (previousName !== "") {
             await deleteImage(previousName);
         }
@@ -34,7 +32,6 @@ const updateProfileService = async (userId: any, previousName: any, files: any, 
 
     // 3. add new image
     if (files?.image) {
-        console.log("******NEW IMAGE*****");
         const result = await uploadImage(files.image.tempFilePath);
         user.profilePicture = {
             public_id: result.public_id,
@@ -45,7 +42,6 @@ const updateProfileService = async (userId: any, previousName: any, files: any, 
 
     // 4. user doesn't decide to change image
     if (profilePicture) {
-        console.log("******IMAGE NOT CHANGE*****");
         const profilePicture2 = JSON.parse(profilePicture)
         user.profilePicture = profilePicture2
     }
