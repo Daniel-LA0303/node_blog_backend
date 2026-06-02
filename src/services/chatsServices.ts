@@ -11,6 +11,16 @@ const markMessagesAsRead = async (userId: any) => {
     );
 };
 
+const getUnreadMessagesCount = async (userId: string) => {
+
+    const unreadMessagesCount = await Message.countDocuments({
+        receiverId: userId,
+        read: false,
+    });
+
+    return unreadMessagesCount;
+}
+
 const sendMessage = async (senderId: string, receiverId: string, message: string) => {
 
 
@@ -95,7 +105,7 @@ const getMessagesPaginatedByChat = async (
     return {
         messages: messages,
         meta: {
-            total: 0,
+            total: total,
             page,
             limit,
             totalPages: Math.ceil(total / limit)
@@ -103,29 +113,41 @@ const getMessagesPaginatedByChat = async (
     }
 }
 
-const getUnreadMessagesCount = async (userId: string) => {
 
-    const unreadMessagesCount = await Message.countDocuments({
-        receiverId: userId,
-        read: false,
-    });
 
-    return unreadMessagesCount;
-}
-
-const getChatsBYUserId = async (userId: string, page: number, limit: number) => {
+const getChatsByUserId = async (userId: string, page: number, limit: number) => {
 
     const skip = (page - 1) * limit;
 
+
+    const total = await Conversation.countDocuments({
+        members: { $all: [userId] },
+    });
+
     const conversations = await Conversation.find({
-     members: { $in: [userId] },
+        members: { $in: [userId] },
     })
-      .populate("members", "name email profilePicture") // obtenemos info básica de los miembros
-      .sort({ updatedAt: -1 }); // opcional: ordenarlas por última actividad
+        .select("_id lastMessage isGroup groupName members createdAt")
+        .populate("members", "name email profilePicture") // obtenemos info básica de los miembros
+        .sort({ updatedAt: -1 }) // opcional: ordenarlas por última actividad
+        .skip(skip)
+        .limit(limit);
+
+    return {
+        conversations: conversations,
+        meta: {
+            total: total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
 }
+
 
 export default {
     sendMessage,
     getMessagesPaginatedByChat,
     getUnreadMessagesCount,
+    getChatsByUserId
 }

@@ -1,5 +1,5 @@
 import express from "express";
-import { getMemoryUsage, getMessages, getUnreadMessagesCount, sendMessage } from "../controllers/messageController.js";
+import { getConversations, getMemoryUsage, getMessages, getUnreadMessagesCount, sendMessage } from "../controllers/messageController.js";
 import checkAuth from "../middleware/checkAuth.js";
 
 
@@ -13,6 +13,9 @@ router.get("/get/:id", checkAuth, getMessages);
 
 // get unread messages count
 router.get("/unread", checkAuth, getUnreadMessagesCount);
+
+// get conversations by user
+router.get("/get-conversations/:id", checkAuth, getConversations);
 
 router.get("/memory", getMemoryUsage);
 

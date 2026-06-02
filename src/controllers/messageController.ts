@@ -35,6 +35,23 @@ export const getMessages = async (req: any, res: any) => {
   }
 };
 
+export const getConversations = async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 20;
+    
+    const currentUserId = req.user._id;
+
+    const data = await chatsServices.getChatsByUserId(id, page, limit);
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.log("Error al obtener mensajes", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+};
+
 
 export const getUnreadMessagesCount = async (req: any, res: any) => {
   try {

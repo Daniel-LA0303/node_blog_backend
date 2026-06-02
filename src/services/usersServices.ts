@@ -307,11 +307,11 @@ const registerNewUser = async (email: any, body: any) => {
     await user.save();
 
     // 5. send email
-    emailRegister({
+    /*emailRegister({
         email: user.email,
         name: user.name,
         token: user.token
-    });
+    });*/
 
 }
 

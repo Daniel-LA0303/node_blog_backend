@@ -30,6 +30,16 @@ const messageSchema = new Schema<IMessage>(
       type: Boolean,
       default: false,
     },
+    image: {
+      type: String,
+      required: false,
+      default: null
+    },
+    file: {
+      type: String,
+      required: false,
+      default: null
+    }
   },
   {
     timestamps: true,
