@@ -7,9 +7,10 @@ import { ServiceException } from "../utils/exception/ServiceException";
 import fs from "fs-extra"
 import generateJWT from "../helpers/generateJWT";
 import generateID from "../helpers/generateID";
-import { emailRegister } from "../helpers/email";
-import PlanSuscription from "../models/Plan";
-import Subscriptions from "../models/Subscriptions";
+import { EntityType, NotificationType } from "../enums/notifications.enums";
+import notificationsServices from "./notificationsServices";
+import { NewNotificationI } from "../interfaces/notification.interfaces";
+
 
 
 const updateProfileService = async (userId: any, previousName: any, files: any, profilePicture: any, body: any) => {
@@ -25,8 +26,6 @@ const updateProfileService = async (userId: any, previousName: any, files: any, 
 
     // 2. when user inserts a new image, we need to delete 
     if (previousName) {
-        console.log("******DELETE IMAGE*****");
-
         if (previousName !== "") {
             await deleteImage(previousName);
         }
@@ -34,7 +33,6 @@ const updateProfileService = async (userId: any, previousName: any, files: any, 
 
     // 3. add new image
     if (files?.image) {
-        console.log("******NEW IMAGE*****");
         const result = await uploadImage(files.image.tempFilePath);
         user.profilePicture = {
             public_id: result.public_id,
@@ -45,7 +43,6 @@ const updateProfileService = async (userId: any, previousName: any, files: any, 
 
     // 4. user doesn't decide to change image
     if (profilePicture) {
-        console.log("******IMAGE NOT CHANGE*****");
         const profilePicture2 = JSON.parse(profilePicture)
         user.profilePicture = profilePicture2
     }
@@ -158,6 +155,7 @@ const userFollowATag = async (categoryId: any, userId: any) => {
 
 // Follow a user
 const followUserService = async (userFollowedId: any, userProfileId: any) => {
+
     // 1. check if userProfile exists
     const userProfile = await User.findById(userProfileId);
     if (!userProfile) throw new ServiceException("User (follower) not found", 404);
@@ -196,6 +194,18 @@ const followUserService = async (userFollowedId: any, userProfileId: any) => {
         },
         { new: true }
     );
+
+    const notificationData: NewNotificationI = {
+        recipientId: userFollowedId,
+        senderId: userProfileId,
+        entityId: userProfileId,
+        message: userProfile.name + " followed you!",
+        entityType: EntityType.USER,
+        type: NotificationType.FOLLOW_USER,
+        isCheck: true
+    };
+
+    await notificationsServices.sendNotification(notificationData);
 };
 
 // Unfollow a user
@@ -307,11 +317,11 @@ const registerNewUser = async (email: any, body: any) => {
     await user.save();
 
     // 5. send email
-    emailRegister({
+    /*emailRegister({
         email: user.email,
         name: user.name,
         token: user.token
-    });
+    });*/
 
 }
 
@@ -540,7 +550,7 @@ const userDashboardFollowedTagsPaginated = async (
                 limit,
                 sort: { createdAt: -1 },
             },
-              select: "name color desc follows _id",
+            select: "name color desc follows _id",
         });
 
     // 4. sort tags
@@ -629,15 +639,15 @@ const topUsersCategories = async () => {
 
     // 1. get users top
     const users = await User.find()
-        .sort({ numberPost: -1 }) 
-        .limit(5)                 
-        .select("name profilePicture numberPost email"); 
+        .sort({ numberPost: -1 })
+        .limit(5)
+        .select("name profilePicture numberPost email");
 
     // 2. get categories top        
     const categories = await Categories.find()
-        .sort({ "follows.countFollows": -1 }) 
-        .limit(5)                             
-        .select("name _id color follows"); 
+        .sort({ "follows.countFollows": -1 })
+        .limit(5)
+        .select("name _id color follows");
 
     return {
         users,
@@ -646,37 +656,37 @@ const topUsersCategories = async () => {
 }
 
 const getUsersByNameOrEmailPaginatedService = async (page = 1, limit = 5, search = "") => {
-  // 1. calcular skip
-  const skip = (page - 1) * limit;
+    // 1. calcular skip
+    const skip = (page - 1) * limit;
 
-  // 2. query base (regex en name o email)
-  const query = {
-    $or: [
-      { name: { $regex: search, $options: "i" } },
-      { email: { $regex: search, $options: "i" } }
-    ]
-  };
+    // 2. query base (regex en name o email)
+    const query = {
+        $or: [
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } }
+        ]
+    };
 
-  // 3. obtener usuarios paginados
-  const users = await User.find(query)
-    .skip(skip)
-    .limit(limit)
-    // .select("_id name email profilePicture createdAt")
-    .sort({ createdAt: -1 });
+    // 3. obtener usuarios paginados
+    const users = await User.find(query)
+        .skip(skip)
+        .limit(limit)
+        // .select("_id name email profilePicture createdAt")
+        .sort({ createdAt: -1 });
 
-  // 4. calcular total
-  const total = await User.countDocuments(query);
+    // 4. calcular total
+    const total = await User.countDocuments(query);
 
-  // 5. return info
-  return {
-    data: users,
-    meta: {
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    },
-  };
+    // 5. return info
+    return {
+        data: users,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        },
+    };
 };
 
 

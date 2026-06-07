@@ -145,7 +145,6 @@ const deletePost = async (req: any, res: any, next: any) => {
 
 // -- Dashboard action start --//
 const getUserPost = async (req: any, res: any, next: any) => {
-  console.log(req.params.id);
   const post = await Post.find({ user: req.params.id })
   res.json(post)
 }

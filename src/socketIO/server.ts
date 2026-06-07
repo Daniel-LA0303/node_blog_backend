@@ -58,7 +58,7 @@ io.on("connection", (socket: Socket) => {
   users[userId] = socket.id;
 
   console.log(
-    `✅ Usuario conectado: ${userId}, socket.id: ${socket.id}`
+    `User conected: ${userId}, socket.id: ${socket.id}`
   );
 
   // initial online users
@@ -88,7 +88,7 @@ io.on("connection", (socket: Socket) => {
       });
 
       console.log(
-        `❌ Usuario desconectado: ${userId}`
+        `User disconnect: ${userId}`
       );
     }
   });

@@ -17,7 +17,13 @@ const messageSchema = new Schema<IMessage>(
 
     message: {
       type: String,
-      required: true,
+      required: false,
+    },
+
+    messageType: {
+      type: String,
+      required: false,
+      default: "TEXT"
     },
 
     conversationId: {
@@ -25,11 +31,26 @@ const messageSchema = new Schema<IMessage>(
       ref: "Conversation",
       required: true,
     },
-
+    replyTo: {
+      type: Schema.Types.ObjectId,
+      ref: "Message",
+      default: null,
+      required: false,
+    },
     read: {
       type: Boolean,
       default: false,
     },
+    image: {
+      type: String,
+      required: false,
+      default: null
+    },
+    file: {
+      type: String,
+      required: false,
+      default: null
+    }
   },
   {
     timestamps: true,
