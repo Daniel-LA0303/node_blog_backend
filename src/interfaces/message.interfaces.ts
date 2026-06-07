@@ -21,3 +21,10 @@ export interface IMessage extends Document {
   file?: string;
   replyTo?: Types.ObjectId;
 }
+
+export interface SendNewMessageI {
+    message: string;
+    messageType: string;
+    replyTo?: string;
+    image?: string | null;
+}

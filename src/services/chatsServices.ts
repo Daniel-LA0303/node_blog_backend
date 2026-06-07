@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Conversation from "../models/Conversation";
 import Message from "../models/Message";
 import { getReceiverSocketId, io } from "../socketIO/server";
+import { SendNewMessageI } from "../interfaces/message.interfaces";
 
 
 const markMessagesAsRead = async (userId: any) => {
@@ -35,9 +36,11 @@ const sendNotificationNewConversation = async (receiver: string, conversationId:
     }
 }
 
-const sendMessage = async (senderId: string, receiverId: string, message: string) => {
+const sendMessage = async (senderId: string, receiverId: string, body: SendNewMessageI) => {
 
     let isNew = false;
+
+    const { message, messageType, image, replyTo } = body;
 
     const receiverObjectId = new mongoose.Types.ObjectId(receiverId); // <-- convertir
 
@@ -58,22 +61,39 @@ const sendMessage = async (senderId: string, receiverId: string, message: string
         senderId,
         receiverId: receiverObjectId, // guardar como ObjectId
         message,
+        messageType,
+        replyTo,
+        image,
         conversationId: conversation._id,
         read: false,
     });
 
     await newMessage.save();
+    const populatedMessage = await newMessage.populate([
+        { path: "senderId", select: "name email profilePicture" },
+        { path: "receiverId", select: "name email profilePicture" },
+        {
+            path: "replyTo",
+            select: "message senderId createdAt messageType image",
+            populate: {
+                path: "senderId",
+                select: "name email profilePicture"
+            }
+        },
+    ]);
+    console.log("-----------");
 
-    const populatedMessage = await newMessage.populate("senderId", "name email profilePicture");
+    console.log(populatedMessage);
+
 
     // 3. Actualizar última actividad de la conversación
     const newConversation = await Conversation.findByIdAndUpdate(conversation._id, {
         updatedAt: new Date(),
         lastMessage: newMessage._id
     },
-    { new: true});
+        { new: true });
 
-    if(isNew && newConversation?._id){
+    if (isNew && newConversation?._id) {
         await sendNotificationNewConversation(receiverObjectId.toString(), newConversation._id.toString());
     }
 
@@ -118,7 +138,15 @@ const getMessagesPaginatedByChat = async (
     // Obtener mensajes paginados (más recientes primero)
     const messages = await Message.find({ conversationId: conversation._id })
         .populate("senderId", "name email profilePicture")
-        .sort({ createdAt: -1 }) // Orden descendente para obtener los más recientes primero
+        .populate({
+            path: "replyTo",
+            select: "message messageType image senderId",
+            populate: {
+                path: "senderId",
+                select: "name email profilePicture"
+            }
+        })
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
 

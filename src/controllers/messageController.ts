@@ -1,14 +1,15 @@
+import { SendNewMessageI } from "../interfaces/message.interfaces.js";
 import Message from "../models/Message.js";
 import chatsServices from "../services/chatsServices.js";
 
 export const sendMessage = async (req: any, res: any) => {
   try {
-    const { message } = req.body;
+    const body = req.body as SendNewMessageI;
     const { id: receiverId } = req.params;
 
     const senderId = req.user._id; // ObjectId
 
-    const populatedMessage = await chatsServices.sendMessage(senderId, receiverId, message);
+    const populatedMessage = await chatsServices.sendMessage(senderId, receiverId, body);
 
     res.status(201).json(populatedMessage);
   } catch (error) {
