@@ -20,12 +20,23 @@ const messageSchema = new Schema<IMessage>(
       required: true,
     },
 
+    messageType: {
+      type: String,
+      required: false,
+      default: "TEXT"
+    },
+
     conversationId: {
       type: Schema.Types.ObjectId,
       ref: "Conversation",
       required: true,
     },
-
+    replyTo: {
+      type: Schema.Types.ObjectId,
+      ref: "Message",
+      default: null,
+      required: false,
+    },
     read: {
       type: Boolean,
       default: false,

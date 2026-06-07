@@ -14,8 +14,10 @@ export interface IMessage extends Document {
   senderId: Types.ObjectId;
   receiverId: Types.ObjectId;
   message: string;
+  messageType: string;
   conversationId: Types.ObjectId;
   read: boolean;
   image?: string;
   file?: string;
+  replyTo?: Types.ObjectId;
 }
