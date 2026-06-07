@@ -4,6 +4,9 @@ import Post from "../models/Post.js";
 import User from "../models/User.js";
 import Replies from "../models/Replies.js";
 import mongoose from "mongoose";
+import { NewNotificationI } from "../interfaces/notification.interfaces.js";
+import { EntityType, NotificationType } from "../enums/notifications.enums.js";
+import notificationsServices from "./notificationsServices.js";
 
 const newReplyService = async (commentId: any, body: any) => {
 
@@ -41,6 +44,24 @@ const newReplyService = async (commentId: any, body: any) => {
             path: 'userID',
             select: 'name profilePicture'
         });
+
+
+    // check don't send to a notification to same user himself
+    if (comment.userID.toString() !== body.userID.toString()) {
+        const notificationData: NewNotificationI = {
+            recipientId: comment.userID,
+            senderId: body.userID,
+            entityId: comment._id,
+            message: user.name + " reply your comment: " + (
+                comment.comment.length > 10 ? comment.comment.slice(0, 10) + "..." : post.title),
+            entityType: EntityType.REPLY,
+            type: NotificationType.REPLY_COMMENT,
+            isCheck: false
+        };
+
+        await notificationsServices.sendNotification(notificationData);
+    }
+
 
     return populatedReply;;
 }
@@ -153,10 +174,10 @@ const deleteReplyService = async (replyId: any, userId: any, commentId: any) => 
     );
 
     // 5. Devolver solo el ID de la reply eliminada (o un objeto de confirmación)
-    return { 
-        deleted: true, 
+    return {
+        deleted: true,
         replyId: replyId,
-        message: "Reply deleted successfully" 
+        message: "Reply deleted successfully"
     };
 };
 
