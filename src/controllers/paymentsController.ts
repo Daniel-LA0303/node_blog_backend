@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "../utils/ApiResponse";
 import paymentsService from "../services/paymentsServices";
+import PlanSuscription from "../models/Plan";
 
 const newPaymentMethodController = async(
     req: Request, res: Response, next:any
@@ -88,7 +89,7 @@ const changeDefaultPaymentMethodController = async(
             201,
             req.originalUrl,
             req.method,
-            "Payment method updated successfully",
+            "Get Plans successfully",
             null,
             false
         ));
@@ -98,10 +99,58 @@ const changeDefaultPaymentMethodController = async(
     }
 }
 
+const getPlansController = async (req: Request, res: Response, next:any) => {
+
+    try {
+
+        // 1. get plans
+        const data = await PlanSuscription.find();
+
+        // 2 response api
+        res.status(201).json(new ApiResponse(
+            201,
+            req.originalUrl,
+            req.method,
+            "Get plan by name successfully",
+            data,
+            false
+        ));
+    } catch (error) {
+        next(error);
+    }
+}
+
+const getPlanByNameController = async (req: Request, res: Response, next:any) => {
+
+    try {
+
+        // 1. GET NAME and user
+        const name = req.params.id
+        const user = req?.user;
+
+        // 2. get by name
+        const data = await paymentsService.getPaymentMethodAndPlan(name as string, user._id as string);        
+
+        // 3. response api
+        res.status(201).json(new ApiResponse(
+            201,
+            req.originalUrl,
+            req.method,
+            "Payment method updated successfully",
+            data,
+            false
+        ));
+    } catch (error) {
+        next(error);
+    }
+}
+
 
 export {
     newPaymentMethodController,
     getPaymentMethodsByUserController,
     deletePaymentMethodController,
-    changeDefaultPaymentMethodController
+    changeDefaultPaymentMethodController,
+    getPlansController,    
+    getPlanByNameController,
 }

@@ -1,5 +1,8 @@
+import mongoose from "mongoose";
 import { PaymentMentohdI, PaymentMentohdRequestI, PaymentMentohdResponseI } from "../interfaces/plansuscription.interfaces";
 import PaymentMethods from "../models/PaymentMethods";
+import PlanSuscription from "../models/Plan";
+import Subscriptions from "../models/Subscriptions";
 import User from "../models/User";
 import { ServiceException } from "../utils/exception/ServiceException";
 
@@ -119,9 +122,35 @@ const changeDefaultMethod = async (newDefualtMethodId: string, userId: string) =
     );
 }
 
+const getPaymentMethodAndPlan = async (namePlan: string, userId: string) => {
+
+    const plan = await PlanSuscription.findOne({name: namePlan});
+
+    if (!plan) {
+        throw new ServiceException("This plan does not exists!", 404);
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new ServiceException("This user does not exists!", 404);
+    }
+
+    const method = await PaymentMethods.findOne({
+        user: user._id,
+        isDefault: true
+    }).select('_id user externalId methodType brand last4 expMonth expYear isDefault');
+
+    return {
+        plan,
+        method
+    }
+
+}
+
 export default {
     createPaymentMethod,
     getPaymentMethodsByUser,
     deletePaymentMethod,
-    changeDefaultMethod
+    changeDefaultMethod,
+    getPaymentMethodAndPlan
 }
