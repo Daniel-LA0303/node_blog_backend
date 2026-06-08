@@ -5,7 +5,13 @@ import PlanSuscription from "../models/Plan";
 import Subscriptions from "../models/Subscriptions";
 import User from "../models/User";
 import { ServiceException } from "../utils/exception/ServiceException";
+import { TryPaymentRequestI } from "../interfaces/payment.interfaces";
+import Stripe from 'stripe'
+import PaymentHistory from "../models/PaymentHistory";
+import { emailPaymentFailed, emailPaymentSuccess } from "../helpers/email";
 
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string)
 
 
 const createPaymentMethod = async (data: PaymentMentohdRequestI)
@@ -67,7 +73,7 @@ const getPaymentMethodsByUser = async (userId: string)
     const methods = await PaymentMethods.find({
         user: user._id
     }).select('_id user externalId methodType brand last4 expMonth expYear isDefault')
-    .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 });
 
     return methods as PaymentMentohdResponseI[];
 }
@@ -107,7 +113,7 @@ const changeDefaultMethod = async (newDefualtMethodId: string, userId: string) =
 
     // 5. update the old method
     await PaymentMethods.findByIdAndUpdate(
-        method?._id, 
+        method?._id,
         {
             isDefault: false
         }
@@ -115,7 +121,7 @@ const changeDefaultMethod = async (newDefualtMethodId: string, userId: string) =
 
     // u6. pdate the new default method
     await PaymentMethods.findByIdAndUpdate(
-        newDefualtMethodId, 
+        newDefualtMethodId,
         {
             isDefault: true
         }
@@ -124,7 +130,7 @@ const changeDefaultMethod = async (newDefualtMethodId: string, userId: string) =
 
 const getPaymentMethodAndPlan = async (namePlan: string, userId: string) => {
 
-    const plan = await PlanSuscription.findOne({name: namePlan});
+    const plan = await PlanSuscription.findOne({ name: namePlan });
 
     if (!plan) {
         throw new ServiceException("This plan does not exists!", 404);
@@ -147,10 +153,178 @@ const getPaymentMethodAndPlan = async (namePlan: string, userId: string) => {
 
 }
 
+
+const tryPayment = async (data: TryPaymentRequestI) => {
+
+    const user = await User.findById(data.userId);
+    if (!user) {
+        throw new ServiceException("This user does not exists!", 404);
+    }
+
+    const plan = await PlanSuscription.findById(data.planId);
+    if (!plan) {
+        throw new ServiceException("This plan does not exists!", 404);
+    }
+
+    const method = await PaymentMethods.findById(data.paymentMethodId);
+    if (!method) {
+        throw new ServiceException("This method does not exists!", 404);
+    }
+
+    const subscription = await Subscriptions.findOne(
+        { user: user._id }
+    );
+    if (!subscription) {
+        throw new ServiceException("This subscription does not exists!", 404);
+    }
+
+    // check price 
+    const expectedPrice = data.interval === 'YEAR'
+        ? Math.round(plan.price * 0.8 * 12)
+        : plan.price
+
+    if (data.price !== expectedPrice) {
+        throw new ServiceException(
+            `Price mismatch: expected ${expectedPrice} but received ${data.price}`,
+            400
+        )
+    }
+
+    // check if this method is use for first time
+    if (!method.customerRef) {
+
+        const customer = await stripe.customers.create({
+            email: user.email,
+            name: user.name,
+            payment_method: method.externalId, // pm_1....
+        })
+
+        method.customerRef = customer.id  // cus_xxxxxxxxxxxxx
+        await method.save()
+    }
+
+    // create subscription in stripe
+    // create product first
+    const product = await stripe.products.create({
+        name: `${plan.name} plan`,
+    })
+
+    // create subscription in stripe
+    const stripeSubscription = await stripe.subscriptions.create({
+        customer: method.customerRef,
+        default_payment_method: method.externalId,
+        items: [{
+            price_data: {
+                currency: plan.currency.toLowerCase(),
+                unit_amount: expectedPrice * 100,
+                recurring: {
+                    interval: data.interval === 'YEAR' ? 'year' : 'month',
+                    interval_count: 1,
+                },
+                product: product.id,
+            }
+        }],
+        expand: ['latest_invoice.payment_intent'],
+    })
+
+    const invoice = stripeSubscription.latest_invoice as any
+ 
+    // check payment status
+    const intentStatus = (stripeSubscription.latest_invoice as any)?.payment_intent?.status
+
+    if (invoice?.status !== 'paid') {
+        // rollback stripe subscription if payment failed
+        await stripe.subscriptions.cancel(stripeSubscription.id)
+        throw new ServiceException('Payment failed, please try again later, nothing is charged to your card', 400)
+    }
+
+    // calculate expiration
+    const now = new Date()
+    const expiresAt = data.interval === 'YEAR'
+        ? new Date(new Date(now).setFullYear(now.getFullYear() + 1))
+        : new Date(new Date(now).setMonth(now.getMonth() + 1))
+
+    // update subscription in DB
+    await subscription.updateOne({
+        planSubscription: plan._id,
+        isFree: false,
+        startedAt: new Date(),
+        expiresAt,
+        stripeSubscriptionId: stripeSubscription.id,
+    });
+
+    await PaymentHistory.create({
+        user: user._id,
+        subscription: subscription._id,
+        stripeInvoiceId: (stripeSubscription.latest_invoice as any)?.id,
+        stripeSubId: stripeSubscription.id,
+        plan: plan._id,
+        amount: expectedPrice,
+        currency: plan.currency,
+        interval: data.interval,
+        status: 'succeeded',
+        paidAt: new Date(),
+    });
+
+    await emailPaymentSuccess({
+        email: user.email,
+        name: user.name,
+        plan: plan.name,
+        amount: expectedPrice,
+        currency: plan.currency,
+        interval: data.interval,
+        expiresAt,
+    })
+
+
+    if (invoice?.status !== 'paid') {
+        await stripe.subscriptions.cancel(stripeSubscription.id)
+
+        // save failed attempt
+        await PaymentHistory.create({
+            user: user._id,
+            subscription: subscription._id,
+            stripeInvoiceId: (stripeSubscription.latest_invoice as any)?.id,
+            stripeSubId: stripeSubscription.id,
+            plan: plan._id,
+            amount: expectedPrice,
+            currency: plan.currency,
+            interval: data.interval,
+            status: 'failed',
+            paidAt: new Date(),
+        });
+
+        await emailPaymentFailed({
+            email: user.email,
+            name: user.name,
+            plan: plan.name,
+            amount: expectedPrice,
+            currency: plan.currency,
+        })
+
+        throw new ServiceException('Payment failed, please try again', 400)
+    }
+
+    // TODO in the future send a email
+    return {
+        subscriptionId: stripeSubscription.id,
+        status: stripeSubscription.status,
+        expiresAt,
+        plan: plan.name,
+        interval: data.interval,
+        amount: expectedPrice,
+        currency: plan.currency,
+        message: "Payment done successfully!",
+        planData: plan
+    }
+
+}
+
 export default {
     createPaymentMethod,
     getPaymentMethodsByUser,
     deletePaymentMethod,
     changeDefaultMethod,
-    getPaymentMethodAndPlan
+    getPaymentMethodAndPlan,
+    tryPayment
 }

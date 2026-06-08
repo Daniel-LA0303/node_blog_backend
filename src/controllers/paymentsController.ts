@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { ApiResponse } from "../utils/ApiResponse";
 import paymentsService from "../services/paymentsServices";
 import PlanSuscription from "../models/Plan";
+import { TryPaymentRequestI } from "../interfaces/payment.interfaces";
 
 const newPaymentMethodController = async(
     req: Request, res: Response, next:any
@@ -145,6 +146,31 @@ const getPlanByNameController = async (req: Request, res: Response, next:any) =>
     }
 }
 
+const tryPaymentController = async (req: Request, res: Response, next:any) => {
+
+    try {
+
+        // 1. GET NAME and user
+        const data = req.body as TryPaymentRequestI;
+
+
+        // 2. get by name
+        const res2 = await paymentsService.tryPayment(data);        
+
+        // 3. response api
+        res.status(201).json(new ApiResponse(
+            201,
+            req.originalUrl,
+            req.method,
+            "Payment done successfully",
+            res2,
+            false
+        ));
+    } catch (error) {
+        next(error);
+    }
+}
+
 
 export {
     newPaymentMethodController,
@@ -153,4 +179,5 @@ export {
     changeDefaultPaymentMethodController,
     getPlansController,    
     getPlanByNameController,
+    tryPaymentController
 }

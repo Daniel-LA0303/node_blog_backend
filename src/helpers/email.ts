@@ -78,3 +78,107 @@ export const emailNewPassword = async (datos: any) => {
         `
     })
 }
+
+export const emailPaymentSuccess = async (data: any) => {
+    const { email, name, plan, amount, currency, interval, expiresAt } = data
+
+    const transport = nodemailer.createTransport({
+        host: process.env.MAILTRAP_HOST as string,
+
+        port: Number(process.env.MAILTRAP_PORT),
+
+        auth: {
+            user: process.env.MAILTRAP_USER as string,
+
+            pass: process.env.MAILTRAP_PASS as string,
+        },
+    });
+
+
+    await transport.sendMail({
+        from:    'Daniel-LA Blog',
+        to:      email,
+        subject: 'Payment confirmed — your plan is active',
+        text:    `Your payment was successful. Plan: ${plan}`,
+        html: `
+            <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+                <h2 style="color: #16a34a;">Payment confirmed</h2>
+                <p>Hi <strong>${name}</strong>, your payment was processed successfully.</p>
+
+                <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin: 24px 0;">
+                    <p style="margin: 0 0 8px;"><strong>Plan:</strong> ${plan}</p>
+                    <p style="margin: 0 0 8px;"><strong>Amount:</strong> ${amount} ${currency}</p>
+                    <p style="margin: 0 0 8px;"><strong>Billing:</strong> ${interval === 'YEAR' ? 'Yearly' : 'Monthly'}</p>
+                    <p style="margin: 0;"><strong>Next renewal:</strong> ${new Date(expiresAt).toLocaleDateString()}</p>
+                </div>
+
+                <p style="color: #6b7280; font-size: 13px;">
+                    Your current rate is locked in. If pricing changes in the future, 
+                    it will only apply when you start a new subscription.
+                </p>
+
+                <a href="${process.env.FRONTEND_URL}/dashboard" 
+                   style="display: inline-block; margin-top: 16px; background: #2563eb; color: white; 
+                          padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 14px;">
+                    Go to dashboard
+                </a>
+
+                <p style="color: #9ca3af; font-size: 12px; margin-top: 32px;">
+                    If you did not make this payment, please contact us immediately.
+                </p>
+            </div>
+        `
+    })
+}
+
+export const emailPaymentFailed = async (data: any) => {
+    const { email, name, plan, amount, currency } = data
+
+    const transport = nodemailer.createTransport({
+        host: process.env.MAILTRAP_HOST as string,
+
+        port: Number(process.env.MAILTRAP_PORT),
+
+        auth: {
+            user: process.env.MAILTRAP_USER as string,
+
+            pass: process.env.MAILTRAP_PASS as string,
+        },
+    });
+
+
+    await transport.sendMail({
+        from:    'Daniel-LA Blog',
+        to:      email,
+        subject: 'Payment failed — action required',
+        text:    `Your payment for the ${plan} plan could not be processed.`,
+        html: `
+            <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+                <h2 style="color: #dc2626;">Payment failed</h2>
+                <p>Hi <strong>${name}</strong>, we were unable to process your payment.</p>
+
+                <div style="background: #fef2f2; border-radius: 8px; padding: 16px; margin: 24px 0;">
+                    <p style="margin: 0 0 8px;"><strong>Plan:</strong> ${plan}</p>
+                    <p style="margin: 0;"><strong>Amount:</strong> ${amount} ${currency}</p>
+                </div>
+
+                <p style="color: #374151;">This may have happened because:</p>
+                <ul style="color: #6b7280; font-size: 14px;">
+                    <li>Insufficient funds</li>
+                    <li>Card expired or blocked</li>
+                    <li>Bank declined the transaction</li>
+                </ul>
+
+                <a href="${process.env.FRONTEND_URL}/plans" 
+                   style="display: inline-block; margin-top: 16px; background: #2563eb; color: white; 
+                          padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 14px;">
+                    Try again
+                </a>
+
+                <p style="color: #9ca3af; font-size: 12px; margin-top: 32px;">
+                    If you need help, please contact our support team.
+                </p>
+            </div>
+        `
+    })
+}

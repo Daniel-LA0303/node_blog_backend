@@ -1,5 +1,5 @@
 import express from "express";
-import { changeDefaultPaymentMethodController, deletePaymentMethodController, getPaymentMethodsByUserController, getPlanByNameController, getPlansController, newPaymentMethodController } from "../controllers/paymentsController";
+import { changeDefaultPaymentMethodController, deletePaymentMethodController, getPaymentMethodsByUserController, getPlanByNameController, getPlansController, newPaymentMethodController, tryPaymentController } from "../controllers/paymentsController";
 import checkAuth from "../middleware/checkAuth";
 
 const router = express.Router();
@@ -11,5 +11,6 @@ router.post('/change-defualt-method/:id', checkAuth, changeDefaultPaymentMethodC
 
 router.get('/get-plans', getPlansController);
 router.get('/get-plan-by-name/:id',checkAuth ,getPlanByNameController);
+router.post('/subscribe', checkAuth, tryPaymentController);
 
 export default router;
