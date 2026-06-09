@@ -315,7 +315,8 @@ const tryPayment = async (data: TryPaymentRequestI) => {
         amount: expectedPrice,
         currency: plan.currency,
         message: "Payment done successfully!",
-        planData: plan
+        planData: plan,
+        isFree: false
     }
 
 }

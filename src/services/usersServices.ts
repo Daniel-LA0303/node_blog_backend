@@ -10,6 +10,8 @@ import generateID from "../helpers/generateID";
 import { EntityType, NotificationType } from "../enums/notifications.enums";
 import notificationsServices from "./notificationsServices";
 import { NewNotificationI } from "../interfaces/notification.interfaces";
+import Subscriptions from "../models/Subscriptions";
+import PlanSuscription from "../models/Plan";
 
 
 
@@ -277,6 +279,12 @@ const login = async (email: any, password: any) => {
         throw new ServiceException("User not found", 404);
     }
 
+    // get plan suscription
+    const suscription = await Subscriptions.findOne({user: user._id});
+
+    // get plan
+    const plan = await PlanSuscription.findById(suscription?.planSubscription);
+
     // 2. check if user is confirmed
     if (!user.confirm) {
         throw new ServiceException("This account has not been confirmed", 400);
@@ -294,7 +302,10 @@ const login = async (email: any, password: any) => {
         name: user.name,
         email: user.email,
         profileImage: user.profilePicture.secure_url,
-        token: generateJWT(user._id)
+        token: generateJWT(user._id),
+        expiresAt: suscription?.expiresAt,
+        isFree: suscription?.isFree,
+        plan: plan
     }
 
 }

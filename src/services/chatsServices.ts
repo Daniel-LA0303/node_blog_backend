@@ -81,10 +81,6 @@ const sendMessage = async (senderId: string, receiverId: string, body: SendNewMe
             }
         },
     ]);
-    console.log("-----------");
-
-    console.log(populatedMessage);
-
 
     // 3. Actualizar última actividad de la conversación
     const newConversation = await Conversation.findByIdAndUpdate(conversation._id, {
