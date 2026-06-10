@@ -85,5 +85,11 @@ export interface IUser extends Document {
 
     notifications: INotification[];
 
+    historySearch: string[];
+    
+    recomended: any;
+
+    activityTracker: any;
+
     checkPassword(passwordForm: string): Promise<boolean>;
 }

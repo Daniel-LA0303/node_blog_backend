@@ -7,6 +7,7 @@ import { ServiceException } from "../utils/exception/ServiceException";
 import notificationsService from "../services/notificationsServices";
 import { NewNotificationI } from "../interfaces/notification.interfaces";
 import { EntityType, NotificationType } from "../enums/notifications.enums";
+import { trackActivity } from "./globalServices";
 
 
 // save new post
@@ -17,6 +18,8 @@ const saveNewPostService = async (userId: any, postData: any) => {
   if (!user) {
     throw new ServiceException("User not found", 404);
   }
+
+  await trackActivity(user._id.toString());
 
   // 2. valid if title exists
   const postSearch = await Post.findOne({ title: postData.title });
@@ -183,6 +186,8 @@ const userLikePostService = async (postId: any, userId: any) => {
   const user = await User.findById(userId);
   if (!user) throw new ServiceException("User not found", 404);
 
+  await trackActivity(user._id.toString());
+
   // 2. check if post exists
   const post = await Post.findById(postId);
   if (!post) throw new ServiceException("Post not found", 404);
@@ -284,6 +289,8 @@ const userSavePostService = async (postId: any, userId: any) => {
   // 1. check if user exists
   const user = await User.findById(userId);
   if (!user) throw new ServiceException("User not found", 404);
+
+  await trackActivity(user._id.toString());
 
   // 2. check if post exists
   const post = await Post.findById(postId);

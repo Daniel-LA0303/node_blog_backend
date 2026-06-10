@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { IPost } from "../interfaces/post.interfaces";
 import Categories from "../models/Categories";
 import User from "../models/User";
+import { trackActivity } from "./globalServices";
 
 /**
  * get categories paginated
@@ -53,7 +54,9 @@ const getOneCategoryFullInfo = async (categoryName: any, userId: any) => {
         { $match: { _id: { $ne: category._id } } },
         { $sample: { size: 5 } },
         { $project: { name: 1, color: 1, desc: 1, follows: 1 } }
-    ])
+    ]);
+
+    await trackActivity(userId);
 
     // 4. count user posts in this category (only if logged in)
     let countsPosts = 0

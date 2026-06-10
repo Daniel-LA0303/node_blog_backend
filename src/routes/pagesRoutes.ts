@@ -23,6 +23,7 @@ import {
 import { getProfileEditUserPage } from "../controllers/pagesController.js";
 import { getEditPostPage } from "../controllers/pagesController.js";
 import checkAuth from "../middleware/checkAuth.js";
+import optionalAuth from "../middleware/optionalAuth.js";
 
 const router = express.Router();
 
@@ -111,7 +112,7 @@ router.get('/page-view-post/:id', getViewPostPage );
  * search routes
  */
 // search global first --
-router.get("/global/:q", getGlobalSearchController);
+router.get("/global/:q", optionalAuth, getGlobalSearchController);
 
 // Search routes ---
 router.get("/posts/:q", getPostsSearchController);

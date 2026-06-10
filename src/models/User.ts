@@ -195,6 +195,44 @@ const usersSchema = new Schema<IUser>(
         },
       },
     ],
+
+    historySearch: {
+      type: [String], // max 20
+      default: []
+    },
+
+    // this is a history recommended
+    recomended: {
+      recommendedBlogs: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "Post",
+        },
+      ],
+      recommendedUsers: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "User",
+        },
+      ],
+      recommendedTags: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "Categories",
+        },
+      ],
+      updatedAt: String
+    },
+    activityTracker: {
+      pendingActions: {
+        type: Number,
+        default: 0
+      },
+      lastRecommendationAt: {
+        type: Date,
+        default: null
+      }
+    }
   },
   {
     timestamps: true,

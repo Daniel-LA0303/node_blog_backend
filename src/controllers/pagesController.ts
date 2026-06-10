@@ -1,4 +1,5 @@
 import Post from "../models/Post.js";
+import User from "../models/User.js";
 import categoriesServices from "../services/categoriesServices";
 import postsServices from "../services/postsServices";
 import usersServices from "../services/usersServices";
@@ -378,6 +379,20 @@ const getViewPostPage = async (req: any, res: any, next: any) => {
     }
 }
 
+
+// save history search
+const saveHistory = async (userId: string, q: string) => {
+
+    await User.findByIdAndUpdate(userId, {
+        $push: {
+            historySearch: {
+                $each: [q],
+                $slice: -20
+            }
+        }
+    });
+}
+
 /**
  * Search controllers
  */
@@ -387,6 +402,19 @@ const getGlobalSearchController = async (req: any, res: any) => {
         const { q } = req.params; // texto de búsqueda
         const page = 1; // siempre primera página
         const limit = 5;
+
+        // get user if search is in auth 
+        const userId = req.user?._id; 
+
+        if(userId){
+            // we call service to save search 
+            console.log("user is auth");
+            await saveHistory(userId, q);
+        }else{
+            console.log("user is not auth");
+            
+        }
+
 
         const [posts, categories, users] = await Promise.all([
             postsServices.getPostsByTitlePaginatedService(page, limit, q),

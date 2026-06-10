@@ -12,6 +12,7 @@ import notificationsServices from "./notificationsServices";
 import { NewNotificationI } from "../interfaces/notification.interfaces";
 import Subscriptions from "../models/Subscriptions";
 import PlanSuscription from "../models/Plan";
+import { trackActivity } from "./globalServices";
 
 
 
@@ -75,6 +76,8 @@ const userUnfollowATag = async (categoryId: any, userId: any) => {
     // 1. check if user exists
     const user = await User.findById(userId);
     if (!user) throw new ServiceException("User not found", 404);
+
+    await trackActivity(user._id.toString());
 
     // 2. check if category exists
     const category = await Categories.findById(categoryId);
@@ -165,6 +168,8 @@ const followUserService = async (userFollowedId: any, userProfileId: any) => {
     // 2. check if userFollowed exists
     const userFollowed = await User.findById(userFollowedId);
     if (!userFollowed) throw new ServiceException("User (to be followed) not found", 404);
+
+    await trackActivity(userProfileId);
 
     // 3. validations: check if relation already exists
     const alreadyFollower = userFollowed.followersUsers.followers.includes(userProfileId);
