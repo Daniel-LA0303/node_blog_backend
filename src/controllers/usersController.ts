@@ -438,10 +438,66 @@ const searchUsers = async (req: any, res: any) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
-
 //-- Dashboard end --//
+
+const getBlogsRecommendedController = async (req: any, res: any, next: any) => {
+    try {
+        const users = await usersServices.getBlogsRecommended(req.user._id);
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "Get blogs recommedned successfully",
+                users,
+                false
+            )
+        );
+    } catch (error) {
+        console.log(error);
+        next(error);
+    }
+}
+
+const getTagsRecommendedController = async (req: any, res: any, next: any) => {
+    try {
+        const users = await usersServices.getTagsRecommended(req.user._id);
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "Get tags recommedned successfully",
+                users,
+                false
+            )
+        );
+    } catch (error) {
+        console.log(error);
+        next(error);
+    }
+}
+
+const getUsersRecommendedController = async (req: any, res: any, next: any) => {
+    try {
+        const users = await usersServices.getUsersRecommended(req.user._id);
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "Get tags recommedned successfully",
+                users,
+                false
+            )
+        );
+    } catch (error) {
+        console.log(error);
+        next(error);
+    }
+}
+
+
 
 export {
     //-- auth user start --//
@@ -471,5 +527,8 @@ export {
     //-- actions user end --//
     getPostsByUserPaginated,
     allUsers,
-    searchUsers
+    searchUsers,
+    getBlogsRecommendedController,
+    getTagsRecommendedController,
+    getUsersRecommendedController
 }

@@ -285,7 +285,7 @@ const login = async (email: any, password: any) => {
     }
 
     // get plan suscription
-    const suscription = await Subscriptions.findOne({user: user._id});
+    const suscription = await Subscriptions.findOne({ user: user._id });
 
     // get plan
     const plan = await PlanSuscription.findById(suscription?.planSubscription);
@@ -705,6 +705,61 @@ const getUsersByNameOrEmailPaginatedService = async (page = 1, limit = 5, search
     };
 };
 
+const getBlogsRecommended = async (userId?: string) => {
+
+
+    const blogsRecomended = await User.findById(userId)
+        .select('recomended')
+        .populate({
+            path: "recomended.recommendedBlogs",
+            select: "linkImage _id title desc categories date comments createdAt",
+            populate: {
+                path: "categories",
+                select: "_id name color desc createdAt"
+            }
+        });
+
+    if (!blogsRecomended) {
+        throw new ServiceException("User not found", 404);
+    }
+
+    return blogsRecomended;
+}
+
+const getTagsRecommended = async (userId?: string) => {
+
+
+    const tagsRecomended = await User.findById(userId)
+        .select('recomended')
+        .populate({
+            path: "recomended.recommendedTags",
+            select: "_id name color desc createdAt",
+        });
+
+    if (!tagsRecomended) {
+        throw new ServiceException("User not found", 404);
+    }
+
+    return tagsRecomended;
+}
+
+const getUsersRecommended = async (userId?: string) => {
+
+
+    const usersRecomended = await User.findById(userId)
+        .select('recomended')
+        .populate({
+            path: "recomended.recommendedUsers",
+            select: "_id name color email createdAt profilePicture followersUsers",
+        });
+
+    if (!usersRecomended) {
+        throw new ServiceException("User not found", 404);
+    }
+
+    return usersRecomended;
+}
+
 
 
 export default {
@@ -726,5 +781,8 @@ export default {
     userDashboardFollowersPaginated,
     userDashboardFollowingPaginated,
     topUsersCategories,
-    getUsersByNameOrEmailPaginatedService
+    getUsersByNameOrEmailPaginatedService,
+    getBlogsRecommended,
+    getTagsRecommended,
+    getUsersRecommended
 }

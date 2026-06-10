@@ -28,6 +28,9 @@ import {
     getPostsByUserPaginated,
     allUsers,
     searchUsers,
+    getBlogsRecommendedController,
+    getTagsRecommendedController,
+    getUsersRecommendedController,
     //-- User actions end --//
 } from "../controllers/usersController";
 
@@ -100,5 +103,9 @@ router.get("/allusers",
     checkAuth, 
     allUsers);
 router.get("/search", searchUsers);
+
+router.get("/get-blogs-recommended", checkAuth, getBlogsRecommendedController);
+router.get("/get-users-recommended", checkAuth, getUsersRecommendedController);
+router.get("/get-tags-recommended", checkAuth, getTagsRecommendedController);
 
 export default router
