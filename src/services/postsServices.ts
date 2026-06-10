@@ -144,7 +144,7 @@ const getViewPostInfoService = async (postId: any) => {
     })
     .populate({
       path: 'user',
-      select: 'name email followedUsers followersUsers profilePicture posts'
+      select: 'name email followedUsers followersUsers profilePicture posts info createdAt'
     });
 
   // 2. validate if post exists
@@ -491,6 +491,25 @@ const getPostsByTitlePaginatedService = async (page = 1, limit = 5, title = "") 
 };
 
 
+const getBlogsSuggestionsFromAUser = async (blogId: string) => {
+
+  const blog = await Post.findById(blogId);
+
+  const blogsByUser = await Post.find({
+    user: blog?.user
+  })
+  .select('linkImage _id title desc categories date comments createdAt')
+  .populate({
+    path: 'categories',
+    select: "_id name color desc createdAt"
+  }).limit(4)
+
+  const filterB = blogsByUser.filter(b => b._id.toString() !== blogId);
+
+  return filterB;
+}
+
+
 
 export default {
   saveNewPostService,
@@ -504,5 +523,6 @@ export default {
   updatePostService,
   getOnePostToUpdate,
   getPostsByCategoryPaginatedService,
-  getPostsByTitlePaginatedService
+  getPostsByTitlePaginatedService,
+  getBlogsSuggestionsFromAUser
 }

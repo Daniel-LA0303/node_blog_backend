@@ -362,6 +362,8 @@ const getViewPostPage = async (req: any, res: any, next: any) => {
         const postInfo = await postsServices.getViewPostInfoService(req.params.id)
         const { post, comments, totalComments } = postInfo;
 
+        const blogsUserSuggestion = await postsServices.getBlogsSuggestionsFromAUser(req.params.id);
+
         res.status(200).json(new ApiResponse(
             200,
             req.originalUrl,
@@ -370,7 +372,8 @@ const getViewPostPage = async (req: any, res: any, next: any) => {
             {
                 post,
                 comments,
-                totalComments
+                totalComments,
+                blogsUserSuggestion
             },
             false
         ));
