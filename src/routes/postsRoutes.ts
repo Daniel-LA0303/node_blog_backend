@@ -1,28 +1,19 @@
 import express from "express";
 import fileUpload from "express-fileupload";
 import { 
-    registerPost,
-    getAllPosts,
-    getOnePost,
-    updatePost,
-    deletePost,
-    likePost,
-    savePost,
-    saveComment,
-    deleteComment,
-    editComment,
-    getUserPost,
+    registerPostController,
+    getOnePostController,
+    updatePostController,
+    deletePostController,
+    likePostController,
+    savePostController,
     uploadImagePostController,
-    filterPostByCategory,
-    searchByParam,
-    saveReplyComment,
-    deleteReplyComment,
-    editReplyComment,
-    postsRecommend,
-    dislikePost,
-    unsavePost,
+    filterPostByCategoryController,
+    searchByParamController,
+    dislikePostController,
+    unsavePostController,
     getPostPaginated,
-    getPostsByCategoryPaginated,
+    getPostsByCategoryPaginatedController,
 } from "../controllers/postController.js";
 import checkAuth from "../middleware/checkAuth.js";
 
@@ -47,35 +38,27 @@ router.post('/image-post',
 // new post --
 router.post('/', 
     checkAuth,
-    registerPost
+    registerPostController
 );
 
 // Home posts paginated -- 
 router.get('/get-post-paginated', getPostPaginated);
 
-
-router.get('/', getAllPosts); 
-router.get('/:id', getOnePost); 
+router.get('/:id', getOnePostController); 
 
 // update posts --
 router.put('/:id', 
     checkAuth,
-    updatePost);
+    updatePostController);
 
 router.delete('/:postId', 
     checkAuth,
-    deletePost);
+    deletePostController);
 //-- CRUD post end --//
 
-// -- Dashboard action start --//
-router.get('/get-user-posts/:id', getUserPost);
-// -- Dashboard action end --//
-
-
 // -- Search start --//
-router.get('/filter-post-by-category/:id', filterPostByCategory );
-router.get('/search-by-param/:id', searchByParam);
-router.get('/posts-recommend/:id', postsRecommend);
+router.get('/filter-post-by-category/:id', filterPostByCategoryController);
+router.get('/search-by-param/:id', searchByParamController);
 // -- Search end --//
 
 //-- Actions post start --//
@@ -83,38 +66,25 @@ router.get('/posts-recommend/:id', postsRecommend);
 // like post --
 router.post('/like-post/:id', 
     checkAuth,
-    likePost);
+    likePostController);
 
 // dislke post --
 router.post('/dislike-post/:id', 
     checkAuth,
-    dislikePost);
+    dislikePostController);
 
 // svae post --
 router.post('/save-post/:id', 
     checkAuth,
-    savePost);
+    savePostController);
 
 // unsave post --
 router.post('/unsave-post/:id', 
     checkAuth,
-    unsavePost)
+    unsavePostController)
 //-- Actions post end --//
 
-
-//-- Actions comment post start --//
-router.post('/save-comment/:id', saveComment);
-router.post('/delete-post-comment/:id', deleteComment);
-router.post('/edit-post-comment/:id', editComment);
-// -- Actions comment post end --//
-
-// -- Actions reply comment post start --//
-router.post('/save-reply-comment/:id', saveReplyComment);
-router.post('/delete-reply-comment/:id', deleteReplyComment);
-router.post('/edit-reply-comment/:id', editReplyComment);
-// -- Actions reply comment post end --//
-
 // get posts by category name paginated --
-router.get('/get-posts-by-category-name/:id', getPostsByCategoryPaginated);
+router.get('/get-posts-by-category-name/:id', getPostsByCategoryPaginatedController);
 
 export default router

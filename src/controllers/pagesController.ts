@@ -1,11 +1,10 @@
-import Post from "../models/Post.js";
 import User from "../models/User.js";
 import categoriesServices from "../services/categoriesServices";
 import postsServices from "../services/postsServices";
 import usersServices from "../services/usersServices";
 import { ApiResponse } from "../utils/ApiResponse";
 import { getCategories } from "./categoriesController";
-import { getOneUserFollow } from "./usersController.js";
+import { getOneUserFollowController } from "./usersController.js";
 
 
 /**
@@ -15,7 +14,7 @@ import { getOneUserFollow } from "./usersController.js";
  */
 const getPageHome = async (req: any, res: any) => {
     try {
-        const info = await usersServices.topUsersCategories();
+        const info = await usersServices.topUsersCategoriesService();
         res.status(200).json(
             new ApiResponse(200, "/api/page" + req.path, req.method, "Success get home info page", info, false)
         );
@@ -138,7 +137,7 @@ const getDashboardFollowUserPage = async (req: any, res: any) => {
         if (req.params.id !== req.query.user) {
             return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
         }
-        const userInfo = await getOneUserFollow(req.params.id);
+        const userInfo = await getOneUserFollowController(req.params.id);
         res.status(200).json({
             followers: userInfo?.followers,
             followed: userInfo?.followed
@@ -159,7 +158,7 @@ const getDashboardFollowersByUserPage = async (req: any, res: any) => {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
         const userId = req.params.id;
-        const result = await usersServices.userDashboardFollowersPaginated(page, limit, userId);
+        const result = await usersServices.userDashboardFollowersPaginatedService(page, limit, userId);
 
         // mapping response
         res.status(200).json(
@@ -177,7 +176,7 @@ const getDashboardFollowedByUserPage = async (req: any, res: any) => {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
         const userId = req.params.id;
-        const result = await usersServices.userDashboardFollowingPaginated(page, limit, userId);
+        const result = await usersServices.userDashboardFollowingPaginatedService(page, limit, userId);
 
         res.status(200).json(
             new ApiResponse(200, "/api/users" + req.path, req.method, "Success get posts liked by user paginated", result, false)
@@ -199,7 +198,7 @@ const getDashboardLikePostUserPage = async (req: any, res: any, next: any) => {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
         const userId = req.params.id;
-        const result = await usersServices.userDashboardPostLikedPaginated(page, limit, userId);
+        const result = await usersServices.userDashboardPostLikedPaginatedService(page, limit, userId);
 
         // mapping response
         res.status(200).json(
@@ -222,7 +221,7 @@ const getDashboardSavedPostUserPage = async (req: any, res: any, next: any) => {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
         const userId = req.params.id;
-        const result = await usersServices.userDashboardPostSavedPaginated(page, limit, userId);
+        const result = await usersServices.userDashboardPostSavedPaginatedService(page, limit, userId);
 
         // mapping response
         res.status(200).json(
@@ -244,7 +243,7 @@ const getDashboardTagsUserPage = async (req: any, res: any) => {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
         const userId = req.params.id;
-        const result = await usersServices.userDashboardFollowedTagsPaginated(page, limit, userId);
+        const result = await usersServices.userDashboardFollowedTagsPaginatedService(page, limit, userId);
 
         // mapping response
         res.status(200).json(
@@ -309,7 +308,7 @@ const getProfileEditUserPage = async (req: any, res: any, next: any) => {
     try {
         const userAuth = req.user;
 
-        const user = await usersServices.getUserInfoToEdit(req.params.id, userAuth._id);
+        const user = await usersServices.getUserInfoToEditService(req.params.id, userAuth._id);
         res.status(200).json(
             new ApiResponse(
                 200,
@@ -333,7 +332,7 @@ const getProfileEditUserPage = async (req: any, res: any, next: any) => {
 // CHECK THIS
 const getEditPostPage = async (req: any, res: any, next: any) => {
     try {
-        const response = await postsServices.getOnePostToUpdate(req.params.id);
+        const response = await postsServices.getOnePostToUpdateService(req.params.id);
 
         res.status(200).json(
             new ApiResponse(

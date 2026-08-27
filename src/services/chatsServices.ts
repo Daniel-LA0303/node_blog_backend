@@ -4,15 +4,16 @@ import Message from "../models/Message";
 import { getReceiverSocketId, io } from "../socketIO/server";
 import { SendNewMessageI } from "../interfaces/message.interfaces";
 
-
-const markMessagesAsRead = async (userId: any) => {
+// mark as read
+const markMessagesAsReadService = async (userId: any) => {
     return await Message.updateMany(
         { receiverId: userId, read: false },
         { $set: { read: true } }
     );
 };
 
-const getUnreadMessagesCount = async (userId: string) => {
+// get un read messages
+const getUnreadMessagesCountService = async (userId: string) => {
 
     const unreadMessagesCount = await Message.countDocuments({
         receiverId: userId,
@@ -22,7 +23,8 @@ const getUnreadMessagesCount = async (userId: string) => {
     return unreadMessagesCount;
 }
 
-const sendNotificationNewConversation = async (receiver: string, conversationId: string) => {
+// send notification via web socket
+const sendNotificationNewConversationService = async (receiver: string, conversationId: string) => {
     const receiverSocketId = getReceiverSocketId(receiver);
 
     const conversation = await Conversation.findById(conversationId)
@@ -30,21 +32,22 @@ const sendNotificationNewConversation = async (receiver: string, conversationId:
         .populate("members", "name email profilePicture")
         .populate("lastMessage", "message read createdAt")
 
+    // only send if user is active
     if (receiverSocketId) {
         io.to(receiverSocketId).emit("newConversation", conversation?.toJSON());
-        // console.log("1. EMITIENDO DESDE SERVICIO EL MENSAJE");
     }
 }
 
-const sendMessage = async (senderId: string, receiverId: string, body: SendNewMessageI) => {
+// send a message
+const sendMessageService = async (senderId: string, receiverId: string, body: SendNewMessageI) => {
 
     let isNew = false;
 
     const { message, messageType, image, replyTo } = body;
 
-    const receiverObjectId = new mongoose.Types.ObjectId(receiverId); // <-- convertir
+    const receiverObjectId = new mongoose.Types.ObjectId(receiverId); // <-- convert
 
-    // 1. Buscar o crear conversación
+    // 1. search chat
     let conversation = await Conversation.findOne({
         members: { $all: [senderId, receiverObjectId] },
     });
@@ -56,10 +59,10 @@ const sendMessage = async (senderId: string, receiverId: string, body: SendNewMe
         isNew = true;
     }
 
-    // 2. Crear mensaje vinculado a la conversación
+    // 2. cretae msg 
     const newMessage = new Message({
         senderId,
-        receiverId: receiverObjectId, // guardar como ObjectId
+        receiverId: receiverObjectId, // save
         message,
         messageType,
         replyTo,
@@ -82,7 +85,7 @@ const sendMessage = async (senderId: string, receiverId: string, body: SendNewMe
         },
     ]);
 
-    // 3. Actualizar última actividad de la conversación
+    // 3. update last activity in chat
     const newConversation = await Conversation.findByIdAndUpdate(conversation._id, {
         updatedAt: new Date(),
         lastMessage: newMessage._id
@@ -90,20 +93,20 @@ const sendMessage = async (senderId: string, receiverId: string, body: SendNewMe
         { new: true });
 
     if (isNew && newConversation?._id) {
-        await sendNotificationNewConversation(receiverObjectId.toString(), newConversation._id.toString());
+        await sendNotificationNewConversationService(receiverObjectId.toString(), newConversation._id.toString());
     }
 
-    // 4. Emitir al receptor si está conectado
+    // 4. emit if user is active
     const receiverSocketId = getReceiverSocketId(receiverObjectId.toString());
     if (receiverSocketId) {
         io.to(receiverSocketId).emit("newMessage", populatedMessage.toJSON());
-        // console.log("1. EMITIENDO DESDE SERVICIO EL MENSAJE");
     }
 
     return populatedMessage;
 }
 
-const getMessagesPaginatedByChat = async (
+// get message by chat paginated
+const getMessagesPaginatedByChatService = async (
     otherUserId: string, currentUserId: string, page: number, limit: number
 ) => {
 
@@ -126,12 +129,12 @@ const getMessagesPaginatedByChat = async (
         };
     }
 
-    // Obtener el total de mensajes
+    // total
     const total = await Message.countDocuments({
         conversationId: conversation._id
     });
 
-    // Obtener mensajes paginados (más recientes primero)
+    // get recent msgs
     const messages = await Message.find({ conversationId: conversation._id })
         .populate("senderId", "name email profilePicture")
         .populate({
@@ -146,7 +149,7 @@ const getMessagesPaginatedByChat = async (
         .skip(skip)
         .limit(limit);
 
-    await markMessagesAsRead(currentUserId);
+    await markMessagesAsReadService(currentUserId);
 
     return {
         messages: messages,
@@ -160,8 +163,8 @@ const getMessagesPaginatedByChat = async (
 }
 
 
-
-const getChatsByUserId = async (userId: string, page: number, limit: number) => {
+// get chats by user
+const getChatsByUserIdService = async (userId: string, page: number, limit: number) => {
 
     const skip = (page - 1) * limit;
 
@@ -174,9 +177,9 @@ const getChatsByUserId = async (userId: string, page: number, limit: number) => 
         members: { $in: [userId] },
     })
         .select("_id lastMessage isGroup groupName members createdAt")
-        .populate("members", "name email profilePicture") // obtenemos info básica de los miembros
+        .populate("members", "name email profilePicture") // info
         .populate("lastMessage", "message read createdAt _id")
-        .sort({ updatedAt: -1 }) // opcional: ordenarlas por última actividad
+        .sort({ updatedAt: -1 }) // order
         .skip(skip)
         .limit(limit);
 
@@ -193,8 +196,8 @@ const getChatsByUserId = async (userId: string, page: number, limit: number) => 
 
 
 export default {
-    sendMessage,
-    getMessagesPaginatedByChat,
-    getUnreadMessagesCount,
-    getChatsByUserId
+    sendMessageService,
+    getMessagesPaginatedByChatService,
+    getUnreadMessagesCountService,
+    getChatsByUserIdService
 }

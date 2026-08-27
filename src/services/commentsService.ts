@@ -7,32 +7,7 @@ import { NewNotificationI } from "../interfaces/notification.interfaces";
 import { EntityType, NotificationType } from "../enums/notifications.enums";
 import notificationsServices from "./notificationsServices";
 
-const getAllCommentsByOnePost = async (postId: any) => {
-
-    const post = await Post.findById(postId);
-
-    if (!post) {
-        throw new ServiceException("This post doesn't exists", 404);
-    }
-
-    const comments = await Comment.find({ postID: postId }) // Cambiado de id a postID
-        .select('comment dateComment postID')
-        .populate({
-            path: 'userID',
-            select: 'name profilePicture'
-        })
-        .populate({
-            path: 'replies',
-            select: 'reply dateReply',
-            populate: {
-                path: 'userID',
-                select: 'name profilePicture'
-            }
-        });
-
-    return comments;
-}
-
+// create a new comment
 const newCommentService = async (postId: any, commentBody: any) => {
 
     const { userID, comment } = commentBody;
@@ -94,11 +69,10 @@ const newCommentService = async (postId: any, commentBody: any) => {
 
     }
 
-
     return populatedComment;
-
 }
 
+// update a comment service
 const updateCommentService = async (commentId: any, userId: any, commentNewData: any) => {
 
     // 1. check if post exists
@@ -147,6 +121,7 @@ const updateCommentService = async (commentId: any, userId: any, commentNewData:
     return populatedComment;
 }
 
+// delete a comment service
 const deleteCommentService = async (commentId: any, userId: any, postId: any) => {
 
     // 1. check if post exists
@@ -181,9 +156,9 @@ const deleteCommentService = async (commentId: any, userId: any, postId: any) =>
 
     // 6. remove comment
     await comment.remove();
-
 }
 
+// get comments paginated
 const getCommentsByPostPaginatedService = async (postId: any, page = 1, limit = 5) => {
 
     const skip = (page - 1) * limit;
@@ -255,10 +230,7 @@ const getCommentsByPostPaginatedService = async (postId: any, page = 1, limit = 
 
 }
 
-
-
 export default {
-    getAllCommentsByOnePost,
     newCommentService,
     updateCommentService,
     deleteCommentService,

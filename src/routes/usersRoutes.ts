@@ -3,31 +3,28 @@ import fileUpload from "express-fileupload";
 import checkAuth from "../middleware/checkAuth.js"
 import { 
     //-- auth user start --//
-    registerUser, 
-    authUser, 
-    confirm,
-    forgetPassword,
-    checkToken,
-    newPassword,
-    profile,
+    registerUserController, 
+    loginController, 
+    confirmController,
+    forgetPasswordController,
+    checkTokenController,
+    newPasswordController,
     //-- auth user end --//
     //-- crud user start --//
-    newInfoUser,
-    getOneUser,
-    getAllUsers,
+    updateUserController,
+    getOneUserController,
     //-- crud user end --//
 
     //-- Dashboard start --//
-    getOneUserFollow,
+    getOneUserFollowController,
     //-- Dashboard end --//
     //-- User actions start --//
-    followTag,
-    unFollowTag,
-    followUser,
-    unfollowUser,
-    getPostsByUserPaginated,
-    allUsers,
-    searchUsers,
+    followTagController,
+    unFollowTagController,
+    followUserController,
+    unfollowUserController,
+    getPostsByUserPaginatedController,
+    searchUsersController,
     getBlogsRecommendedController,
     getTagsRecommendedController,
     getUsersRecommendedController,
@@ -38,33 +35,33 @@ const router = express.Router();
 
 
 //add new user --
-router.post('/', registerUser); 
+router.post('/', registerUserController); 
 
 // auth user login --
-router.post('/login', authUser);
+router.post('/login', loginController);
 
 
 // //confirm user
-router.get('/confirm/:token', confirm);
+router.get('/confirm/:token', confirmController);
 //forget password
-router.post('/new-password', forgetPassword);
+router.post('/new-password', forgetPasswordController);
 
 router.route('/new-password/:token')
-    .get(checkToken) //comprueba el token que se manda cuando se ejecuta olvidePassword
-    .post(newPassword) //redirije a una pestaña para nuevo password
+    .get(checkTokenController) // check token then send to change pass
+    .post(newPasswordController) // new pass
 
 router.post('/new-info/:id', 
     checkAuth,    
     fileUpload({
         useTempFiles: true,
         tempFileDir: "./uploads_pro",
-    }),newInfoUser);
+    }),updateUserController);
 
-router.get('/get-profile/:id', getOneUser);
+router.get('/get-profile/:id', getOneUserController);
 
 //-- Dashboard start --//
 
-router.get('/get-profile-follows/:id', getOneUserFollow);
+router.get('/get-profile-follows/:id', getOneUserFollowController);
 //-- Dashboard end --//
 
 //-- User actions start --//
@@ -72,37 +69,28 @@ router.get('/get-profile-follows/:id', getOneUserFollow);
 // user follow a tag --
 router.post('/follow-tag/:id', 
     checkAuth,
-    followTag);
+    followTagController);
 
 // user unfollow a tag --
 router.post('/unfollow-tag/:id', 
     checkAuth,
-    unFollowTag);
+    unFollowTagController);
 
 // user follor others users -- 
 router.post('/user-follow/:id', 
     checkAuth,
-    followUser);
+    followUserController);
 
 // user unfollow other user --
 router.post('/user-unfollow/:id', 
     checkAuth,
-    unfollowUser);
+    unfollowUserController);
 //-- User actions end --//
 
 // posts by user paginated --
-router.get("/posts-by-user/:id", getPostsByUserPaginated);
+router.get("/posts-by-user/:id", getPostsByUserPaginatedController);
 
-router.get('/all-users', getAllUsers);
-
-router.get('/profile', 
-        checkAuth, 
-        profile);
-
-router.get("/allusers", 
-    checkAuth, 
-    allUsers);
-router.get("/search", searchUsers);
+router.get("/search", searchUsersController);
 
 router.get("/get-blogs-recommended", checkAuth, getBlogsRecommendedController);
 router.get("/get-users-recommended", checkAuth, getUsersRecommendedController);

@@ -2,7 +2,7 @@ export const errorHandler = (err: any, req: any, res: any, next: any) => {
   console.error(err); // para logs internos
 
   if (err.name === "ServiceException") {
-    // Error forzado / esperado
+    // Error forced
     return res.status(err.status).json({
       error: true,
       status: err.status,
@@ -15,7 +15,7 @@ export const errorHandler = (err: any, req: any, res: any, next: any) => {
     });
   }
 
-  // Error general no esperado
+  // general error
   return res.status(500).json({
     error: true,
     status: 500,

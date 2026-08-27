@@ -8,23 +8,29 @@ import { NewNotificationI } from "../interfaces/notification.interfaces.js";
 import { EntityType, NotificationType } from "../enums/notifications.enums.js";
 import notificationsServices from "./notificationsServices.js";
 
+
+// new reply
 const newReplyService = async (commentId: any, body: any) => {
 
+    // 1. find post
     const post = await Post.findById(body.postID);
     if (!post) {
         throw new ServiceException("This post doesn't exists", 404);
     }
 
+    // 2. find user
     const user = await User.findById(body.userID);
     if (!user) {
         throw new ServiceException("This user doesn't exists", 404);
     }
 
+    // 3. find comment
     const comment = await Comment.findById(commentId);
     if (!comment) {
         throw new ServiceException("This comment doesn't exists", 404);
     }
 
+    // create new repy
     const reply = new Replies({
         reply: body.reply,
         commentID: commentId,
@@ -35,6 +41,7 @@ const newReplyService = async (commentId: any, body: any) => {
 
     const newReply = await reply.save();
 
+    // 4. update comment
     comment.replies.push(newReply._id);
     await comment.save();
 
@@ -46,6 +53,7 @@ const newReplyService = async (commentId: any, body: any) => {
         });
 
 
+    // 5. send notification via web socket
     // check don't send to a notification to same user himself
     if (comment.userID.toString() !== body.userID.toString()) {
         const notificationData: NewNotificationI = {
@@ -58,7 +66,6 @@ const newReplyService = async (commentId: any, body: any) => {
             type: NotificationType.REPLY_COMMENT,
             isCheck: false
         };
-
         await notificationsServices.sendNotification(notificationData);
     }
 
@@ -66,6 +73,7 @@ const newReplyService = async (commentId: any, body: any) => {
     return populatedReply;;
 }
 
+// get replies by comment paginated
 const getRepliesByCommentPaginatedService = async (commentId: any, page = 1, limit = 3) => {
     try {
         const skip = (page - 1) * limit;
@@ -114,6 +122,7 @@ const getRepliesByCommentPaginatedService = async (commentId: any, page = 1, lim
     }
 }
 
+// count replies
 const countRepliesByCommentService = async (commentId: any) => {
     try {
         const total = await Replies.countDocuments({ commentID: commentId });
@@ -123,26 +132,28 @@ const countRepliesByCommentService = async (commentId: any) => {
     }
 }
 
+// update a reply
 const updateReplyService = async (replyId: any, userId: any, updateData: any) => {
-    // 1. Buscar la reply
+
+    // 1. find reply
     const reply = await Replies.findById(replyId);
     if (!reply) {
         throw new ServiceException("Reply not found", 404);
     }
 
-    // 2. Verificar que el usuario es el dueño
+    // 2. check reply user
     if (reply.userID.toString() !== userId) {
         throw new ServiceException("Unauthorized", 401);
     }
 
-    // 3. Actualizar la reply
+    // 3. update
     if (updateData.reply) {
         reply.reply = updateData.reply;
     }
 
     const updatedReply = await reply.save();
 
-    // 4. Devolver la reply actualizada con populate
+    // 4. return reply updated
     return await Replies.findById(updatedReply._id)
         .select('reply dateReply userID commentID postID')
         .populate({
@@ -151,6 +162,7 @@ const updateReplyService = async (replyId: any, userId: any, updateData: any) =>
         });
 };
 
+// delete a reply
 const deleteReplyService = async (replyId: any, userId: any, commentId: any) => {
     // 1. Buscar la reply
     const reply = await Replies.findById(replyId);

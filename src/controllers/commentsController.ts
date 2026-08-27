@@ -1,91 +1,8 @@
-import Comment from "../models/Comments";
-import Post from "../models/Post";
 import commentsService from "../services/commentsService";
 import { ApiResponse } from "../utils/ApiResponse";
 
 
-const getAllComments = async (req: any, res: any) => {
-    try {
-        const comments = await Comment.find()
-            .select('comment dateComment postID')
-            .populate({
-                path: 'userID',
-                select: 'name profilePicture'
-            }).populate({
-                path: 'replies',
-                select: 'reply dateReply',
-                populate: {
-                    path: 'userID',
-                    select: 'name profilePicture'
-                }
-            });
-        res.json(comments);
-    } catch (error) {
-        res.status(500).json(error);
-    }
-
-}
-
-/*DELETE*/
-const getAllCommentsByPost = async (postId: any) => {
-    try {
-        const comments = await Comment.find({ postID: postId }) // Cambiado de id a postID
-            .select('comment dateComment postID')
-            .populate({
-                path: 'userID',
-                select: 'name profilePicture'
-            })
-            .populate({
-                path: 'replies',
-                select: 'reply dateReply',
-                populate: {
-                    path: 'userID',
-                    select: 'name profilePicture'
-                }
-            });
-
-        return comments;
-    } catch (error) {
-        console.error("Error en getAllCommentsByPost:", error);
-        throw error;
-    }
-}
-
-const getAllCommentsByPostFunction = async (
-    req: any,
-    res: any
-): Promise<void> => {
-    try {
-
-        const { id } = req.params;
-
-        const comments = await Comment.find({ id })
-            .select('comment dateComment postID')
-            .populate({
-                path: 'userID',
-                select: 'name profilePicture'
-            })
-            .populate({
-                path: 'replies',
-                select: 'reply dateReply',
-                populate: {
-                    path: 'userID',
-                    select: 'name profilePicture'
-                }
-            });
-
-        res.json(comments);
-
-    } catch (error: any) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
-    }
-};
-
-
+// new comment
 const addComment = async (req: any, res: any, next: any) => {
 
     try {
@@ -106,28 +23,7 @@ const addComment = async (req: any, res: any, next: any) => {
     }
 };
 
-
-const getOneComment = async (req: any, res: any) => {
-    try {
-        const comment = await Comment.findById(req.params.id)
-            .select('comment dateComment ')
-            .populate({
-                path: 'userID',
-                select: 'name profilePicture'
-            }).populate({
-                path: 'replies',
-                select: 'reply dateReply',
-                populate: {
-                    path: 'userID',
-                    select: 'name profilePicture'
-                }
-            })
-        res.json(comment);
-    } catch (error) {
-        res.status(500).json(error);
-    }
-}
-
+// edit a comment
 const editComment = async (req: any, res: any, next: any) => {
     try {
 
@@ -146,6 +42,7 @@ const editComment = async (req: any, res: any, next: any) => {
     }
 }
 
+// delete a comment
 const deleteComment = async (req: any, res: any, next: any) => {
     try {
 
@@ -165,6 +62,7 @@ const deleteComment = async (req: any, res: any, next: any) => {
     }
 }
 
+// get comment paginated
 const getCommentsPaginatedByBlogId = async (req: any, res: any, next: any) => {
 
     try {
@@ -183,7 +81,6 @@ const getCommentsPaginatedByBlogId = async (req: any, res: any, next: any) => {
             false
         ));
 
-
     } catch (error) {
         console.log(error);
         next(error);
@@ -191,11 +88,7 @@ const getCommentsPaginatedByBlogId = async (req: any, res: any, next: any) => {
 }
 
 export {
-    getAllComments,
-    getAllCommentsByPost,
-    getAllCommentsByPostFunction,
     addComment,
-    getOneComment,
     editComment,
     deleteComment,
     getCommentsPaginatedByBlogId

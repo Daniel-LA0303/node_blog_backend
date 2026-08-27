@@ -1,8 +1,10 @@
 import dotenv from "dotenv"; 
 dotenv.config();
 import {v2 as cloudinary} from 'cloudinary'
-// import { CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, CLOUDINARY_CLOUD_NAME } from './config.js'
 
+/**
+ * cloudinary config 
+ */
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
   api_key: process.env.CLOUDINARY_API_KEY, 
@@ -10,7 +12,7 @@ cloudinary.config({
   secure: true
 })
 
-
+// send image to service
 export const uploadImage = async (filePath: any) => {
   return await cloudinary.uploader.upload(filePath, {
     folder: 'blog_profile'
@@ -23,6 +25,7 @@ export const uploadImagePost = async (filePath: any) => {
   })
 }
 
+// delete an image from service
 export const deleteImage = async (publicId: any) => {
   return await cloudinary.uploader.destroy(publicId)
 }

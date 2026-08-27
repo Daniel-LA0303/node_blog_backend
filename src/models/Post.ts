@@ -21,7 +21,7 @@ const postSchema = new Schema<IPost>(
     title: {
       type: String,
       required: true,
-      unique: true,
+      unique: false,
     },
 
     // description

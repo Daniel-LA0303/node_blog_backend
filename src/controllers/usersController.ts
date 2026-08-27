@@ -7,12 +7,12 @@ import Conversation from '../models/Conversation';
 
 
 // --- Auth Users start --//
-const registerUser = async (req: any, res: any, next: any) => {
+const registerUserController = async (req: any, res: any, next: any) => {
 
     try {
         const { email } = req.body;
 
-        await usersServices.registerNewUser(email, req.body);
+        await usersServices.registerNewUserService(email, req.body);
 
         res.status(201).json(
             new ApiResponse(
@@ -30,12 +30,13 @@ const registerUser = async (req: any, res: any, next: any) => {
     }
 }
 
-const authUser = async (req: any, res: any, next: any) => {
+// login
+const loginController = async (req: any, res: any, next: any) => {
     try {
 
         const { email, password } = req.body;
 
-        const userInfo = await usersServices.login(email, password);
+        const userInfo = await usersServices.loginService(email, password);
 
         res.status(200).json(
             new ApiResponse(
@@ -53,14 +54,15 @@ const authUser = async (req: any, res: any, next: any) => {
     }
 }
 
-const confirm = async (req: any, res: any, next: any) => {
+// confim user 
+const confirmController = async (req: any, res: any, next: any) => {
 
     try {
 
         const { token } = req.params;
 
         // call service to confirm
-        await usersServices.userConfirmed(token);
+        await usersServices.userConfirmedService(token);
         res.status(200).json(
             new ApiResponse(
                 200,
@@ -76,7 +78,8 @@ const confirm = async (req: any, res: any, next: any) => {
     }
 }
 
-const forgetPassword = async (req: any, res: any) => {
+// change pass SHOULD BE A SERVICE
+const forgetPasswordController = async (req: any, res: any) => {
     try {
         const { email } = req.body;
         const user = await User.findOne({ email: email });
@@ -99,14 +102,15 @@ const forgetPassword = async (req: any, res: any) => {
     }
 }
 
-const checkToken = async (req: any, res: any) => {
+// check token 
+const checkTokenController = async (req: any, res: any) => {
     try {
         const { token } = req.params;
 
         const tokenValid = await User.findOne({ token });
 
         if (tokenValid) {
-            res.json({ msg: "Token valido y el usuario existe" })
+            res.json({ msg: "Valid token and user exists" })
         } else {
             const error = new Error('Token no valido');
             return res.status(400).json({ msg: error.message });
@@ -116,7 +120,8 @@ const checkToken = async (req: any, res: any) => {
     }
 }
 
-const newPassword = async (req: any, res: any) => {
+// when check a token we send it to this
+const newPasswordController = async (req: any, res: any) => {
     try {
         const { token } = req.params;
         const { password } = req.body;
@@ -141,16 +146,10 @@ const newPassword = async (req: any, res: any) => {
         res.status(500).json({ error: 'Error', msg: error.message });
     }
 }
-
-const profile = async (req: any, res: any) => {
-    const { user } = req;
-    res.json(user);
-}
-
 // -- Auth Users end --//
 
 // -- Users CRUD actions start --//
-const newInfoUser = async (req: any, res: any, next: any) => {
+const updateUserController = async (req: any, res: any, next: any) => {
     try {
         const { id } = req.params;
 
@@ -177,7 +176,7 @@ const newInfoUser = async (req: any, res: any, next: any) => {
     }
 }
 
-const getOneUser = async (req: any, res: any, next: any) => {
+const getOneUserController = async (req: any, res: any, next: any) => {
     try {
         const user = await User.findById(req.params.id).populate({
             path: "postsSaved",
@@ -208,25 +207,16 @@ const getOneUser = async (req: any, res: any, next: any) => {
     }
 }
 
-const getAllUsers = async (req: any, res: any) => {
-    try {
-        const users = await User.find();
-        res.status(200).json(users);
-    } catch (error) {
-        res.status(500).json(error);
-    }
-}
-
 // -- Users CRUD actions end --//
 
 // -- Actions beetween Users start --/
 
-const followTag = async (req: any, res: any, next: any) => {
+const followTagController = async (req: any, res: any, next: any) => {
     try {
-        const { categoryId } = req.query; // ID de la categoría
-        const userId = req.params.id; // ID del usuario
+        const { categoryId } = req.query; // category id
+        const userId = req.params.id; // user id
 
-        await usersServices.userFollowATag(categoryId, userId);
+        await usersServices.userFollowATagService(categoryId, userId);
 
         res.status(200).json(
             new ApiResponse(
@@ -244,12 +234,12 @@ const followTag = async (req: any, res: any, next: any) => {
     }
 };
 
-const unFollowTag = async (req: any, res: any, next: any) => {
+const unFollowTagController = async (req: any, res: any, next: any) => {
     try {
-        const { categoryId } = req.query; // ID de la categoría
-        const userId = req.params.id; // ID del usuario
+        const { categoryId } = req.query; // category id
+        const userId = req.params.id; // user id
 
-        await usersServices.userUnfollowATag(categoryId, userId);
+        await usersServices.userUnfollowATagService(categoryId, userId);
 
         res.status(200).json(
             new ApiResponse(
@@ -268,7 +258,7 @@ const unFollowTag = async (req: any, res: any, next: any) => {
 };
 
 // follow user
-const followUser = async (req: any, res: any, next: any) => {
+const followUserController = async (req: any, res: any, next: any) => {
     try {
         const { userFollow } = req.query;  // ID of the user to follow
         const userProfileId = req.params.id;    // ID of the current logged user
@@ -291,7 +281,7 @@ const followUser = async (req: any, res: any, next: any) => {
 };
 
 // Unfollow User
-const unfollowUser = async (req: any, res: any, next: any) => {
+const unfollowUserController = async (req: any, res: any, next: any) => {
     try {
         const { userUnfollow } = req.query;  // ID of the user to unfollow
         const userProfileId = req.params.id;    // ID of the current logged user
@@ -315,7 +305,7 @@ const unfollowUser = async (req: any, res: any, next: any) => {
 
 // -- Actions beetween Users end --/
 
-const getPostsByUserPaginated = async (req: any, res: any, next: any) => {
+const getPostsByUserPaginatedController = async (req: any, res: any, next: any) => {
 
     try {
 
@@ -342,7 +332,7 @@ const getPostsByUserPaginated = async (req: any, res: any, next: any) => {
  * @param {*} id 
  * @returns 
  */
-const getOneUserFollow = async (id: any) => {
+const getOneUserFollowController = async (id: any) => {
     try {
         const user = await User.findById(id).populate({
             path: "followersUsers",
@@ -370,55 +360,9 @@ const getOneUserFollow = async (id: any) => {
     }
 }
 
-/**
- * Get user info for dashboard
- * @param {*} id 
- * @returns 
- */
-
-// DELETE
-const getOneUserEditProfile = async (id: any) => {
-    try {
-        const user = await User.findById(id)
-            .select('info profilePicture');
-        return user;
-    }
-    catch (error) {
-
-    }
-}
 
 
-const allUsers = async (req: any, res: any) => {
-  try {
-    const loggedInUser = req.user._id;
-    // 1. Buscar todas las conversaciones donde participa el usuario
-    const conversations = await Conversation.find({
-     members: { $in: [loggedInUser] },
-    })
-      .populate("members", "name email profilePicture") // obtenemos info básica de los miembros
-      .sort({ updatedAt: -1 }); // opcional: ordenarlas por última actividad
-
-    // 2. Mapear para obtener solo los otros miembros de la conversación
-    const users = conversations.map((conv) => {
-      return conv.members.find(
-        (member) => member._id.toString() !== loggedInUser.toString()
-      );
-    });
-
-    // 3. Filtrar duplicados en caso de varias conversaciones con la misma persona
-    const uniqueUsers = Array.from(
-      new Map(users.map((user) => [user?._id.toString(), user])).values()
-    );
-
-    res.status(200).json(uniqueUsers);
-  } catch (error) {
-    console.log("Error in allUsers Controller: " + error);
-  }
-};
-
-
-const searchUsers = async (req: any, res: any) => {
+const searchUsersController = async (req: any, res: any) => {
   try {
     const { q, currentUserId } = req.query; // q = texto de búsqueda
 
@@ -442,7 +386,7 @@ const searchUsers = async (req: any, res: any) => {
 
 const getBlogsRecommendedController = async (req: any, res: any, next: any) => {
     try {
-        const users = await usersServices.getBlogsRecommended(req.user._id);
+        const users = await usersServices.getBlogsRecommendedService(req.user._id);
         res.status(200).json(
             new ApiResponse(
                 200,
@@ -461,7 +405,7 @@ const getBlogsRecommendedController = async (req: any, res: any, next: any) => {
 
 const getTagsRecommendedController = async (req: any, res: any, next: any) => {
     try {
-        const users = await usersServices.getTagsRecommended(req.user._id);
+        const users = await usersServices.getTagsRecommendedService(req.user._id);
         res.status(200).json(
             new ApiResponse(
                 200,
@@ -480,7 +424,7 @@ const getTagsRecommendedController = async (req: any, res: any, next: any) => {
 
 const getUsersRecommendedController = async (req: any, res: any, next: any) => {
     try {
-        const users = await usersServices.getUsersRecommended(req.user._id);
+        const users = await usersServices.getUsersRecommendedService(req.user._id);
         res.status(200).json(
             new ApiResponse(
                 200,
@@ -501,33 +445,29 @@ const getUsersRecommendedController = async (req: any, res: any, next: any) => {
 
 export {
     //-- auth user start --//
-    registerUser,
-    authUser,
-    confirm,
-    forgetPassword,
-    checkToken,
-    newPassword,
-    profile,
+    registerUserController,
+    loginController,
+    confirmController,
+    forgetPasswordController,
+    checkTokenController,
+    newPasswordController,
     //-- auth user end --//
     //-- crud user start --//
-    newInfoUser,
-    getOneUser,
-    getAllUsers,
+    updateUserController,
+    getOneUserController,
     //-- crud user end --//
     //dashboard
-    getOneUserFollow,
+    getOneUserFollowController,
     //dashboard
     //-- actions user start --//
-    followUser,
-    unfollowUser,
-    followTag,
-    unFollowTag,
+    followUserController,
+    unfollowUserController,
+    followTagController,
+    unFollowTagController,
     // getOneUserShortInfo,
-    getOneUserEditProfile,
     //-- actions user end --//
-    getPostsByUserPaginated,
-    allUsers,
-    searchUsers,
+    getPostsByUserPaginatedController,
+    searchUsersController,
     getBlogsRecommendedController,
     getTagsRecommendedController,
     getUsersRecommendedController

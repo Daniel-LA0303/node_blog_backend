@@ -2,7 +2,7 @@ import { ApiResponse } from "../utils/ApiResponse";
 
 import notificationsService from '../services/notificationsServices';
 
-
+// get notifications paginated
 const getNotificationsByUserController = async (req: any, res: any, next: any) => {
     try {
     
@@ -24,13 +24,13 @@ const getNotificationsByUserController = async (req: any, res: any, next: any) =
     
 }
 
-
+// change status
 const changeStatusController = async (req: any, res: any, next: any) => {
     try {
     
             const notificationId = req.params.id; 
     
-            const result = await notificationsService.changeStateToRead(notificationId as string);
+            const result = await notificationsService.changeStateToReadService(notificationId as string);
     
             // mapping response
             res.status(200).json(

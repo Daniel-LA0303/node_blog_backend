@@ -3,12 +3,17 @@ import Categories from "../models/Categories";
 import Post from "../models/Post";
 import User from "../models/User";
 
+const RECO_THRESHOLD = 5; // each 5 actions
+
 /** 
  * TODO: this fucntion is very artesanal, so is think to platform with limit users
  * max 1000000
  * if there are more than 1000000 users, we need to change architecture
+ * 
+ * THIS FUNCTION GENERATE USERS - BLOGS - CATEGORIES 
+ * this can be set in a user information each 5 reactions
 */
-export const generateRecommendations = async (userId: string) => {
+export const generateRecommendationsService = async (userId: string) => {
     try {
         const user = await User.findById(userId).select(
             "likePost.posts postsSaved.posts followsTags.tags followedUsers.followed posts historySearch"
@@ -16,8 +21,7 @@ export const generateRecommendations = async (userId: string) => {
 
         if (!user) return;
 
-        //  VALIDAR IDs EXISTENTES
-        // verificar qué posts/users/tags aún existen
+        // verify id to set exists
         const [existingLikedPosts, existingSavedPosts, existingFollowedTags, existingFollowedUsers] = await Promise.all([
             Post.find({ _id: { $in: user.likePost.posts } }).select("_id categories"),
             Post.find({ _id: { $in: user.postsSaved.posts } }).select("_id categories"),
@@ -30,8 +34,7 @@ export const generateRecommendations = async (userId: string) => {
         const existingFollowedTagIds = existingFollowedTags.map(t => t._id.toString());
         const existingFollowedUserIds = existingFollowedUsers.map(u => u._id.toString());
 
-        // ── LIMPIAR IDs HUÉRFANOS DEL USUARIO ─────────────────────────
-        // opcional pero recomendado: limpiar refs muertas del usuario
+        // clean ids with objects deleted
         await User.findByIdAndUpdate(userId, {
             "likePost.posts": existingLikedPostIds,
             "postsSaved.posts": existingSavedPostIds,
@@ -39,7 +42,7 @@ export const generateRecommendations = async (userId: string) => {
             "followedUsers.followed": existingFollowedUserIds,
         });
 
-        // RECOMMENDED BLOGS 
+        // recommended blogs
         const interactedPosts = [...existingLikedPosts, ...existingSavedPosts];
 
         const interactedCategories = interactedPosts
@@ -72,7 +75,7 @@ export const generateRecommendations = async (userId: string) => {
             userFrequency[id] = (userFrequency[id] || 0) + 1;
         });
 
-        // validar que esos usuarios aún existen
+        // valid users exists yet
         const candidateUserIds = Object.keys(userFrequency);
         const validCandidateUsers = await User.find({
             _id: { $in: candidateUserIds }
@@ -81,7 +84,7 @@ export const generateRecommendations = async (userId: string) => {
         const validCandidateIds = new Set(validCandidateUsers.map(u => u._id.toString()));
 
         const sortedUserIds = Object.entries(userFrequency)
-            .filter(([id]) => validCandidateIds.has(id)) // solo los que existen
+            .filter(([id]) => validCandidateIds.has(id)) // only valid users
             .sort((a, b) => b[1] - a[1])
             .slice(0, 15)
             .map(([id]) => new mongoose.Types.ObjectId(id));
@@ -109,10 +112,8 @@ export const generateRecommendations = async (userId: string) => {
     }
 };
 
-
-const RECO_THRESHOLD = 5; // cada 5 acciones nuevas
-
-export const trackActivity = async (userId: string) => {
+// update info with user wach 7 days
+export const trackActivityService = async (userId: string) => {
     const user = await User.findByIdAndUpdate(
         userId,
         { $inc: { "activityTracker.pendingActions": 1 } },
@@ -123,18 +124,17 @@ export const trackActivity = async (userId: string) => {
 
     const { pendingActions, lastRecommendationAt } = user.activityTracker;
 
-    // forzar recalculo si lleva más de 7 días sin actualizar
+    // force each 7 days
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const isStale = !lastRecommendationAt || lastRecommendationAt < sevenDaysAgo;
 
     if (pendingActions >= RECO_THRESHOLD || isStale) {
-        // resetear contador y recalcular
+        // reset data
         await User.findByIdAndUpdate(userId, {
             "activityTracker.pendingActions": 0,
             "activityTracker.lastRecommendationAt": new Date()
         });
 
-        // en background, no bloquea la respuesta al usuario
-        generateRecommendations(userId).catch(console.error);
+        generateRecommendationsService(userId).catch(console.error);
     }
 };

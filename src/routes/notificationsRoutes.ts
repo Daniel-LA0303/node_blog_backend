@@ -6,7 +6,7 @@ import {
     getNotificationsByUserController
 } from "../controllers/notificationsController";
 
-
+// routers to notifications
 const router = express.Router();
 
 router.get('/get-notifications-by-user-paginated/:id',checkAuth, getNotificationsByUserController);

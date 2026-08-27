@@ -5,8 +5,8 @@ import { getReceiverSocketId, io } from "../socketIO/server";
 import { ServiceException } from "../utils/exception/ServiceException";
 
 
-
-const sendNotification = async (data: NewNotificationI) => {
+// send new notificarion
+const sendNotificationService = async (data: NewNotificationI) => {
 
     // check if user doesn't put like before
     if (data.isCheck) {
@@ -46,7 +46,8 @@ const sendNotification = async (data: NewNotificationI) => {
     }
 }
 
-const changeStateToRead = async (notificationId: string) => {
+// change status
+const changeStateToReadService = async (notificationId: string) => {
 
     // 1. get notifications
     const notification = await Notification.findById(notificationId);
@@ -64,6 +65,7 @@ const changeStateToRead = async (notificationId: string) => {
 
 }
 
+// get notifications paginated
 const getNotificationsByUserService = async (page: number = 1, limit: number = 5, userId: string) => {
 
     // 1. calculate
@@ -98,7 +100,7 @@ const getNotificationsByUserService = async (page: number = 1, limit: number = 5
 }
 
 export default {
-    sendNotification,
+    sendNotificationService,
     getNotificationsByUserService,
-    changeStateToRead
+    changeStateToReadService
 }

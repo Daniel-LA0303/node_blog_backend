@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import mongoose from "mongoose";
 
-//2. conexion a la db
+// db connection to mongo atlas
 const connectDB = async () => {
     try {
         await mongoose.connect(process.env.MONGO_URL_WEB as string);

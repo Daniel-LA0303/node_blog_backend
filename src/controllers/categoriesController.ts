@@ -2,8 +2,6 @@ import Categories from '../models/Categories'
 
 /**
  * Add new category
- * @param {*} req 
- * @param {*} res 
  */
 const addCategory = async(req: any, res: any) => {
     const newCategory = new Categories(req.body);
@@ -20,12 +18,10 @@ const addCategory = async(req: any, res: any) => {
 
 /**
  * Update category
- * @param {*} req 
- * @param {*} res 
  */
 const updateCategories = async (req: any, res: any, next: any) => {
 try {
-        const updates = req.body; // espera [{ id: "...", longDesc: "..." }, ...]
+        const updates = req.body; 
 
         if (!Array.isArray(updates)) {
             return res.status(400).json({ msg: 'Body must be an array of updates' });
@@ -55,8 +51,7 @@ try {
 
 
 /**
- * Get categories for new post
- * @returns 
+ * Get categories for new post THIS IS A SERVICE
  */
 const getCategories = async() => {
     try {
@@ -68,49 +63,12 @@ const getCategories = async() => {
     }
 }
 
-/**
- * Get all categfories that have more than 0 followers
- * @param {*} req 
- * @param {*} res 
- */
-const getCategoriesNotZero = async () => {
-    try {
-        const cats = await Categories.find({ 'follows.countFollows': { $gt: 0 } })
-            .select('name color follows.countFollows');
-        return cats;
-    } catch (error) {
-        console.error("Error in getCategoriesNotZero:", error);
-        throw new Error('Error to find categories');
-    }
-}
 
 /**
- * Get all categories with basic ingo
- * @param {*} req 
- * @param {*} res 
- */
-const getAllCategorisInfo = async(req: any, res: any) => {
-    try {
-        const cats = await Categories.find().populate('follows')
-            .select('name color desc value label ');
-        return cats;
-    } catch (error) {
-        console.error("Error in getAllCategorisInfo:", error);
-        throw new Error('Error to find categories');
-    }
-}
-
-/**
- * Get one category
- * @param {*} req 
- * @param {*} res 
+ * Get one category THIS IS A SERVICE
  */
 const getOneCategory = async(id: any) => {
     try {
-
-
-        
-
         const category = await Categories.findOne({name : id})
         .populate('follows')
         .select('name color desc');
@@ -121,16 +79,8 @@ const getOneCategory = async(id: any) => {
 }
 
 export {
-    /**
-     * 
-     */
     addCategory,
     getCategories,
     getOneCategory,
     updateCategories,
-    getCategoriesNotZero,
-    getAllCategorisInfo
-    /**
-     * 
-     */
 }

@@ -9,6 +9,7 @@ const app = express();
 
 const server = http.createServer(app);
 
+// create a new server only permit our frontend
 const io = new Server(server, {
   cors: {
     origin: [

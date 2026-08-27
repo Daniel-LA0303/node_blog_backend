@@ -9,7 +9,7 @@ interface CustomJwtPayload extends JwtPayload {
   id: string;
 }
 
-//aqui se auntentica todo antes de mandar la info del perfil
+// middleware to check jwt
 const checkAuth = async (req: any, res: any, next: any) => {
     let token;
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {

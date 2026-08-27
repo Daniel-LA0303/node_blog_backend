@@ -12,14 +12,18 @@ import notificationsServices from "./notificationsServices";
 import { NewNotificationI } from "../interfaces/notification.interfaces";
 import Subscriptions from "../models/Subscriptions";
 import PlanSuscription from "../models/Plan";
-import { trackActivity } from "./globalServices";
+import { trackActivityService } from "./globalServices";
+import { emailRegister } from "../helpers/email";
 
 
-
-const updateProfileService = async (userId: any, previousName: any, files: any, profilePicture: any, body: any) => {
-
-    // userId = id -- previousName = req.body.previousName
-    // files = req.files -- profilePicture = req.body.profilePicture
+// update profile service with new info
+const updateProfileService = async (
+    userId: any, 
+    previousName: any, 
+    files: any, 
+    profilePicture: any, 
+    body: any
+) => {
 
     // 1. checks if user exists
     const user = await User.findById(userId);
@@ -70,14 +74,14 @@ const updateProfileService = async (userId: any, previousName: any, files: any, 
     };
 }
 
-// user unfollow a ta or category
-const userUnfollowATag = async (categoryId: any, userId: any) => {
+// user unfollow a tag or category
+const userUnfollowATagService = async (categoryId: any, userId: any) => {
 
     // 1. check if user exists
     const user = await User.findById(userId);
     if (!user) throw new ServiceException("User not found", 404);
 
-    await trackActivity(user._id.toString());
+    await trackActivityService(user._id.toString());
 
     // 2. check if category exists
     const category = await Categories.findById(categoryId);
@@ -115,7 +119,7 @@ const userUnfollowATag = async (categoryId: any, userId: any) => {
 }
 
 // user follow a tag or category
-const userFollowATag = async (categoryId: any, userId: any) => {
+const userFollowATagService = async (categoryId: any, userId: any) => {
 
     // 1. check if user exists
     const user = await User.findById(userId);
@@ -169,7 +173,7 @@ const followUserService = async (userFollowedId: any, userProfileId: any) => {
     const userFollowed = await User.findById(userFollowedId);
     if (!userFollowed) throw new ServiceException("User (to be followed) not found", 404);
 
-    await trackActivity(userProfileId);
+    await trackActivityService(userProfileId);
 
     // 3. validations: check if relation already exists
     const alreadyFollower = userFollowed.followersUsers.followers.includes(userProfileId);
@@ -212,7 +216,7 @@ const followUserService = async (userFollowedId: any, userProfileId: any) => {
         isCheck: true
     };
 
-    await notificationsServices.sendNotification(notificationData);
+    await notificationsServices.sendNotificationService(notificationData);
 };
 
 // Unfollow a user
@@ -257,14 +261,13 @@ const unfollowUserService = async (userFollowedId: any, userProfileId: any) => {
     );
 };
 
-
-
-
-const getUserInfoToEdit = async (userId: any, userAuthId: any) => {
+// get all info user to update
+const getUserInfoToEditService = async (userId: any, userAuthId: any) => {
 
     // 1. search user
     const user = await User.findById(userId).select('info profilePicture');
 
+    // 2. send exception if user does not exists
     if (!user) throw new ServiceException("User not found", 404);
 
     // 3. check if userId and user auth id are the same
@@ -273,10 +276,9 @@ const getUserInfoToEdit = async (userId: any, userAuthId: any) => {
     }
 
     return user;
-
 }
 
-const login = async (email: any, password: any) => {
+const loginService = async (email: any, password: any) => {
 
     // 1. check if user exists
     const user = await User.findOne({ email: email });
@@ -315,7 +317,8 @@ const login = async (email: any, password: any) => {
 
 }
 
-const registerNewUser = async (email: any, body: any) => {
+// register new user
+const registerNewUserService = async (email: any, body: any) => {
 
     // 1. check if email exists
     const existUser = await User.findOne({ email: email });
@@ -333,15 +336,15 @@ const registerNewUser = async (email: any, body: any) => {
     await user.save();
 
     // 5. send email
-    /*emailRegister({
+    await emailRegister({
         email: user.email,
         name: user.name,
         token: user.token
-    });*/
-
+    });
 }
 
-const userConfirmed = async (token: any) => {
+// to confirm user 
+const userConfirmedService = async (token: any) => {
 
     // 1. search user by token
     const userConfirm = await User.findOne({ token: token });
@@ -356,6 +359,7 @@ const userConfirmed = async (token: any) => {
     await userConfirm.save();
 }
 
+// get all posts bys user
 const getPostByUserPaginatedService = async (page = 1, limit = 5, userId: any) => {
 
     // 1. calculate skip
@@ -392,6 +396,7 @@ const getPostByUserPaginatedService = async (page = 1, limit = 5, userId: any) =
     }
 }
 
+// get all info user to show in profile page
 const getOneUserProfileInfoService = async (userId: any) => {
 
     const user = await User.findById(userId).populate({
@@ -450,7 +455,8 @@ const userDashboardInfoService = async (userId: any) => {
     return responseData;
 }
 
-const userDashboardPostSavedPaginated = async (page = 1, limit = 5, userId: any) => {
+// get post save by user
+const userDashboardPostSavedPaginatedService = async (page = 1, limit = 5, userId: any) => {
 
     // 1. get skip
     const skip = (page - 1) * limit;
@@ -494,9 +500,8 @@ const userDashboardPostSavedPaginated = async (page = 1, limit = 5, userId: any)
     };
 };
 
-
-
-const userDashboardPostLikedPaginated = async (page = 1, limit = 5, userId: any) => {
+// get post liked by user
+const userDashboardPostLikedPaginatedService = async (page = 1, limit = 5, userId: any) => {
 
     // 1. get skip
     const skip = (page - 1) * limit;
@@ -540,7 +545,8 @@ const userDashboardPostLikedPaginated = async (page = 1, limit = 5, userId: any)
     };
 };
 
-const userDashboardFollowedTagsPaginated = async (
+// get tags followed by user
+const userDashboardFollowedTagsPaginatedService = async (
     page = 1,
     limit = 10,
     userId: any
@@ -583,8 +589,8 @@ const userDashboardFollowedTagsPaginated = async (
     };
 };
 
-// get users
-const userDashboardFollowersPaginated = async (page = 1, limit = 10, userId: any) => {
+// get followers by user
+const userDashboardFollowersPaginatedService = async (page = 1, limit = 10, userId: any) => {
     const skip = (page - 1) * limit;
 
     // 1. get total
@@ -617,8 +623,8 @@ const userDashboardFollowersPaginated = async (page = 1, limit = 10, userId: any
     };
 };
 
-// get users
-const userDashboardFollowingPaginated = async (page = 1, limit = 10, userId: any) => {
+// get following by user
+const userDashboardFollowingPaginatedService = async (page = 1, limit = 10, userId: any) => {
     const skip = (page - 1) * limit;
 
     // 1. get total
@@ -651,7 +657,8 @@ const userDashboardFollowingPaginated = async (page = 1, limit = 10, userId: any
     };
 };
 
-const topUsersCategories = async () => {
+// get categories and users top to show it in home
+const topUsersCategoriesService = async () => {
 
     // 1. get users top
     const users = await User.find()
@@ -671,11 +678,13 @@ const topUsersCategories = async () => {
     };
 }
 
+// search users to show it in serach page
 const getUsersByNameOrEmailPaginatedService = async (page = 1, limit = 5, search = "") => {
+    
     // 1. calcular skip
     const skip = (page - 1) * limit;
 
-    // 2. query base (regex en name o email)
+    // 2. query base 
     const query = {
         $or: [
             { name: { $regex: search, $options: "i" } },
@@ -683,14 +692,14 @@ const getUsersByNameOrEmailPaginatedService = async (page = 1, limit = 5, search
         ]
     };
 
-    // 3. obtener usuarios paginados
+    // 3. oget users paginated
     const users = await User.find(query)
         .skip(skip)
         .limit(limit)
         // .select("_id name email profilePicture createdAt")
         .sort({ createdAt: -1 });
 
-    // 4. calcular total
+    // 4. total
     const total = await User.countDocuments(query);
 
     // 5. return info
@@ -705,7 +714,8 @@ const getUsersByNameOrEmailPaginatedService = async (page = 1, limit = 5, search
     };
 };
 
-const getBlogsRecommended = async (userId?: string) => {
+// get blogs recommended to show it with a user is seeing a post
+const getBlogsRecommendedService = async (userId?: string) => {
 
 
     const blogsRecomended = await User.findById(userId)
@@ -726,8 +736,8 @@ const getBlogsRecommended = async (userId?: string) => {
     return blogsRecomended;
 }
 
-const getTagsRecommended = async (userId?: string) => {
-
+// get tags recommended to show tags
+const getTagsRecommendedService = async (userId?: string) => {
 
     const tagsRecomended = await User.findById(userId)
         .select('recomended')
@@ -743,8 +753,8 @@ const getTagsRecommended = async (userId?: string) => {
     return tagsRecomended;
 }
 
-const getUsersRecommended = async (userId?: string) => {
-
+// get users recommended
+const getUsersRecommendedService = async (userId?: string) => {
 
     const usersRecomended = await User.findById(userId)
         .select('recomended')
@@ -764,25 +774,25 @@ const getUsersRecommended = async (userId?: string) => {
 
 export default {
     updateProfileService,
-    userFollowATag,
-    userUnfollowATag,
-    getUserInfoToEdit,
-    login,
-    registerNewUser,
-    userConfirmed,
+    userFollowATagService,
+    userUnfollowATagService,
+    getUserInfoToEditService,
+    loginService,
+    registerNewUserService,
+    userConfirmedService,
     followUserService,
     unfollowUserService,
     getPostByUserPaginatedService,
     getOneUserProfileInfoService,
     userDashboardInfoService,
-    userDashboardPostLikedPaginated,
-    userDashboardPostSavedPaginated,
-    userDashboardFollowedTagsPaginated,
-    userDashboardFollowersPaginated,
-    userDashboardFollowingPaginated,
-    topUsersCategories,
+    userDashboardPostLikedPaginatedService,
+    userDashboardPostSavedPaginatedService,
+    userDashboardFollowedTagsPaginatedService,
+    userDashboardFollowersPaginatedService,
+    userDashboardFollowingPaginatedService,
+    topUsersCategoriesService,
     getUsersByNameOrEmailPaginatedService,
-    getBlogsRecommended,
-    getTagsRecommended,
-    getUsersRecommended
+    getBlogsRecommendedService,
+    getTagsRecommendedService,
+    getUsersRecommendedService
 }

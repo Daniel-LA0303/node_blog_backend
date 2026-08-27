@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import jwt from "jsonwebtoken";
 
+// generate a new jwt
 const generateJWT = (id: any) => {
     return jwt.sign({
         id

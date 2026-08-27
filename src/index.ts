@@ -6,7 +6,6 @@ import connectDB from "./config/db";
 import cors from "cors"
 import multer from "multer";
 import path from "path"
-import { fileURLToPath } from "url";
 
 import usersRoutes from './routes/usersRoutes'
 import postsRoutes from './routes/postsRoutes'

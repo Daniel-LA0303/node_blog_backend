@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import nodemailer from "nodemailer"
 
+// email new user
 export const emailRegister = async (datos: any) => {
     const { email, name, token } = datos;
 
@@ -18,7 +19,7 @@ export const emailRegister = async (datos: any) => {
     });
 
 
-    //Informacion del email
+    // INFO EMAIL
     const info = await transport.sendMail({
         from: 'Daniel-LA Blog',
         to: email,
@@ -48,6 +49,7 @@ export const emailRegister = async (datos: any) => {
 
 }
 
+// email config forget pass
 export const emailNewPassword = async (datos: any) => {
     const { email, name, token } = datos;
 

@@ -7,7 +7,7 @@ import { ServiceException } from "../utils/exception/ServiceException";
 import notificationsService from "../services/notificationsServices";
 import { NewNotificationI } from "../interfaces/notification.interfaces";
 import { EntityType, NotificationType } from "../enums/notifications.enums";
-import { trackActivity } from "./globalServices";
+import { trackActivityService } from "./globalServices";
 
 
 // save new post
@@ -19,13 +19,13 @@ const saveNewPostService = async (userId: any, postData: any) => {
     throw new ServiceException("User not found", 404);
   }
 
-  await trackActivity(user._id.toString());
+  await trackActivityService(user._id.toString());
 
   // 2. valid if title exists
-  const postSearch = await Post.findOne({ title: postData.title });
-  if (postSearch) {
-    throw new ServiceException("Post already exists with this title", 400);
-  }
+  //const postSearch = await Post.findOne({ title: postData.title });
+  //if (postSearch) {
+    //throw new ServiceException("Post already exists with this title", 400);
+  //}
 
   // 3. assamble the info
   const post = new Post(postData);
@@ -40,6 +40,7 @@ const saveNewPostService = async (userId: any, postData: any) => {
   return post;
 };
 
+// update a post
 const updatePostService = async (postId: any, body: any) => {
 
   // 1. check if post exists
@@ -70,7 +71,8 @@ const updatePostService = async (postId: any, body: any) => {
   );
 }
 
-const getOnePostToUpdate = async (postId: any) => {
+// get one post to updated in page 
+const getOnePostToUpdateService = async (postId: any) => {
 
   // 1. get one post to update
   const post = await Post.findById(postId).populate({
@@ -129,9 +131,6 @@ const deletePostService = async (postId: any, userId: any) => {
   post.remove();
 }
 
-
-
-
 // get a post with info
 const getViewPostInfoService = async (postId: any) => {
 
@@ -180,13 +179,14 @@ const getViewPostInfoService = async (postId: any) => {
   return { post, comments, totalComments };
 }
 
+// user like a new post
 const userLikePostService = async (postId: any, userId: any) => {
 
   // 1. check if user exists
   const user = await User.findById(userId);
   if (!user) throw new ServiceException("User not found", 404);
 
-  await trackActivity(user._id.toString());
+  await trackActivityService(user._id.toString());
 
   // 2. check if post exists
   const post = await Post.findById(postId);
@@ -238,10 +238,11 @@ const userLikePostService = async (postId: any, userId: any) => {
     isCheck: true
   };
 
-  await notificationsService.sendNotification(notificationData);
+  await notificationsService.sendNotificationService(notificationData);
 
 };
 
+// user dislike a post
 const userDisikePostService = async (postId: any, userId: any) => {
 
   // 1. check if user exists
@@ -284,13 +285,14 @@ const userDisikePostService = async (postId: any, userId: any) => {
   );
 };
 
+// user save a post
 const userSavePostService = async (postId: any, userId: any) => {
 
   // 1. check if user exists
   const user = await User.findById(userId);
   if (!user) throw new ServiceException("User not found", 404);
 
-  await trackActivity(user._id.toString());
+  await trackActivityService(user._id.toString());
 
   // 2. check if post exists
   const post = await Post.findById(postId);
@@ -328,6 +330,7 @@ const userSavePostService = async (postId: any, userId: any) => {
   );
 };
 
+// unser unsave a post
 const userUnsavePostService = async (postId: any, userId: any) => {
   // 1. check if user exists
   const user = await User.findById(userId);
@@ -369,12 +372,7 @@ const userUnsavePostService = async (postId: any, userId: any) => {
   );
 };
 
-/**
- * get categories paginated
- * @param {*} page 
- * @param {*} limit 
- * @returns 
- */
+// get all post to show in home
 const getAllPostsPaginatedService = async (page = 1, limit = 10) => {
 
   // get posts
@@ -405,7 +403,7 @@ const getAllPostsPaginatedService = async (page = 1, limit = 10) => {
   }
 }
 
-
+// get post by category name, find one or more
 const getPostsByCategoryPaginatedService = async (page = 1, limit = 5, categoryName: any) => {
 
   // 1. get category
@@ -451,6 +449,7 @@ const getPostsByCategoryPaginatedService = async (page = 1, limit = 5, categoryN
   };
 };
 
+// to search post with name
 const getPostsByTitlePaginatedService = async (page = 1, limit = 5, title = "") => {
   // 1. calcular skip
   const skip = (page - 1) * limit;
@@ -490,7 +489,7 @@ const getPostsByTitlePaginatedService = async (page = 1, limit = 5, title = "") 
   };
 };
 
-
+// recommendation blogs
 const getBlogsSuggestionsFromAUser = async (blogId: string) => {
 
   const blog = await Post.findById(blogId);
@@ -509,8 +508,6 @@ const getBlogsSuggestionsFromAUser = async (blogId: string) => {
   return filterB;
 }
 
-
-
 export default {
   saveNewPostService,
   getViewPostInfoService,
@@ -521,7 +518,7 @@ export default {
   userUnsavePostService,
   getAllPostsPaginatedService,
   updatePostService,
-  getOnePostToUpdate,
+  getOnePostToUpdateService,
   getPostsByCategoryPaginatedService,
   getPostsByTitlePaginatedService,
   getBlogsSuggestionsFromAUser

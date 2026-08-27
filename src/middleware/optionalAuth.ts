@@ -5,6 +5,7 @@ interface CustomJwtPayload extends JwtPayload {
   id: string;
 }
 
+// check auth 
 const optionalAuth = async (req: any, res: any, next: any) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {

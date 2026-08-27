@@ -2,14 +2,15 @@ import { SendNewMessageI } from "../interfaces/message.interfaces.js";
 import Message from "../models/Message.js";
 import chatsServices from "../services/chatsServices.js";
 
-export const sendMessage = async (req: any, res: any) => {
+// send message
+export const sendMessageController = async (req: any, res: any) => {
   try {
     const body = req.body as SendNewMessageI;
     const { id: receiverId } = req.params;
 
     const senderId = req.user._id; // ObjectId
 
-    const populatedMessage = await chatsServices.sendMessage(senderId, receiverId, body);
+    const populatedMessage = await chatsServices.sendMessageService(senderId, receiverId, body);
 
     res.status(201).json(populatedMessage);
   } catch (error) {
@@ -19,8 +20,8 @@ export const sendMessage = async (req: any, res: any) => {
 };
 
 
-// routes/message.js
-export const getMessages = async (req: any, res: any) => {
+// get messages by chat
+export const getMessagesController = async (req: any, res: any) => {
   try {
     const { id: otherUserId } = req.params;
     const page = Number(req.query.page) || 1;
@@ -28,7 +29,7 @@ export const getMessages = async (req: any, res: any) => {
     
     const currentUserId = req.user._id;
 
-    const data = await chatsServices.getMessagesPaginatedByChat(otherUserId, currentUserId, page, limit);
+    const data = await chatsServices.getMessagesPaginatedByChatService(otherUserId, currentUserId, page, limit);
 
     res.status(200).json(data);
   } catch (error) {
@@ -37,15 +38,14 @@ export const getMessages = async (req: any, res: any) => {
   }
 };
 
-export const getConversations = async (req: any, res: any) => {
+// get conversations by user
+export const getConversationsController = async (req: any, res: any) => {
   try {
     const { id } = req.params;
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 20;
     
-    const currentUserId = req.user._id;
-
-    const data = await chatsServices.getChatsByUserId(id, page, limit);
+    const data = await chatsServices.getChatsByUserIdService(id, page, limit);
 
     res.status(200).json(data);
   } catch (error) {
@@ -54,24 +54,23 @@ export const getConversations = async (req: any, res: any) => {
   }
 };
 
-
-export const getUnreadMessagesCount = async (req: any, res: any) => {
+// get unread messages
+export const getUnreadMessagesCountController = async (req: any, res: any) => {
   try {
 
-    // obtendremos el id psandolo desde el backend ya no desde sesion
-    const userId = req.user._id; // El id del usuario que se reconecta
+    const userId = req.user._id; 
     
-    // Contar los mensajes no leídos para este usuario
-    const unreadMessagesCount = await chatsServices.getUnreadMessagesCount(userId);
+    // count
+    const unreadMessagesCount = await chatsServices.getUnreadMessagesCountService(userId);
 
-    res.status(200).json({ unreadMessagesCount }); // Enviar el número de mensajes no leídos
+    res.status(200).json({ unreadMessagesCount });
   } catch (error) {
     console.log("Error al obtener los mensajes no leídos", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 };
 
-export const markAsRead = async (req: any, res: any) => {
+export const markAsReadController = async (req: any, res: any) => {
   try {
     const currentUserId = req.user._id
     const { conversationId } = req.params
