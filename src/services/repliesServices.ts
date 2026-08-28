@@ -66,7 +66,7 @@ const newReplyService = async (commentId: any, body: any) => {
             type: NotificationType.REPLY_COMMENT,
             isCheck: false
         };
-        await notificationsServices.sendNotification(notificationData);
+        await notificationsServices.sendNotificationService(notificationData);
     }
 
 

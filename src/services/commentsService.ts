@@ -65,7 +65,7 @@ const newCommentService = async (postId: any, commentBody: any) => {
             isCheck: false
         };
 
-        await notificationsServices.sendNotification(notificationData);
+        await notificationsServices.sendNotificationService(notificationData);
 
     }
 
