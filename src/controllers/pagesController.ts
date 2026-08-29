@@ -135,7 +135,7 @@ const getDashboardPostsUserPage = async (req: any, res: any, next: any) => {
 const getDashboardFollowUserPage = async (req: any, res: any) => {
     try {
         if (req.params.id !== req.query.user) {
-            return res.status(401).json({ error: 'Error', msg: "Unauthorized" });
+            return res.status(400).json({ error: 'Error', msg: "Unauthorized" });
         }
         const userInfo = await getOneUserFollowController(req.params.id);
         res.status(200).json({

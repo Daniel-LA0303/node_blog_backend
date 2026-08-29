@@ -13,7 +13,11 @@ import checkAuth from "../middleware/checkAuth.js";
 const router = express.Router();
 
 // send message
-router.post("/send/:id", checkAuth, sendMessageController);
+router.post("/send/:id", 
+    checkAuth, 
+    // rate limit here not spam in messages
+    //sendMessageRateLimiter
+    sendMessageController);
 
 // get messages in one conversation
 router.get("/get/:id", checkAuth, getMessagesController);

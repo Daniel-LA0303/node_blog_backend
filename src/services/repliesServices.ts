@@ -143,7 +143,7 @@ const updateReplyService = async (replyId: any, userId: any, updateData: any) =>
 
     // 2. check reply user
     if (reply.userID.toString() !== userId) {
-        throw new ServiceException("Unauthorized", 401);
+        throw new ServiceException("Unauthorized", 400);
     }
 
     // 3. update
@@ -172,7 +172,7 @@ const deleteReplyService = async (replyId: any, userId: any, commentId: any) => 
 
     // 2. Verificar que el usuario es el dueño
     if (reply.userID.toString() !== userId) {
-        throw new ServiceException("Unauthorized", 401);
+        throw new ServiceException("Unauthorized", 404);
     }
 
     // 3. Eliminar la reply de la base de datos

@@ -33,8 +33,8 @@ const checkAuth = async (req: any, res: any, next: any) => {
             return next();
         } catch (error) {
             // 401 triggers the frontend refresh flow
-            return res.status(429).json(
-                new ApiResponse(429, '/api' + req.path, req.method, 'Access token expired or invalid', null, true)
+            return res.status(401).json(
+                new ApiResponse(401, '/api' + req.path, req.method, 'Access token expired or invalid', null, true)
             );
         }
     }

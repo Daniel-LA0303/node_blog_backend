@@ -95,7 +95,7 @@ const updateCommentService = async (commentId: any, userId: any, commentNewData:
 
     // 4. check if user its the same to update comment
     if (comment.userID.toString() !== userId) {
-        throw new ServiceException("You don't have permissions to update this comment", 401);
+        throw new ServiceException("You don't have permissions to update this comment", 400);
     }
 
     // 5. update comment
@@ -144,7 +144,7 @@ const deleteCommentService = async (commentId: any, userId: any, postId: any) =>
 
     // 4. check if user its the same to update comment
     if (comment.userID.toString() !== userId) {
-        throw new ServiceException("You don't have permissions to delete this comment", 401);
+        throw new ServiceException("You don't have permissions to delete this comment", 400);
     }
 
     // 5. quit comment from post

@@ -32,15 +32,21 @@ import {
     //-- User actions end --//
 } from "../controllers/usersController";
 import checkRefreshToken from "../middleware/checkRefreshToken.js";
+import { loginRateLimiter } from "../rate-limiter/ratesLimits.js";
 
 const router = express.Router();
 
 
 //add new user --
-router.post('/', registerUserController); 
+router.post('/', 
+    // rete limit
+    registerUserController); 
 
 // auth user login --
-router.post('/login', loginController);
+router.post('/login', 
+    // here rate limit
+    loginRateLimiter,
+    loginController);
 
 
 // //confirm user
