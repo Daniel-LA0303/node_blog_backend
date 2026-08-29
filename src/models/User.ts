@@ -23,6 +23,14 @@ const usersSchema = new Schema<IUser>(
       unique: true,
     },
 
+    roles: {
+      type: [{
+        _id: false,
+        name: { type: String, required: true }
+      }],
+      default: [{ name: 'ROLE_USER' }]
+    },
+
     token: {
       type: String,
     },

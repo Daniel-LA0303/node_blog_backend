@@ -5,7 +5,7 @@ import User from "../models/User";
 import Post from "../models/Post"
 import { ServiceException } from "../utils/exception/ServiceException";
 import fs from "fs-extra"
-import generateJWT from "../helpers/generateJWT";
+import { generateAccessToken, generateRefreshToken } from "../helpers/generateJWT";
 import generateID from "../helpers/generateID";
 import { EntityType, NotificationType } from "../enums/notifications.enums";
 import notificationsServices from "./notificationsServices";
@@ -14,14 +14,17 @@ import Subscriptions from "../models/Subscriptions";
 import PlanSuscription from "../models/Plan";
 import { trackActivityService } from "./globalServices";
 import { emailRegister } from "../helpers/email";
+import { IInfoUser } from "../interfaces/tokens.interfaces";
+import Tokens from "../models/Tokens";
+import { hashToken } from "../utils/hashToken";
 
 
 // update profile service with new info
 const updateProfileService = async (
-    userId: any, 
-    previousName: any, 
-    files: any, 
-    profilePicture: any, 
+    userId: any,
+    previousName: any,
+    files: any,
+    profilePicture: any,
     body: any
 ) => {
 
@@ -278,7 +281,11 @@ const getUserInfoToEditService = async (userId: any, userAuthId: any) => {
     return user;
 }
 
-const loginService = async (email: any, password: any) => {
+const loginService = async (
+    email: string,
+    password: string,
+    info: IInfoUser
+) => {
 
     // 1. check if user exists
     const user = await User.findOne({ email: email });
@@ -301,21 +308,70 @@ const loginService = async (email: any, password: any) => {
     if (!await user.checkPassword(password)) {
 
         throw new ServiceException("Your password is incorrect", 400);
-
     }
+
+    // 4. generate report, acces and refresh token
+    const refreshToken = generateRefreshToken(user._id, user.roles);
+    const accessToken = generateAccessToken(user._id, user.roles);
+
+    const tokenInfo = new Tokens({
+        token: hashToken(refreshToken),
+        ipAddress: info.ip,
+        userAgent: info.userAgent,
+        origin: info.origin,
+        host: info.host,
+        userId: user._id
+    });
+
+    // save token
+    await tokenInfo.save();
 
     return {
         _id: user.id,
         name: user.name,
         email: user.email,
         profileImage: user.profilePicture.secure_url,
-        token: generateJWT(user._id),
+        accessToken,
+        refreshToken,
         expiresAt: suscription?.expiresAt,
         isFree: suscription?.isFree,
         plan: plan
     }
 
 }
+
+const refreshTokenService = async (
+    oldTokenDoc: any,
+    user: any,
+    info: IInfoUser
+) => {
+
+    // 1. flow refresh token 
+    oldTokenDoc.isRevoked = true;
+    oldTokenDoc.status = 'REVOKED';
+    await oldTokenDoc.save();
+
+    // 2. create and save new token
+    const accessToken = generateAccessToken(user._id, user.roles);
+    const newRefreshToken = generateRefreshToken(user._id, user.roles);
+
+    await Tokens.create({
+        token: hashToken(newRefreshToken),
+        userId: user._id,
+        ipAddress: info.ip,
+        userAgent: info.userAgent,
+        origin: info.origin,
+        host: info.host,
+        isRevoked: false,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), // 30 días
+    });
+
+    return {
+        accessToken,
+        refreshToken: newRefreshToken
+    }
+}
+
 
 // register new user
 const registerNewUserService = async (email: any, body: any) => {
@@ -680,7 +736,7 @@ const topUsersCategoriesService = async () => {
 
 // search users to show it in serach page
 const getUsersByNameOrEmailPaginatedService = async (page = 1, limit = 5, search = "") => {
-    
+
     // 1. calcular skip
     const skip = (page - 1) * limit;
 
@@ -794,5 +850,6 @@ export default {
     getUsersByNameOrEmailPaginatedService,
     getBlogsRecommendedService,
     getTagsRecommendedService,
-    getUsersRecommendedService
+    getUsersRecommendedService,
+    refreshTokenService
 }

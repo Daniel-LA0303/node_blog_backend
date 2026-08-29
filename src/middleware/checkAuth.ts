@@ -1,4 +1,4 @@
-import dotenv from "dotenv"; 
+import dotenv from "dotenv";
 dotenv.config();
 import jwt, { JwtPayload } from "jsonwebtoken";
 import User from "../models/User";
@@ -6,7 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse";
 import { error } from "console";
 
 interface CustomJwtPayload extends JwtPayload {
-  id: string;
+    id: string;
 }
 
 // middleware to check jwt
@@ -24,31 +24,18 @@ const checkAuth = async (req: any, res: any, next: any) => {
             const user = await User.findById(decoded.id).select("-password -confirmado -token -__v");
 
             // 4. check if user exists
-            if (user === null) {
-
-                return res.status(404).json(new ApiResponse(
-                    404,
-                    "/api" + req.path,
-                    req.method,
-                    "Invalid token or user not found",
-                    null,
-                    true)
+            if (!user) {
+                return res.status(401).json(
+                    new ApiResponse(401, '/api' + req.path, req.method, 'User not found', null, true)
                 );
             }
             req.user = user;
             return next();
         } catch (error) {
-            console.error("Error in checkAuth middleware:", error);
-
-            return res.status(401).json(new ApiResponse(
-                401,
-                "/api" + req.path,
-                req.method,
-                "Invalid or expired token",
-                null,
-                true
-            ));
-
+            // 401 triggers the frontend refresh flow
+            return res.status(429).json(
+                new ApiResponse(429, '/api' + req.path, req.method, 'Access token expired or invalid', null, true)
+            );
         }
     }
 

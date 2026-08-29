@@ -53,6 +53,10 @@ interface INotification {
     date: Date;
 }
 
+interface IRole {
+    name: string;
+}
+
 export interface IUser extends Document {
 
     name: string;
@@ -90,6 +94,8 @@ export interface IUser extends Document {
     recomended: any;
 
     activityTracker: any;
+
+    roles: IRole[];
 
     checkPassword(passwordForm: string): Promise<boolean>;
 }

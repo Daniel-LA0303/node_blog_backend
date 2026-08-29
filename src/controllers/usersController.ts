@@ -4,6 +4,8 @@ import { emailNewPassword } from '../helpers/email'
 import usersServices from '../services/usersServices';
 import { ApiResponse } from '../utils/ApiResponse';
 import Conversation from '../models/Conversation';
+import { IInfoUser } from '../interfaces/tokens.interfaces.js';
+import { generateAccessToken, generateRefreshToken } from '../helpers/generateJWT.js';
 
 
 // --- Auth Users start --//
@@ -30,13 +32,62 @@ const registerUserController = async (req: any, res: any, next: any) => {
     }
 }
 
+const refreshTokenController = async (req: any, res: any, next: any) => {
+    try {
+        // req.user y req.tokenDoc ya vienen validados por el middleware checkRefreshToken
+        const user = req.user;
+        const oldTokenDoc = req.tokenDoc;
+
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip;
+        const userAgent = req.headers['user-agent'];
+        const origin = req.headers['origin'] || req.headers['referer'];
+        const host = req.headers['host'];
+
+        const info: IInfoUser = {
+            ip,
+            userAgent,
+            origin,
+            host
+        }
+
+        const response = await usersServices.refreshTokenService(oldTokenDoc, user, info);
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "Tokens refreshed successfully",
+                response,
+                false
+            )
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+export default refreshTokenController;
+
 // login
 const loginController = async (req: any, res: any, next: any) => {
     try {
 
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip;
+        const userAgent = req.headers['user-agent'];
+        const origin = req.headers['origin'] || req.headers['referer'];
+        const host = req.headers['host'];
+
+        const info: IInfoUser = {
+            ip,
+            userAgent,
+            origin,
+            host
+        }
+
         const { email, password } = req.body;
 
-        const userInfo = await usersServices.loginService(email, password);
+        const userInfo = await usersServices.loginService(email, password, info);
 
         res.status(200).json(
             new ApiResponse(
@@ -285,7 +336,7 @@ const unfollowUserController = async (req: any, res: any, next: any) => {
     try {
         const { userUnfollow } = req.query;  // ID of the user to unfollow
         const userProfileId = req.params.id;    // ID of the current logged user
-        
+
         await usersServices.unfollowUserService(userUnfollow, userProfileId);
 
         res.status(200).json(
@@ -311,7 +362,7 @@ const getPostsByUserPaginatedController = async (req: any, res: any, next: any) 
 
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
-        const userId = req.params.id; 
+        const userId = req.params.id;
 
         const result = await usersServices.getPostByUserPaginatedService(page, limit, userId);
 
@@ -363,24 +414,24 @@ const getOneUserFollowController = async (id: any) => {
 
 
 const searchUsersController = async (req: any, res: any) => {
-  try {
-    const { q, currentUserId } = req.query; // q = texto de búsqueda
+    try {
+        const { q, currentUserId } = req.query; // q = texto de búsqueda
 
-    if (!currentUserId) return res.status(400).json({ error: "currentUserId required" });
+        if (!currentUserId) return res.status(400).json({ error: "currentUserId required" });
 
-    const regex = new RegExp(q, "i"); // búsqueda insensible a mayúsculas
+        const regex = new RegExp(q, "i"); // búsqueda insensible a mayúsculas
 
-    // Buscar coincidencias en fullname o email, excluyendo al usuario logeado
-    const users = await User.find({
-      _id: { $ne: currentUserId },
-      $or: [{ name: regex }, { email: regex }],
-    }).select("name email profilePicture");
+        // Buscar coincidencias en fullname o email, excluyendo al usuario logeado
+        const users = await User.find({
+            _id: { $ne: currentUserId },
+            $or: [{ name: regex }, { email: regex }],
+        }).select("name email profilePicture");
 
-    res.status(200).json(users);
-  } catch (error) {
-    console.log("Error in searchUsers:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
+        res.status(200).json(users);
+    } catch (error) {
+        console.log("Error in searchUsers:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
 };
 //-- Dashboard end --//
 
@@ -470,5 +521,6 @@ export {
     searchUsersController,
     getBlogsRecommendedController,
     getTagsRecommendedController,
-    getUsersRecommendedController
+    getUsersRecommendedController,
+    refreshTokenController
 }

@@ -28,8 +28,10 @@ import {
     getBlogsRecommendedController,
     getTagsRecommendedController,
     getUsersRecommendedController,
+    refreshTokenController,
     //-- User actions end --//
 } from "../controllers/usersController";
+import checkRefreshToken from "../middleware/checkRefreshToken.js";
 
 const router = express.Router();
 
@@ -80,6 +82,10 @@ router.post('/unfollow-tag/:id',
 router.post('/user-follow/:id', 
     checkAuth,
     followUserController);
+
+router.post('/refresh-tokens',
+    checkRefreshToken, 
+    refreshTokenController);
 
 // user unfollow other user --
 router.post('/user-unfollow/:id', 
