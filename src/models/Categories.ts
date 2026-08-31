@@ -24,14 +24,17 @@ const CategoriesSchema = new Schema<ICategory>(
 
     color: {
       type: String,
+      required: true,
     },
 
     desc: {
       type: String,
+      required: true,
     },
 
     longDesc: {
       type: String,
+      required: true,
       default: "",
     },
 

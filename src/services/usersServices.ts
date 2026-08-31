@@ -13,10 +13,11 @@ import { NewNotificationI } from "../interfaces/notification.interfaces";
 import Subscriptions from "../models/Subscriptions";
 import PlanSuscription from "../models/Plan";
 import { trackActivityService } from "./globalServices";
-import { emailRegister } from "../helpers/email";
+import { emailAddModerator, emailRegister } from "../helpers/email";
 import { IInfoUser } from "../interfaces/tokens.interfaces";
 import Tokens from "../models/Tokens";
 import { hashToken } from "../utils/hashToken";
+import bcrypt from "bcryptjs";
 
 
 // update profile service with new info
@@ -286,7 +287,6 @@ const loginService = async (
     password: string,
     info: IInfoUser
 ) => {
-
     // 1. check if user exists
     const user = await User.findOne({ email: email });
     if (!user) {
@@ -333,6 +333,7 @@ const loginService = async (
         profileImage: user.profilePicture.secure_url,
         accessToken,
         refreshToken,
+        roles: user.roles,
         expiresAt: suscription?.expiresAt,
         isFree: suscription?.isFree,
         plan: plan
@@ -384,6 +385,7 @@ const registerNewUserService = async (email: any, body: any) => {
 
     // 2. assamble use rinfo
     const user = new User(body);
+    user.password = await bcrypt.hash(body.password, 10);
 
     // 3. generate token to confirm
     user.token = generateID();
@@ -826,7 +828,85 @@ const getUsersRecommendedService = async (userId?: string) => {
     return usersRecomended;
 }
 
+const createModerService = async (userId: string) => {
 
+    // 1. search user and valid user
+    const user = await User.findById(userId);
+    
+    if(!user){
+        throw new ServiceException("User not found", 404);
+    }
+
+    // 2. valid that user does not have role
+    const roles = user.roles.map(r => r.name);
+    const isRole = roles.some(r => r === 'ROLE_MOD');
+
+    if(isRole){
+        throw new ServiceException("This user have role mod yet", 400);
+    }
+
+    // insert new role and save
+    const newRole = {name: 'ROLE_MOD'}
+    user.roles.push(newRole);
+    
+    await user.save();
+
+    // 3. send notification email 
+    await emailAddModerator({
+        email: user.email,
+        name: user.name,
+    });
+
+    // 4. close all sessions
+    await Tokens.updateMany(
+        {userId: user._id, status: 'ACTIVE',}, // filter
+        { $set: {status: 'REVOKED', isRevoked: true}}
+    );
+}
+
+const removeModerService = async (userId: string) => {
+
+    // 1. search user and valid user
+    const user = await User.findById(userId);
+    
+    if(!user){
+        throw new ServiceException("User not found", 404);
+    }
+
+    // 2. valid that user does not have role
+    const isRole = user.roles.some(r => r.name === 'ROLE_MOD');
+
+    if(!isRole){
+        throw new ServiceException("This user does not have this role to remove it.", 400);
+    }
+
+    // insert new role and save
+    user.roles.pull({name: 'ROLE_MOD'});
+    
+    await user.save();
+}
+
+
+const searchUsersToAdminPanelService = async (search: string) => {
+
+    // 1. query base 
+    const query = {
+        $or: [
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } }
+        ]
+    };
+
+    // 2. get users paginated
+    const users = await User.find(query)
+        // .select("_id name email profilePicture createdAt")
+        .sort({ createdAt: -1 })
+        .select("name email profilePicture roles info");
+
+
+    // 5. return info
+    return users;
+}
 
 export default {
     updateProfileService,
@@ -851,5 +931,8 @@ export default {
     getBlogsRecommendedService,
     getTagsRecommendedService,
     getUsersRecommendedService,
-    refreshTokenService
+    refreshTokenService,
+    createModerService,
+    removeModerService,
+    searchUsersToAdminPanelService
 }

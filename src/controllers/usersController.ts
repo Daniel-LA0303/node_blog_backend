@@ -75,13 +75,13 @@ const loginController = async (req: any, res: any, next: any) => {
 
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip;
         const userAgent = req.headers['user-agent'];
-        const origin = req.headers['origin'] || req.headers['referer'];
+        //const origin = req.headers['origin'] || req.headers['referer'];
         const host = req.headers['host'];
 
         const info: IInfoUser = {
             ip,
             userAgent,
-            origin,
+            //origin,
             host
         }
 
@@ -411,17 +411,15 @@ const getOneUserFollowController = async (id: any) => {
     }
 }
 
-
-
 const searchUsersController = async (req: any, res: any) => {
     try {
-        const { q, currentUserId } = req.query; // q = texto de búsqueda
+        const { q, currentUserId } = req.query; // query
 
         if (!currentUserId) return res.status(400).json({ error: "currentUserId required" });
 
-        const regex = new RegExp(q, "i"); // búsqueda insensible a mayúsculas
+        const regex = new RegExp(q, "i"); // search
 
-        // Buscar coincidencias en fullname o email, excluyendo al usuario logeado
+        // search with email and name like params
         const users = await User.find({
             _id: { $ne: currentUserId },
             $or: [{ name: regex }, { email: regex }],
@@ -492,6 +490,97 @@ const getUsersRecommendedController = async (req: any, res: any, next: any) => {
     }
 }
 
+const testRoleController = async (req: any, res: any, next: any) => {
+
+    try {
+
+        console.log("test role controller");
+        
+        // call service to confirm
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "test role",
+                "test role",
+                false
+            )
+        );
+    } catch (error) {
+        next(error);
+    }
+}
+
+
+const createModerController = async (req: any, res: any, next: any) => {
+
+    try {
+
+        const userId = req.body.userId;
+        await usersServices.createModerService(userId);
+        
+        // call service to confirm
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "New mod created successfully.",
+                "New mod created successfully.",
+                false
+            )
+        );
+    } catch (error) {
+        next(error);
+    }
+}
+
+const removeModerController = async (req: any, res: any, next: any) => {
+
+    try {
+
+        const userId = req.body.userId;
+        await usersServices.removeModerService(userId);
+        
+        // call service to confirm
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "Remove mod successfully.",
+                "Remove mod successfully.",
+                false
+            )
+        );
+    } catch (error) {
+        next(error);
+    }
+}
+
+const searchUsersToAdminPanelController = async (req: any, res: any, next: any) => {
+
+    try {
+
+        const q = req.query.search;
+        const r = await usersServices.searchUsersToAdminPanelService(q);
+        
+        // call service to confirm
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "Search users.",
+                r,
+                false
+            )
+        );
+    } catch (error) {
+        next(error);
+    }
+}
 
 
 export {
@@ -522,5 +611,9 @@ export {
     getBlogsRecommendedController,
     getTagsRecommendedController,
     getUsersRecommendedController,
-    refreshTokenController
+    refreshTokenController,
+    testRoleController,
+    createModerController,
+    removeModerController,
+    searchUsersToAdminPanelController
 }

@@ -18,7 +18,7 @@ const tokensSchema = new Schema<IToken>(
         },
         origin: {
             type: String,
-            required: true,
+            required: false,
         },
         host: {
             type: String,

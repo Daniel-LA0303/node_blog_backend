@@ -1,18 +1,34 @@
 import express from "express";
 
 import { 
-    addCategory,
+    addCategoryController,
+    updateCategoryController,
     getOneCategory,
-    updateCategories 
+    updateCategories, 
+    searchCategoryController
 } from "../controllers/categoriesController.js";
+import checkRoleAuth from "../middleware/checkRoleAuth.js";
 
 const router = express.Router();
 
 /**
  * categories routes start
  */
-router.post('/', addCategory); 
+router.post('/', 
+    checkRoleAuth,
+    addCategoryController); 
 
+router.put('/update-category/:id', 
+    checkRoleAuth,
+    updateCategoryController);   
+
+router.put('/update/:id', 
+    checkRoleAuth,
+    updateCategories);
+
+router.get('/search-category', 
+    checkRoleAuth,
+    searchCategoryController);
 
 router.get('/:id', getOneCategory); 
 

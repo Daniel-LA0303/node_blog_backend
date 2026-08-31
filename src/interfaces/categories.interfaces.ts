@@ -5,6 +5,7 @@ interface IFollows {
   users: Types.ObjectId[];
 }
 
+// document interface
 export interface ICategory extends Document {
   name: string;
   value: string;
@@ -13,4 +14,13 @@ export interface ICategory extends Document {
   desc?: string;
   longDesc: string;
   follows: IFollows;
+}
+
+export interface ICreateCategory {
+  name: string;
+  color: string;
+  desc: string;
+  value: string;
+  label: string;
+  longDesc: string
 }

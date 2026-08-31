@@ -95,7 +95,7 @@ export interface IUser extends Document {
 
     activityTracker: any;
 
-    roles: IRole[];
+    roles: Types.DocumentArray<IRole>;
 
     checkPassword(passwordForm: string): Promise<boolean>;
 }

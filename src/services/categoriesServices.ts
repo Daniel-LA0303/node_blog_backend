@@ -3,6 +3,48 @@ import { IPost } from "../interfaces/post.interfaces";
 import Categories from "../models/Categories";
 import User from "../models/User";
 import { trackActivityService } from "./globalServices";
+import { ICreateCategory } from "../interfaces/categories.interfaces";
+import { ServiceException } from "../utils/exception/ServiceException";
+
+
+// create a new category
+const createCategoryService = async (dto: ICreateCategory) => {
+
+    // 1. valid name
+    const cat = await Categories.findOne({
+        name: dto.name
+    });
+    if(cat !== null){
+        throw new ServiceException("This category with this name already exists.", 400);
+    }
+
+    // 2. insert data
+    const newCat = new Categories(dto);
+    await newCat.save();
+    return newCat;
+}
+
+
+const updateCategoryService = async (dto: ICreateCategory, id: string) => {
+
+    // 1. search
+    const cat = await Categories.findById(id);
+
+    if(!cat){
+        throw new ServiceException("This category does not exists.", 404);
+    }
+
+    // 2. update data
+    cat.name = dto.name;
+    cat.value = dto.value;
+    cat.label = dto.label;
+    cat.color = dto.color;
+    cat.desc = dto.desc;
+    cat.longDesc = dto.longDesc;
+
+    await cat.save();
+    return cat;
+}
 
 /**
  * get categories paginated
@@ -122,9 +164,26 @@ const getCategoriesByNamePaginatedService = async (page = 1, limit = 5, name = "
     };
 };
 
+// search a category without pagination
+const getCategoriesByNameService = async (name = "") => {
+
+    // 1. build query
+    const query = { name: { $regex: name, $options: "i" } };
+
+    // 2. get categories
+    const categories = await Categories.find(query)
+        // .select("_id name value label color createdAt")
+        .sort({ createdAt: -1 });
+
+    // 5. return info
+    return categories;
+};
 
 export default {
+    createCategoryService,
+    updateCategoryService,
     getCategoriesPaginatedService,
     getOneCategoryFullInfo,
-    getCategoriesByNamePaginatedService
+    getCategoriesByNamePaginatedService,
+    getCategoriesByNameService
 }

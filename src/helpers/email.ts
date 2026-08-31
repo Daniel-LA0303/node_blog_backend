@@ -35,7 +35,7 @@ export const emailRegister = async (datos: any) => {
                 Your account is almost ready, just check with the following link:
             </p>
             <p style="text-align:center; margin:20px 0;">
-                <a href="http://localhost:5173/user-confirmed/${token}" 
+                <a href="${process.env.FRONTEND_URL}/user-confirmed/${token}" 
                 style="background-color:white; color:#121212; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:bold;">
                 Check your account
                 </a>
@@ -75,7 +75,7 @@ export const emailNewPassword = async (datos: any) => {
         html: `
             <p>Hola: ${name}, Reset your Password in Daniel-LA Blog</p>
             <p>Follow the link below to generate a new password</p>
-            <a href="http://127.0.0.1:5173/forget-password/${token}">Reset your Password</a>
+            <a href="${process.env.FRONTEND_URL}/forget-password/${token}">Reset your Password</a>
             <p>If you have not created this account, please ignore this message</p>
         `
     })
@@ -184,3 +184,47 @@ export const emailPaymentFailed = async (data: any) => {
         `
     })
 }
+
+export const emailAddModerator = async (datos: { email: string; name: string; token?: string }) => {
+    const { email, name, token } = datos;
+
+    const transport = nodemailer.createTransport({
+        host: process.env.MAILTRAP_HOST as string,
+        port: Number(process.env.MAILTRAP_PORT),
+        auth: {
+            user: process.env.MAILTRAP_USER as string,
+            pass: process.env.MAILTRAP_PASS as string,
+        },
+    });
+
+
+    // INFO EMAIL
+    const info = await transport.sendMail({
+        from: 'Daniel-LA Blog <no-reply@daniella-blog.com>',
+        to: email,
+        subject: "Daniel-LA Blog - You've been assigned as a Moderator",
+        text: `Hi ${name}, an administrator has added you as a moderator. All active sessions have been closed for security reasons. Please re-login to access your new permissions: ${process.env.FRONTEND_URL}/login`,
+        html: `
+            <div style="background-color:#121212; color:white; padding:20px; font-family:Arial, sans-serif;">
+                <h2 style="color:#ffffff; text-align:center;">Hi ${name},</h2>
+                <p style="font-size:16px; line-height:1.5;">
+                    An administrator has promoted your account to <b>Moderator</b> on <b>Daniel-LA Blog</b>.
+                </p>
+                <p style="font-size:16px; line-height:1.5;">
+                    For security reasons, all of your active sessions have been closed. Please log back in to activate your new permissions:
+                </p>
+                <p style="text-align:center; margin:25px 0;">
+                    <a href="${process.env.FRONTEND_URL}/login" 
+                       style="background-color:#ffffff; color:#121212; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">
+                        Re-login to Your Account
+                    </a>
+                </p>
+                <p style="font-size:14px; color:#bbbbbb;">
+                    If you believe this was done in error, please contact support or an administrator immediately.
+                </p>
+            </div>
+        `
+    });
+
+    return info;
+};

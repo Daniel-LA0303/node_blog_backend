@@ -29,10 +29,15 @@ import {
     getTagsRecommendedController,
     getUsersRecommendedController,
     refreshTokenController,
+    testRoleController,
+    createModerController,
+    removeModerController,
+    searchUsersToAdminPanelController,
     //-- User actions end --//
 } from "../controllers/usersController";
 import checkRefreshToken from "../middleware/checkRefreshToken.js";
 import { loginRateLimiter } from "../rate-limiter/ratesLimits.js";
+import checkRoleAuth from "../middleware/checkRoleAuth.js";
 
 const router = express.Router();
 
@@ -107,5 +112,21 @@ router.get("/search", searchUsersController);
 router.get("/get-blogs-recommended", checkAuth, getBlogsRecommendedController);
 router.get("/get-users-recommended", checkAuth, getUsersRecommendedController);
 router.get("/get-tags-recommended", checkAuth, getTagsRecommendedController);
+
+router.post('/test-role', 
+    checkRoleAuth,
+    testRoleController);
+
+router.post('/create-mod', 
+    checkRoleAuth,
+    createModerController);
+router.post('/remove-mod', 
+    checkRoleAuth,
+    removeModerController);
+
+router.get("/search-mod", 
+    //checkRoleAuth,
+    searchUsersToAdminPanelController);
+
 
 export default router

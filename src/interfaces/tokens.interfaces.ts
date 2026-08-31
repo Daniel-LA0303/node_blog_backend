@@ -24,6 +24,6 @@ export interface IToken extends Document{
 export interface IInfoUser {
     ip: string,
     userAgent: string;
-    origin: string;
+    origin?: string;
     host: string;
 }
