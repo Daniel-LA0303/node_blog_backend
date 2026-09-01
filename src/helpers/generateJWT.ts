@@ -9,7 +9,7 @@ export const generateAccessToken = (id: any, roles: any[]) => {
         roles
     }, process.env.JWT_SECRET as string,
     {
-        expiresIn: "1d"
+        expiresIn: "3m"
     })
 }
 
@@ -19,7 +19,7 @@ export const generateRefreshToken = (id: any, roles: any[]) => {
         roles
     }, process.env.JWT_SECRET as string,
     {
-        expiresIn: "3d"
+        expiresIn: "7d"
     })
 }
 

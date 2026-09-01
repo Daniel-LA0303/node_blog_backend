@@ -19,8 +19,8 @@ const checkRefreshToken = async (req: any, res: any, next: any) => {
     }
 
     if (!refreshToken) {
-        return res.status(400).json(
-            new ApiResponse(400, "/api" + req.path, req.method, "Authorization header with refresh token is required", null, true)
+        return res.status(401).json(
+            new ApiResponse(401, "/api" + req.path, req.method, "Authorization header with refresh token is required", null, true)
         );
     }
 
@@ -61,9 +61,7 @@ const checkRefreshToken = async (req: any, res: any, next: any) => {
 
         // change token status when token is in db but is not valid
         try {
-            
-            console.log("token expired");
-            
+                        
             // search token
             const tokenDoc = await Tokens.findOne({
                 token: hashToken(refreshToken)

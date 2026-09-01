@@ -12,7 +12,7 @@ interface CustomJwtPayload extends JwtPayload {
     roles: JwtRole[];
 }
 
-const allowedRoles = ['ROLE_ADMIN'];
+const allowedRoles = ['ROLE_ADMIN','ROLE_MOD'];
 
 // middleware to check jwt
 const checkRoleAuth = async (req: any, res: any, next: any) => {
@@ -29,8 +29,8 @@ const checkRoleAuth = async (req: any, res: any, next: any) => {
             const roles: string[] = decoded.roles.map((r) => r.name);
             const haveAccess = roles.some((r) => allowedRoles.includes(r));
             if(!haveAccess){
-                return res.status(400).json(
-                    new ApiResponse(400, '/api' + req.path, req.method, 'You do not have permissions to do that', null, true)
+                return res.status(401).json(
+                    new ApiResponse(401, '/api' + req.path, req.method, 'You do not have permissions to do that', null, true)
                 );
             }
 
@@ -39,24 +39,24 @@ const checkRoleAuth = async (req: any, res: any, next: any) => {
 
             // 5. check if user exists
             if (!user) {
-                return res.status(400).json(
-                    new ApiResponse(400, '/api' + req.path, req.method, 'User not found', null, true)
+                return res.status(401).json(
+                    new ApiResponse(401, '/api' + req.path, req.method, 'User not found', null, true)
                 );
             }
             req.user = user;
             return next();
         } catch (error) {
             // 401 triggers the frontend refresh flow
-            return res.status(400).json(
-                new ApiResponse(400, '/api' + req.path, req.method, 'Access token expired or invalid', null, true)
+            return res.status(401).json(
+                new ApiResponse(401, '/api' + req.path, req.method, 'Access token expired or invalid', null, true)
             );
         }
     }
 
     if (!token) {
         const error = new Error('Invalid token');
-        return res.status(400).json(new ApiResponse(
-            400,
+        return res.status(401).json(new ApiResponse(
+            401,
             "/api" + req.path,
             req.method,
             error.message,

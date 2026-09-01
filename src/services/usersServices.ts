@@ -908,6 +908,48 @@ const searchUsersToAdminPanelService = async (search: string) => {
     return users;
 }
 
+const verifyUserService = async (userId: string) => {
+
+    // 1. find user
+    const user = await User.findById(userId);
+    if(!user){
+        throw new ServiceException("User not found", 404);
+    }
+
+    // 2. verify user
+    user.confirm = true;
+    user.status = 'ACTIVE';
+    await user.save();
+}
+
+const banUserService = async (userId: string) => {
+
+    // 1. find user
+    const user = await User.findById(userId);
+    if(!user){
+        throw new ServiceException("User not found", 404);
+    }
+
+    // 2. verify user
+    user.status = 'BANNED';
+    await user.save();
+
+}
+
+const unbanUserService = async (userId: string) => {
+
+    // 1. find user
+    const user = await User.findById(userId);
+    if(!user){
+        throw new ServiceException("User not found", 404);
+    }
+
+    // 2. verify user
+    user.status = 'ACTIVE';
+    await user.save();
+    
+}
+
 export default {
     updateProfileService,
     userFollowATagService,
@@ -934,5 +976,8 @@ export default {
     refreshTokenService,
     createModerService,
     removeModerService,
-    searchUsersToAdminPanelService
+    searchUsersToAdminPanelService,
+    verifyUserService,
+    banUserService,
+    unbanUserService
 }

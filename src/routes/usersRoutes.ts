@@ -33,6 +33,9 @@ import {
     createModerController,
     removeModerController,
     searchUsersToAdminPanelController,
+    verifyUserController,
+    banUserController,
+    unbanUserController,
     //-- User actions end --//
 } from "../controllers/usersController";
 import checkRefreshToken from "../middleware/checkRefreshToken.js";
@@ -128,5 +131,16 @@ router.get("/search-mod",
     //checkRoleAuth,
     searchUsersToAdminPanelController);
 
+router.post('/verify-user',
+    checkRoleAuth, 
+    verifyUserController);
+
+router.post('/ban-user',
+    checkRoleAuth, 
+    banUserController);
+
+router.post('/unban-user',
+    checkRoleAuth, 
+    unbanUserController);
 
 export default router

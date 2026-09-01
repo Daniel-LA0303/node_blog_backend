@@ -22,6 +22,11 @@ const usersSchema = new Schema<IUser>(
       trim: true,
       unique: true,
     },
+    status: {
+      type: String,
+      required: true,
+      default: 'ACTIVE'
+    },
 
     roles: {
       type: [{

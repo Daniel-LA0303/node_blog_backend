@@ -16,6 +16,7 @@ import repliesRoutes from './routes/repliesRoutes'
 import messageRoutes from './routes/messageRoutes'
 import paymentRoutes from './routes/paymentsRoutes'
 import notificationsRoutes from './routes/notificationsRoutes'
+import reportsRoutes from './routes/reportsRoutes'
 import { errorHandler } from "./utils/exception/errorHandler";
 
 import { app, server } from "./socketIO/server";
@@ -75,6 +76,7 @@ app.use('/api/replies', repliesRoutes);
 app.use('/api/message', messageRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/reports', reportsRoutes);
 
 app.use(errorHandler);
 

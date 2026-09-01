@@ -77,6 +77,8 @@ export interface IUser extends Document {
 
     likePost: ILikePost;
 
+    status: string;
+
     postsSaved: IPostsSaved;
 
     followsTags: IFollowsTags;

@@ -582,6 +582,74 @@ const searchUsersToAdminPanelController = async (req: any, res: any, next: any) 
     }
 }
 
+const verifyUserController = async (req: any, res: any, next: any) => {
+
+    try {
+
+        const userId = req.body.userId;
+        await usersServices.verifyUserService(userId);
+        
+        // call service to confirm
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "Verify user successfully.",
+                "Verify user successfully.",
+                false
+            )
+        );
+    } catch (error) {
+        next(error);
+    }
+}
+
+const banUserController = async (req: any, res: any, next: any) => {
+
+    try {
+
+        const userId = req.body.userId;
+        await usersServices.banUserService(userId);
+        
+        // call service to confirm
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "Ban user successfully.",
+                "Ban user successfully.",
+                false
+            )
+        );
+    } catch (error) {
+        next(error);
+    }
+}
+
+const unbanUserController = async (req: any, res: any, next: any) => {
+
+    try {
+
+        const userId = req.body.userId;
+        await usersServices.unbanUserService(userId);
+        
+        // call service to confirm
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "Unban user successfully.",
+                "Unban user successfully.",
+                false
+            )
+        );
+    } catch (error) {
+        next(error);
+    }
+}
 
 export {
     //-- auth user start --//
@@ -615,5 +683,8 @@ export {
     testRoleController,
     createModerController,
     removeModerController,
-    searchUsersToAdminPanelController
+    searchUsersToAdminPanelController,
+    verifyUserController,
+    banUserController,
+    unbanUserController
 }

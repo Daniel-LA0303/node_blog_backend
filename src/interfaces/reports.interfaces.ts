@@ -7,4 +7,14 @@ export interface IReport extends Document {
     reason: 'SPAM' | 'SENSITIVE_INFO' | 'HARASSMENT' | 'OTHER';
     description?: string;
     status: 'PENDING' | 'RESOLVED' | 'DISMISSED';
+    reportedBy: Types.ObjectId; 
+}
+
+export interface ICreateReport {
+    targetType: string;
+    targetId: string;
+    reason: string;
+    description?: string;
+    status:string;
+    reportedBy: string
 }

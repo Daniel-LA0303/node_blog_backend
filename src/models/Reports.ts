@@ -25,6 +25,11 @@ const ReportsSchema = new Schema<IReport>(
             type: String,
             enum: ['PENDING', 'RESOLVED', 'DISMISSED'],
             default: 'PENDING'
+        },
+        reportedBy: {
+            type: Schema.Types.ObjectId,
+            required: true,
+            ref: "User",
         }
     },
     {
