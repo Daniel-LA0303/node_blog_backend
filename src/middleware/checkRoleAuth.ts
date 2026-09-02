@@ -1,7 +1,7 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import User from "../models/User";
 import { ApiResponse } from "../utils/ApiResponse";
-import { error } from "console";
+import { error, log } from "console";
 
 interface JwtRole {
   name: string;
@@ -35,10 +35,10 @@ const checkRoleAuth = async (req: any, res: any, next: any) => {
             }
 
             // 4. search user
-            const user = await User.findById(decoded.id).select("-password -confirmado -token -__v");
+            const user = await User.findById(decoded.id).select(" _id name email roles");
 
             // 5. check if user exists
-            if (!user) {
+            if (!user) {                
                 return res.status(401).json(
                     new ApiResponse(401, '/api' + req.path, req.method, 'User not found', null, true)
                 );
@@ -47,6 +47,10 @@ const checkRoleAuth = async (req: any, res: any, next: any) => {
             return next();
         } catch (error) {
             // 401 triggers the frontend refresh flow
+            console.log("catch");
+            
+            console.log(error);
+            
             return res.status(401).json(
                 new ApiResponse(401, '/api' + req.path, req.method, 'Access token expired or invalid', null, true)
             );

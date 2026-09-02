@@ -18,6 +18,7 @@ import { IInfoUser } from "../interfaces/tokens.interfaces";
 import Tokens from "../models/Tokens";
 import { hashToken } from "../utils/hashToken";
 import bcrypt from "bcryptjs";
+import auditLogServices from "./auditLogServices";
 
 
 // update profile service with new info
@@ -523,7 +524,7 @@ const getOneUserProfileInfoService = async (userId: any) => {
             path: "posts",
 
         }
-    }).select('profilePicture email createdAt info name _id followersUsers numberPost posts');
+    }).select('profilePicture email createdAt info name _id followersUsers numberPost posts status roles');
 
     if (!user) {
         throw new ServiceException("User not found", 404);
@@ -763,7 +764,7 @@ const userDashboardFollowingPaginatedService = async (page = 1, limit = 10, user
 const topUsersCategoriesService = async () => {
 
     // 1. get users top
-    const users = await User.find({status: 'ACTIVE'})
+    const users = await User.find({ status: 'ACTIVE' })
         .sort({ numberPost: -1 })
         .limit(5)
         .select("name profilePicture numberPost email");
@@ -876,7 +877,7 @@ const getUsersRecommendedService = async (userId?: string) => {
     return usersRecomended;
 }
 
-const createModerService = async (userId: string) => {
+const createModerService = async (userId: string, userR: any, req: any) => {
 
     // 1. search user and valid user
     const user = await User.findById(userId);
@@ -910,9 +911,21 @@ const createModerService = async (userId: string) => {
         { userId: user._id, status: 'ACTIVE', }, // filter
         { $set: { status: 'REVOKED', isRevoked: true } }
     );
+
+    await auditLogServices.createAuditLogService({
+        actor: userR,
+        action: 'ADD_MOD',
+        category: 'MODERATION',
+        target: {
+            entityType: 'User',
+            entityId: user._id,
+            name: user.email
+        },
+        req
+    });
 }
 
-const removeModerService = async (userId: string) => {
+const removeModerService = async (userId: string, userR: any, req: any) => {
 
     // 1. search user and valid user
     const user = await User.findById(userId);
@@ -932,6 +945,18 @@ const removeModerService = async (userId: string) => {
     user.roles.pull({ name: 'ROLE_MOD' });
 
     await user.save();
+
+    await auditLogServices.createAuditLogService({
+        actor: userR,
+        action: 'REMOVE_MOD',
+        category: 'MODERATION',
+        target: {
+            entityType: 'User',
+            entityId: user._id,
+            name: user.email
+        },
+        req
+    });
 }
 
 
@@ -956,7 +981,7 @@ const searchUsersToAdminPanelService = async (search: string) => {
     return users;
 }
 
-const verifyUserService = async (userId: string) => {
+const verifyUserService = async (userId: string, userR: any, req: any) => {
 
     // 1. find user
     const user = await User.findById(userId);
@@ -968,9 +993,21 @@ const verifyUserService = async (userId: string) => {
     user.confirm = true;
     user.status = 'ACTIVE';
     await user.save();
+
+    await auditLogServices.createAuditLogService({
+        actor: userR,
+        action: 'USER_CONFIRM',
+        category: 'MODERATION',
+        target: {
+            entityType: 'User',
+            entityId: user._id,
+            name: user.email
+        },
+        req
+    });
 }
 
-const banUserService = async (userId: string) => {
+const banUserService = async (userId: string, userR: any, req: any) => {
 
     // 1. find user
     const user = await User.findById(userId);
@@ -982,9 +1019,21 @@ const banUserService = async (userId: string) => {
     user.status = 'BANNED';
     await user.save();
 
+    await auditLogServices.createAuditLogService({
+        actor: userR,
+        action: 'USER_BANNED',
+        category: 'MODERATION',
+        target: {
+            entityType: 'User',
+            entityId: user._id,
+            name: user.email
+        },
+        req
+    });
+
 }
 
-const unbanUserService = async (userId: string) => {
+const unbanUserService = async (userId: string, userR: any, req: any) => {
 
     // 1. find user
     const user = await User.findById(userId);
@@ -995,6 +1044,19 @@ const unbanUserService = async (userId: string) => {
     // 2. verify user
     user.status = 'ACTIVE';
     await user.save();
+
+    await auditLogServices.createAuditLogService({
+        actor: userR,
+        action: 'USER_UNBANNED',
+        category: 'MODERATION',
+        target: {
+            entityType: 'User',
+            entityId: user._id,
+            name: user.email
+        },
+        req
+    });
+
 
 }
 

@@ -19,7 +19,8 @@ const addCategoryController = async (req: any, res: any, next: any) => {
             longDesc: req.body.longDesc
         }
 
-        const response = await categoriesServices.createCategoryService(dto);
+        const userR = req.user;
+        const response = await categoriesServices.createCategoryService(dto, userR, req);
 
         res.status(201).json(
             new ApiResponse(
@@ -75,7 +76,8 @@ const updateCategoryController = async (req: any, res: any, next: any) => {
             longDesc: req.body.longDesc
         }
 
-        const repsonse = await categoriesServices.updateCategoryService(dto, id);
+        const userR = req.user;
+        const repsonse = await categoriesServices.updateCategoryService(dto, id, userR, req);
 
         res.status(201).json(
             new ApiResponse(

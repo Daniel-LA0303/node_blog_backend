@@ -519,7 +519,8 @@ const createModerController = async (req: any, res: any, next: any) => {
     try {
 
         const userId = req.body.userId;
-        await usersServices.createModerService(userId);
+        const userR = req.user;
+        await usersServices.createModerService(userId, userR, req);
         
         // call service to confirm
         res.status(200).json(
@@ -542,7 +543,8 @@ const removeModerController = async (req: any, res: any, next: any) => {
     try {
 
         const userId = req.body.userId;
-        await usersServices.removeModerService(userId);
+        const userR = req.user;
+        await usersServices.removeModerService(userId, userR, req);
         
         // call service to confirm
         res.status(200).json(
@@ -588,7 +590,8 @@ const verifyUserController = async (req: any, res: any, next: any) => {
     try {
 
         const userId = req.body.userId;
-        await usersServices.verifyUserService(userId);
+        const userR = req.user;
+        await usersServices.verifyUserService(userId, userR, req);
         
         // call service to confirm
         res.status(200).json(
@@ -611,7 +614,8 @@ const banUserController = async (req: any, res: any, next: any) => {
     try {
 
         const userId = req.body.userId;
-        await usersServices.banUserService(userId);
+        const user = req.user;
+        await usersServices.banUserService(userId, user, req);
         
         // call service to confirm
         res.status(200).json(
@@ -633,8 +637,9 @@ const unbanUserController = async (req: any, res: any, next: any) => {
 
     try {
 
-        const userId = req.body.userId;
-        await usersServices.unbanUserService(userId);
+        const userId = req.body.userId
+        const userR = req.user;
+        await usersServices.unbanUserService(userId, userR, req);
         
         // call service to confirm
         res.status(200).json(

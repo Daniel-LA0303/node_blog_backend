@@ -5,10 +5,11 @@ import User from "../models/User";
 import { trackActivityService } from "./globalServices";
 import { ICreateCategory } from "../interfaces/categories.interfaces";
 import { ServiceException } from "../utils/exception/ServiceException";
+import auditLogServices from "./auditLogServices";
 
 
 // create a new category
-const createCategoryService = async (dto: ICreateCategory) => {
+const createCategoryService = async (dto: ICreateCategory, userR: any, req: any) => {
 
     // 1. valid name
     const cat = await Categories.findOne({
@@ -21,11 +22,24 @@ const createCategoryService = async (dto: ICreateCategory) => {
     // 2. insert data
     const newCat = new Categories(dto);
     await newCat.save();
+
+    // 3. log
+    await auditLogServices.createAuditLogService({
+        actor: userR,
+        action: 'ADD_CATEGORY',
+        category: 'SYSTEM',
+        target: {
+            entityType: 'Categories',
+            entityId: newCat._id,
+            name: newCat.name
+        },
+        req
+    });
     return newCat;
 }
 
 
-const updateCategoryService = async (dto: ICreateCategory, id: string) => {
+const updateCategoryService = async (dto: ICreateCategory, id: string, userR: any, req: any) => {
 
     // 1. search
     const cat = await Categories.findById(id);
@@ -43,6 +57,20 @@ const updateCategoryService = async (dto: ICreateCategory, id: string) => {
     cat.longDesc = dto.longDesc;
 
     await cat.save();
+
+        // 3. log
+    await auditLogServices.createAuditLogService({
+        actor: userR,
+        action: 'EDIT_CATEGORY',
+        category: 'SYSTEM',
+        target: {
+            entityType: 'Categories',
+            entityId: cat._id,
+            name: cat.name
+        },
+        req
+    });
+
     return cat;
 }
 
