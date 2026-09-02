@@ -2,6 +2,120 @@ import dotenv from "dotenv";
 dotenv.config();
 import nodemailer from "nodemailer"
 
+export interface IEmailStatusData {
+    email: string;
+    name: string;
+    postTitle: string;
+    postId: string;
+    status: 'BANNED' | 'DELETED_BY_ADMIN' | 'HIDDEN_BY_ADMIN' | 'PUBLISHED' | string;
+    reason?: string;
+}
+
+export interface IEmailUserStatusData {
+    email: string;
+    name: string;
+    status: 'BANNED' | 'ACTIVE' | 'VERIFIED' | string;
+    reason?: string;
+}
+
+export const emailPostStatusChange = async (datos: IEmailStatusData) => {
+    const { email, name, postTitle, postId, status, reason } = datos;
+
+    const transport = nodemailer.createTransport({
+        host: process.env.MAILTRAP_HOST as string,
+        port: Number(process.env.MAILTRAP_PORT),
+        auth: {
+            user: process.env.MAILTRAP_USER as string,
+            pass: process.env.MAILTRAP_PASS as string,
+        },
+    });
+
+    // 1. Content Factory for Post Status Actions
+    const statusConfig: Record<string, { subject: string; message: string; buttonText?: string; link?: string }> = {
+        BANNED: {
+            subject: 'Daniel-LA Blog - Your Post Has Been Banned',
+            message: `
+        <p style="font-size:16px; line-height:1.5;">
+          Your post <b>"${postTitle}"</b> has been <b>banned</b> by our moderation team for violating community guidelines.
+        </p>
+      `,
+        },
+        DELETED_BY_ADMIN: {
+            subject: 'Daniel-LA Blog - Your Post Was Removed',
+            message: `
+        <p style="font-size:16px; line-height:1.5;">
+          Your post <b>"${postTitle}"</b> was permanently removed by an administrator. This action cannot be undone.
+        </p>
+      `,
+        },
+        HIDDEN_BY_ADMIN: {
+            subject: 'Daniel-LA Blog - Your Post Is Now Hidden',
+            message: `
+        <p style="font-size:16px; line-height:1.5;">
+          Your post <b>"${postTitle}"</b> has been set to <b>Hidden</b> by an administrator and is no longer visible to the public.
+        </p>
+      `,
+            buttonText: 'View My Posts',
+            link: `${process.env.FRONTEND_URL}/profile/posts`,
+        },
+        PUBLISHED: {
+            subject: 'Daniel-LA Blog - Your Post Has Been Restored',
+            message: `
+        <p style="font-size:16px; line-height:1.5;">
+          Great news! Your post <b>"${postTitle}"</b> has been reviewed and restored to public view.
+        </p>
+      `,
+            buttonText: 'View Your Post',
+            link: `${process.env.FRONTEND_URL}/post/${postId}`,
+        },
+    };
+
+    const currentConfig = statusConfig[status] || {
+        subject: 'Daniel-LA Blog - Post Status Update',
+        message: `
+      <p style="font-size:16px; line-height:1.5;">
+        The status of your post <b>"${postTitle}"</b> has been updated to: <b>${status}</b>.
+      </p>
+    `,
+    };
+
+    // 2. HTML Template using your dark theme style
+    const htmlContent = `
+    <div style="background-color:#121212; color:white; padding:20px; font-family:Arial, sans-serif;">
+        <h2 style="color:#ffffff; text-align:center;">Hi ${name},</h2>
+        ${currentConfig.message}
+        
+        ${reason ? `
+          <p style="font-size:14px; color:#e11d48; margin-top:15px;">
+            <b>Reason:</b> ${reason}
+          </p>
+        ` : ''}
+
+        ${currentConfig.buttonText && currentConfig.link ? `
+          <p style="text-align:center; margin:25px 0;">
+              <a href="${currentConfig.link}" 
+                 style="background-color:#ffffff; color:#121212; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">
+                  ${currentConfig.buttonText}
+              </a>
+          </p>
+        ` : ''}
+
+        <p style="font-size:14px; color:#bbbbbb;">
+            If you believe this was done in error, please contact support or an administrator immediately.
+        </p>
+    </div>
+  `;
+
+    // 3. Send Email
+    await transport.sendMail({
+        from: 'Daniel-LA Blog <no-reply@daniella-blog.com>',
+        to: email,
+        subject: currentConfig.subject,
+        text: `Hi ${name}, ${currentConfig.subject}. ${reason ? `Reason: ${reason}` : ''}`,
+        html: htmlContent,
+    });
+};
+
 // email new user
 export const emailRegister = async (datos: any) => {
     const { email, name, token } = datos;
@@ -98,10 +212,10 @@ export const emailPaymentSuccess = async (data: any) => {
 
 
     await transport.sendMail({
-        from:    'Daniel-LA Blog',
-        to:      email,
+        from: 'Daniel-LA Blog',
+        to: email,
         subject: 'Payment confirmed — your plan is active',
-        text:    `Your payment was successful. Plan: ${plan}`,
+        text: `Your payment was successful. Plan: ${plan}`,
         html: `
             <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
                 <h2 style="color: #16a34a;">Payment confirmed</h2>
@@ -150,10 +264,10 @@ export const emailPaymentFailed = async (data: any) => {
 
 
     await transport.sendMail({
-        from:    'Daniel-LA Blog',
-        to:      email,
+        from: 'Daniel-LA Blog',
+        to: email,
         subject: 'Payment failed — action required',
-        text:    `Your payment for the ${plan} plan could not be processed.`,
+        text: `Your payment for the ${plan} plan could not be processed.`,
         html: `
             <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
                 <h2 style="color: #dc2626;">Payment failed</h2>
@@ -227,4 +341,92 @@ export const emailAddModerator = async (datos: { email: string; name: string; to
     });
 
     return info;
+};
+
+export const emailUserStatusChange = async (datos: IEmailUserStatusData) => {
+    const { email, name, status, reason } = datos;
+
+    const transport = nodemailer.createTransport({
+        host: process.env.MAILTRAP_HOST as string,
+        port: Number(process.env.MAILTRAP_PORT),
+        auth: {
+            user: process.env.MAILTRAP_USER as string,
+            pass: process.env.MAILTRAP_PASS as string,
+        },
+    });
+
+    // 1. Content Factory for User Actions
+    let subject = 'Daniel-LA Blog - Account Status Update';
+    let messageHtml = '';
+    let buttonHtml = '';
+
+    if (status === 'BANNED') {
+        subject = 'Daniel-LA Blog - Your Account Has Been Banned';
+        messageHtml = `
+      <p style="font-size:16px; line-height:1.5;">
+        Your account has been <b>suspended/banned</b> by an administrator due to a violation of our community guidelines.
+      </p>
+      <p style="font-size:16px; line-height:1.5;">
+        For security reasons, all active sessions have been terminated and you will no longer be able to log in.
+      </p>
+    `;
+    } else if (status === 'ACTIVE') {
+        subject = 'Daniel-LA Blog - Your Account Has Been Restored';
+        messageHtml = `
+      <p style="font-size:16px; line-height:1.5;">
+        Great news! An administrator has restored your account access on <b>Daniel-LA Blog</b>.
+      </p>
+      <p style="font-size:16px; line-height:1.5;">
+        You can now log back in and continue using your account normally.
+      </p>
+    `;
+        buttonHtml = `
+      <p style="text-align:center; margin:25px 0;">
+        <a href="${process.env.FRONTEND_URL}/login" 
+           style="background-color:#ffffff; color:#121212; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">
+            Log In to Your Account
+        </a>
+      </p>
+    `;
+    } else if (status === 'VERIFIED') {
+        subject = 'Daniel-LA Blog - Your Email Has Been Verified';
+        messageHtml = `
+      <p style="font-size:16px; line-height:1.5;">
+        Your email address has been <b>successfully verified</b>.
+      </p>
+      <p style="font-size:16px; line-height:1.5;">
+        Your account is now fully active. You can log in and start publishing and interacting with the community.
+      </p>
+    `;
+        buttonHtml = `
+      <p style="text-align:center; margin:25px 0;">
+        <a href="${process.env.FRONTEND_URL}/login" 
+           style="background-color:#ffffff; color:#121212; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">
+            Log In to Your Account
+        </a>
+      </p>
+    `;
+    }
+
+    // 2. Build HTML Template
+    const htmlContent = `
+    <div style="background-color:#121212; color:white; padding:20px; font-family:Arial, sans-serif;">
+        <h2 style="color:#ffffff; text-align:center;">Hi ${name},</h2>
+        ${messageHtml}
+        ${reason ? `<p style="font-size:14px; color:#e11d48; margin-top:15px;"><b>Reason:</b> ${reason}</p>` : ''}
+        ${buttonHtml}
+        <p style="font-size:14px; color:#bbbbbb;">
+            If you believe this was done in error, please contact support or an administrator immediately.
+        </p>
+    </div>
+  `;
+
+    // 3. Send Email
+    await transport.sendMail({
+        from: 'Daniel-LA Blog <no-reply@daniella-blog.com>',
+        to: email,
+        subject,
+        text: `Hi ${name}, ${subject}. ${reason ? `Reason: ${reason}` : ''}`,
+        html: htmlContent,
+    });
 };

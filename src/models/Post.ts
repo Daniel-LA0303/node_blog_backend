@@ -26,7 +26,10 @@ const postSchema = new Schema<IPost>(
 
     status:{
       type: String,
-      default: "PUBLISHED" // PUBLISHED - HIDDEN - BANNED (only admin)
+      default: "PUBLISHED",
+      enum: ['PUBLISHED', 'HIDDEN', 'DELETED', 'BANNED', 'DELETED_BY_ADMIN', 'HIDDEN_BY_ADMIN'],
+      // PUBLISHED (owner ) - HIDDEN (owner) - DELETED (owner) 
+      // BANNED (admin) - DELETED_BY_ADMIN (admin) - HIDDEN_BY_ADMIN (admin)
     },
 
     // description

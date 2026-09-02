@@ -13,7 +13,7 @@ import { NewNotificationI } from "../interfaces/notification.interfaces";
 import Subscriptions from "../models/Subscriptions";
 import PlanSuscription from "../models/Plan";
 import { trackActivityService } from "./globalServices";
-import { emailAddModerator, emailRegister } from "../helpers/email";
+import { emailAddModerator, emailRegister, emailUserStatusChange, IEmailUserStatusData } from "../helpers/email";
 import { IInfoUser } from "../interfaces/tokens.interfaces";
 import Tokens from "../models/Tokens";
 import { hashToken } from "../utils/hashToken";
@@ -994,6 +994,15 @@ const verifyUserService = async (userId: string, userR: any, req: any) => {
     user.status = 'ACTIVE';
     await user.save();
 
+    // 3. send email
+    const dataEmail: IEmailUserStatusData = {
+        email: user.email,
+        name: user.name,
+        status: 'VERIFIED',
+    }
+
+    await emailUserStatusChange(dataEmail);
+
     await auditLogServices.createAuditLogService({
         actor: userR,
         action: 'USER_CONFIRM',
@@ -1019,6 +1028,18 @@ const banUserService = async (userId: string, userR: any, req: any) => {
     user.status = 'BANNED';
     await user.save();
 
+    // 3. send email
+    const dataEmail: IEmailUserStatusData = {
+        email: user.email,
+        name: user.name,
+        status: 'BANNED',
+    }
+
+    await emailUserStatusChange(dataEmail);
+
+    // 4. close session via web socket and all tokens
+
+    // 5. add log
     await auditLogServices.createAuditLogService({
         actor: userR,
         action: 'USER_BANNED',
@@ -1044,6 +1065,15 @@ const unbanUserService = async (userId: string, userR: any, req: any) => {
     // 2. verify user
     user.status = 'ACTIVE';
     await user.save();
+
+    // 3. send email
+    const dataEmail: IEmailUserStatusData = {
+        email: user.email,
+        name: user.name,
+        status: 'ACTIVE',
+    }
+
+    await emailUserStatusChange(dataEmail);
 
     await auditLogServices.createAuditLogService({
         actor: userR,

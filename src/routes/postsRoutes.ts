@@ -14,8 +14,10 @@ import {
     unsavePostController,
     getPostPaginated,
     getPostsByCategoryPaginatedController,
+    changePostStatusController,
 } from "../controllers/postController.js";
 import checkAuth from "../middleware/checkAuth.js";
+import checkRoleAuth from "../middleware/checkRoleAuth.js";
 
 
 const router = express.Router();
@@ -82,6 +84,13 @@ router.post('/save-post/:id',
 router.post('/unsave-post/:id', 
     checkAuth,
     unsavePostController)
+
+router.post('/change-post-status', 
+    checkRoleAuth,
+    changePostStatusController,
+)
+
+    
 //-- Actions post end --//
 
 // get posts by category name paginated --

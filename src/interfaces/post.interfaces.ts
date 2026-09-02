@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 interface IImage {
   secure_url: string;
@@ -57,4 +57,17 @@ export interface IPost extends Document {
   date?: number;
 
   comments: Types.ObjectId[];
+}
+
+export enum CHANGE_STATUS {
+  BANNED = "BANNED",
+  DELETED_BY_ADMIN = "DELETED_BY_ADMIN",
+  HIDDEN_BY_ADMIN = "HIDDEN_BY_ADMIN",
+  HIDDEN = "HIDDEN"
+}
+
+export interface IUserPopulated {
+  _id: mongoose.Types.ObjectId;
+  name: string;
+  email: string;
 }

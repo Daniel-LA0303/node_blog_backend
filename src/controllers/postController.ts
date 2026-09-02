@@ -350,6 +350,34 @@ const getPostPaginated = async (req: any, res: any, next: any) => {
   }
 }
 
+const changePostStatusController = async (
+  req: any, 
+  res: any, 
+  next: any
+) => {
+  try {
+
+    const {postId, status, reason} = req.body;
+    const userR = req.user;
+    await postsServices.changeStatusInPostService(postId, status, userR, req, reason);
+
+    // mapping response
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        "/api/post" + req.path,
+        req.method,
+        "Change status successfully.",
+        "Change status successfully.",
+        false
+      )
+    );
+
+  } catch (error: any) {
+    next(error);
+  }
+}
+
 
 /**
  * Pages End
@@ -380,5 +408,6 @@ export {
   unsavePostController,
   //-- Actions post end --//
   getPostPaginated,
-  getPostsByCategoryPaginatedController
+  getPostsByCategoryPaginatedController,
+  changePostStatusController
 }

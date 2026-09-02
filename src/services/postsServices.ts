@@ -8,6 +8,10 @@ import notificationsService from "../services/notificationsServices";
 import { NewNotificationI } from "../interfaces/notification.interfaces";
 import { EntityType, NotificationType } from "../enums/notifications.enums";
 import { trackActivityService } from "./globalServices";
+import auditLogServices from "./auditLogServices";
+import { AnyMxRecord } from "node:dns";
+import { CHANGE_STATUS, IUserPopulated } from "../interfaces/post.interfaces";
+import { emailPostStatusChange } from "../helpers/email";
 
 
 // save new post
@@ -24,7 +28,7 @@ const saveNewPostService = async (userId: any, postData: any) => {
   // 2. valid if title exists
   //const postSearch = await Post.findOne({ title: postData.title });
   //if (postSearch) {
-    //throw new ServiceException("Post already exists with this title", 400);
+  //throw new ServiceException("Post already exists with this title", 400);
   //}
 
   // 3. assamble the info
@@ -139,7 +143,7 @@ const deletePostService = async (postId: any, userId: any) => {
 const getViewPostInfoService = async (postId: any) => {
 
   // 1. search a post
-  const post = await Post.findOne({ _id: postId, status: { $in: ['PUBLISHED', 'HIDDEN'] }})
+  const post = await Post.findOne({ _id: postId, status: { $in: ['PUBLISHED', 'HIDDEN'] } })
     .select('categoriesPost categoriesSelect content date desc likePost linkImage title usersSavedPost createdAt status')
     .populate({
       path: 'categories',
@@ -423,7 +427,7 @@ const getPostsByCategoryPaginatedService = async (page = 1, limit = 5, categoryN
   const skip = (page - 1) * limit;
 
   // 3. get post with category paginated
-  const posts = await Post.find({ categories: { $in: [category._id] }, status: 'PUBLISHED'})
+  const posts = await Post.find({ categories: { $in: [category._id] }, status: 'PUBLISHED' })
     .skip(skip)
     .limit(limit)
     .select("title linkImage comments _id user categories createdAt date usersSavedPost likePost")
@@ -459,7 +463,7 @@ const getPostsByTitlePaginatedService = async (page = 1, limit = 5, title = "") 
   const skip = (page - 1) * limit;
 
   // 2. query base (regex por título)
-  const query = { title: { $regex: title, $options: "i" }, status: 'PUBLISHED'};
+  const query = { title: { $regex: title, $options: "i" }, status: 'PUBLISHED' };
 
   // 3. obtener posts paginados
   const posts = await Post.find(query)
@@ -502,15 +506,65 @@ const getBlogsSuggestionsFromAUser = async (blogId: string) => {
     user: blog?.user,
     status: 'PUBLISHED'
   })
-  .select('linkImage _id title desc categories date comments createdAt')
-  .populate({
-    path: 'categories',
-    select: "_id name color desc createdAt"
-  }).limit(4)
+    .select('linkImage _id title desc categories date comments createdAt')
+    .populate({
+      path: 'categories',
+      select: "_id name color desc createdAt"
+    }).limit(4)
 
   const filterB = blogsByUser.filter(b => b._id.toString() !== blogId);
 
   return filterB;
+}
+
+const changeStatusInPostService = async (
+  postId: string,
+  status: CHANGE_STATUS,
+  userR: any,
+  req: any,
+  reason?: string
+) => {
+
+  // 1. valid post
+  const post = await Post.findById(postId)
+    .populate<{ user: IUserPopulated }>("user");
+  ;
+  if (!post) {
+    throw new ServiceException("Post not found", 404);
+  }
+
+  // 2. set status
+  // status only can be // BANNED (admin) - DELETED_BY_ADMIN (admin) - HIDDEN_BY_ADMIN (admin)
+  // status HIDDEN only if admin decide unbanned or unhidden but post deleted by admin
+  // it can't be recuperate
+  post.status = status;
+  post.save();
+
+  // 3. send email
+  if (post.user?.email) {
+    await emailPostStatusChange({
+      email: post.user.email,
+      name: post.user.name,
+      postTitle: post.title,
+      postId: post._id.toString(),
+      status,
+      reason
+    });
+  }
+
+  // 4. create log
+  await auditLogServices.createAuditLogService({
+    actor: userR,
+    action: 'POST_' + status,
+    category: 'MODERATION',
+    target: {
+      entityType: 'Post',
+      entityId: post._id,
+      name: post.title
+    },
+    req
+  });
+
 }
 
 export default {
@@ -526,5 +580,6 @@ export default {
   getOnePostToUpdateService,
   getPostsByCategoryPaginatedService,
   getPostsByTitlePaginatedService,
-  getBlogsSuggestionsFromAUser
+  getBlogsSuggestionsFromAUser,
+  changeStatusInPostService
 }
