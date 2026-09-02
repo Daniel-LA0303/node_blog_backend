@@ -168,23 +168,33 @@ const getChatsByUserIdService = async (userId: string, page: number, limit: numb
 
     const skip = (page - 1) * limit;
 
+    const query = { members: { $in: [userId] } };
 
-    const total = await Conversation.countDocuments({
-        members: { $all: [userId] },
+    // 1. Query conversations with populated members
+    const rawConversations = await Conversation.find(query)
+        .select("_id lastMessage isGroup groupName members createdAt updatedAt")
+        .populate({
+            path: "members",
+            select: "name email profilePicture status"
+        })
+        .populate("lastMessage", "message read createdAt _id")
+        .sort({ updatedAt: -1 });
+
+    // 2. Filter out conversations where ANY member is BANNED
+    const validConversations = rawConversations.filter((conv) => {
+        // Check if any populated member has status 'BANNED'
+        const hasBannedMember = conv.members.some(
+            (member: any) => member && member.status === "BANNED"
+        );
+        return !hasBannedMember;
     });
 
-    const conversations = await Conversation.find({
-        members: { $in: [userId] },
-    })
-        .select("_id lastMessage isGroup groupName members createdAt")
-        .populate("members", "name email profilePicture") // info
-        .populate("lastMessage", "message read createdAt _id")
-        .sort({ updatedAt: -1 }) // order
-        .skip(skip)
-        .limit(limit);
+    // 3. Paginate the filtered array manually
+    const total = validConversations.length;
+    const paginatedConversations = validConversations.slice(skip, skip + limit);
 
     return {
-        conversations: conversations,
+        conversations: paginatedConversations,
         meta: {
             total: total,
             page,

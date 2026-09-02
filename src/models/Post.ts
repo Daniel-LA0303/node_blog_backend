@@ -24,6 +24,11 @@ const postSchema = new Schema<IPost>(
       unique: false,
     },
 
+    status:{
+      type: String,
+      default: "PUBLISHED" // PUBLISHED - HIDDEN - BANNED (only admin)
+    },
+
     // description
     desc: {
       type: String,

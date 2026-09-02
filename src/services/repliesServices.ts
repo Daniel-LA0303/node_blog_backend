@@ -97,7 +97,7 @@ const getRepliesByCommentPaginatedService = async (commentId: any, page = 1, lim
                     foreignField: '_id',
                     as: 'userID',
                     pipeline: [
-                        { $project: { name: 1, profilePicture: 1 } }
+                        { $project: { name: 1, profilePicture: 1, status: 1 } }
                     ]
                 }
             },

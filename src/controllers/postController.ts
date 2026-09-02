@@ -62,7 +62,7 @@ const registerPostController = async (req: any, res: any, next: any) => {
 //get one post
 const getOnePostController = async (req: any, res: any, next: any) => {
   try {
-    const post = await Post.findById(req.params.id).populate({
+    const post = await Post.findOne({ _id: req.params.id, status: 'PUBLISHED' }).populate({
       path: "commenstOnPost",
       populate: {
         path: "comments",

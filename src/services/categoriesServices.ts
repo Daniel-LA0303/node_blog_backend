@@ -14,7 +14,7 @@ const createCategoryService = async (dto: ICreateCategory) => {
     const cat = await Categories.findOne({
         name: dto.name
     });
-    if(cat !== null){
+    if (cat !== null) {
         throw new ServiceException("This category with this name already exists.", 400);
     }
 
@@ -30,7 +30,7 @@ const updateCategoryService = async (dto: ICreateCategory, id: string) => {
     // 1. search
     const cat = await Categories.findById(id);
 
-    if(!cat){
+    if (!cat) {
         throw new ServiceException("This category does not exists.", 404);
     }
 
@@ -84,10 +84,19 @@ const getOneCategoryFullInfo = async (categoryName: any, userId: any) => {
 
     // 2. get users with info
     const usersPopulated = await User.aggregate([
-        { $match: { _id: { $in: category.follows.users } } },
-        { $sample: { size: Math.min(category.follows.users.length, 5) } },
-        { $project: { name: 1, profilePicture: 1 } }
-    ])
+        {
+            $match: {
+                _id: { $in: category.follows.users },
+                status: 'ACTIVE'
+            }
+        },
+        {
+            $sample: { size: Math.min(category.follows.users.length, 5) }
+        },
+        {
+            $project: { name: 1, profilePicture: 1 }
+        }
+    ]);
 
     // 3. get related categories without current
     const relatedCategories = await Categories.aggregate([
@@ -119,15 +128,15 @@ const getOneCategoryFullInfo = async (categoryName: any, userId: any) => {
     // 5. return info
     return {
         category: {
-            _id:          category._id,
-            name:         category.name,
-            color:        category.color,
-            desc:         category.desc,
-            longDesc:     category.longDesc,
-            follows:      category.follows,
+            _id: category._id,
+            name: category.name,
+            color: category.color,
+            desc: category.desc,
+            longDesc: category.longDesc,
+            follows: category.follows,
             countFollows: category.follows.countFollows,
         },
-        users:             usersPopulated,
+        users: usersPopulated,
         relatedCategories,
         countsPosts,
     }

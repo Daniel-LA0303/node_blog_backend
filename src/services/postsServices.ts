@@ -117,33 +117,37 @@ const deletePostService = async (postId: any, userId: any) => {
   }
 
   // 4. we need to delete image from cloudinary
-  if (post.linkImage && post.linkImage.public_id) {
-    await deleteImage(post.linkImage.public_id);
-  }
+  //if (post.linkImage && post.linkImage.public_id) {
+  //  await deleteImage(post.linkImage.public_id);
+  //}
 
   // 5. reduce number post
   user.numberPost = user.numberPost - 1;
 
   // 6. delete post from user
-  user.posts = user.posts.filter(postId => postId.toString() !== post._id.toString());
-
+  //user.posts = user.posts.filter(postId => postId.toString() !== post._id.toString());
   user.save();
-  post.remove();
+
+
+  //post.remove();
+  // only change status
+  post.status = 'DELETED_BY_USER';
+  post.save();
 }
 
 // get a post with info
 const getViewPostInfoService = async (postId: any) => {
 
   // 1. search a post
-  const post = await Post.findById(postId)
-    .select('categoriesPost categoriesSelect content date desc likePost linkImage title usersSavedPost createdAt')
+  const post = await Post.findOne({ _id: postId, status: { $in: ['PUBLISHED', 'HIDDEN'] }})
+    .select('categoriesPost categoriesSelect content date desc likePost linkImage title usersSavedPost createdAt status')
     .populate({
       path: 'categories',
       select: '_id name value label color'
     })
     .populate({
       path: 'user',
-      select: 'name email followedUsers followersUsers profilePicture posts info createdAt'
+      select: 'name email followedUsers followersUsers profilePicture posts info createdAt status'
     });
 
   // 2. validate if post exists
@@ -156,7 +160,7 @@ const getViewPostInfoService = async (postId: any) => {
     .select('comment dateComment postID')
     .populate({
       path: 'userID',
-      select: 'name profilePicture'
+      select: 'name profilePicture status'
     })
     .populate({
       path: 'replies',
@@ -167,7 +171,7 @@ const getViewPostInfoService = async (postId: any) => {
       },
       populate: {
         path: 'userID',
-        select: 'name profilePicture'
+        select: 'name profilePicture status'
       }
     })
     .sort({ dateComment: -1 }) // Ordenar comentarios por más reciente
@@ -377,7 +381,7 @@ const getAllPostsPaginatedService = async (page = 1, limit = 10) => {
 
   // get posts
   const skip = (page - 1) * limit;
-  const posts = await Post.find()
+  const posts = await Post.find({ status: 'PUBLISHED' })
     .skip(skip)
     .limit(limit)
     .select("title linkImage comments _id user categories createdAt date usersSavedPost likePost")
@@ -419,7 +423,7 @@ const getPostsByCategoryPaginatedService = async (page = 1, limit = 5, categoryN
   const skip = (page - 1) * limit;
 
   // 3. get post with category paginated
-  const posts = await Post.find({ categories: { $in: [category._id] } })
+  const posts = await Post.find({ categories: { $in: [category._id] }, status: 'PUBLISHED'})
     .skip(skip)
     .limit(limit)
     .select("title linkImage comments _id user categories createdAt date usersSavedPost likePost")
@@ -455,7 +459,7 @@ const getPostsByTitlePaginatedService = async (page = 1, limit = 5, title = "") 
   const skip = (page - 1) * limit;
 
   // 2. query base (regex por título)
-  const query = { title: { $regex: title, $options: "i" } };
+  const query = { title: { $regex: title, $options: "i" }, status: 'PUBLISHED'};
 
   // 3. obtener posts paginados
   const posts = await Post.find(query)
@@ -495,7 +499,8 @@ const getBlogsSuggestionsFromAUser = async (blogId: string) => {
   const blog = await Post.findById(blogId);
 
   const blogsByUser = await Post.find({
-    user: blog?.user
+    user: blog?.user,
+    status: 'PUBLISHED'
   })
   .select('linkImage _id title desc categories date comments createdAt')
   .populate({

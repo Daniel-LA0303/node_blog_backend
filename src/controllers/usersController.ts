@@ -422,6 +422,7 @@ const searchUsersController = async (req: any, res: any) => {
         // search with email and name like params
         const users = await User.find({
             _id: { $ne: currentUserId },
+            status: 'ACTIVE',
             $or: [{ name: regex }, { email: regex }],
         }).select("name email profilePicture");
 

@@ -423,8 +423,13 @@ const getPostByUserPaginatedService = async (page = 1, limit = 5, userId: any) =
     // 1. calculate skip
     const skip = (page - 1) * limit;
 
+    const query = {
+        user: new mongoose.Types.ObjectId(userId),
+        status: { $in: ['PUBLISHED'] }
+    };
+
     // 2. get posts with info    
-    const posts = await Post.find({ user: new mongoose.Types.ObjectId(userId) })
+    const posts = await Post.find(query)
         .skip(skip)
         .limit(limit)
         .populate({
@@ -435,12 +440,53 @@ const getPostByUserPaginatedService = async (page = 1, limit = 5, userId: any) =
             path: 'categories',
             select: '_id name value label color'
         })
-        .select('title createdAt numberComments usersSavedPost linkImage date comments likePost')
+        .select('title createdAt numberComments usersSavedPost linkImage date comments likePost status')
         .sort({ createdAt: -1 });
 
 
     // 3. calculate total
-    const total = await Post.countDocuments({ userId });
+    const total = await Post.countDocuments(query);
+
+    // 4. return info
+    return {
+        data: posts,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
+}
+
+const getPostByUserDashboardPaginatedService = async (page = 1, limit = 5, userId: any) => {
+
+    // 1. calculate skip
+    const skip = (page - 1) * limit;
+
+    const query = {
+        user: new mongoose.Types.ObjectId(userId),
+        status: { $in: ['PUBLISHED', 'HIDDEN'] }
+    };
+
+    // 2. get posts with info    
+    const posts = await Post.find(query)
+        .skip(skip)
+        .limit(limit)
+        .populate({
+            path: 'user',
+            select: 'name _id profilePicture'
+        })
+        .populate({
+            path: 'categories',
+            select: '_id name value label color'
+        })
+        .select('title createdAt numberComments usersSavedPost linkImage date comments likePost status')
+        .sort({ createdAt: -1 });
+
+
+    // 3. calculate total
+    const total = await Post.countDocuments(query);
 
     // 4. return info
     return {
@@ -457,7 +503,7 @@ const getPostByUserPaginatedService = async (page = 1, limit = 5, userId: any) =
 // get all info user to show in profile page
 const getOneUserProfileInfoService = async (userId: any) => {
 
-    const user = await User.findById(userId).populate({
+    const user = await User.findOne({ _id: userId, status: 'ACTIVE' }).populate({
         path: "postsSaved",
         populate: {
             path: "posts",
@@ -519,33 +565,32 @@ const userDashboardPostSavedPaginatedService = async (page = 1, limit = 5, userI
     // 1. get skip
     const skip = (page - 1) * limit;
 
+    const user = await User.findById(userId).select("postsSaved.posts");
+    const savedPostIds = user?.postsSaved?.posts || [];
+
+    const query = {
+        _id: { $in: savedPostIds },
+        status: "PUBLISHED"
+    };
+
     // 2. get total
-    const userTotal = await User.findById(userId).select("postsSaved.posts");
-    const total = userTotal?.postsSaved?.posts?.length || 0;
+    const total = await Post.countDocuments(query);
 
     // 3. get post
-    const user = await User.findById(userId)
-        .select("postsSaved.posts")
-        .populate({
-            path: "postsSaved.posts",
-            options: {
-                skip,
-                limit,
-                // sort: { createdAt: -1 }
-            },
-            populate: [
-                { path: "user", select: "name _id profilePicture" },
-                { path: "categories", select: "_id name value label color" }
-            ],
-            select: "title createdAt numberComments usersSavedPost linkImage date comments likePost"
-        });
+    const posts = await Post.find(query)
+        .skip(skip)
+        .limit(limit)
+        .select("title createdAt numberComments usersSavedPost linkImage date comments likePost status")
+        .sort({ createdAt: -1 })
+        .populate({ path: "user", select: "name _id profilePicture" })
+        .populate({ path: "categories", select: "_id name value label color" });
 
     if (!user) {
         throw new ServiceException("User not found", 404);
     }
 
     // 4. sort post
-    const postsInverted = user.postsSaved.posts.reverse();
+    const postsInverted = [...posts].reverse();
 
     return {
         data: postsInverted,
@@ -561,39 +606,38 @@ const userDashboardPostSavedPaginatedService = async (page = 1, limit = 5, userI
 // get post liked by user
 const userDashboardPostLikedPaginatedService = async (page = 1, limit = 5, userId: any) => {
 
-    // 1. get skip
+    // 1. Calculate skip offset
     const skip = (page - 1) * limit;
 
-    // 2. get total
-    const userTotal = await User.findById(userId).select("likePost.posts");
-    const total = userTotal?.likePost?.posts?.length || 0;
-
-    // 3. get psots
-    const user = await User.findById(userId)
-        .select("likePost.posts")
-        .populate({
-            path: "likePost.posts",
-            options: {
-                skip,
-                limit,
-                // sort: { createdAt: -1 }
-            },
-            populate: [
-                { path: "user", select: "name _id profilePicture" },
-                { path: "categories", select: "_id name value label color" }
-            ],
-            select: "title createdAt numberComments usersSavedPost linkImage date comments likePost"
-        });
+    // 2. Retrieve user's liked post IDs
+    const user = await User.findById(userId).select("likePost.posts");
 
     if (!user) {
         throw new ServiceException("User not found", 404);
     }
 
-    // 4. sort user
-    const postsInverted = user.likePost.posts.reverse();
+    const likedPostIds = user.likePost?.posts || [];
+
+    // 3. Define query criteria (filters for liked IDs and active status)
+    const query = {
+        _id: { $in: likedPostIds },
+        status: "PUBLISHED"
+    };
+
+    // 4. Calculate accurate total count for matching published posts
+    const total = await Post.countDocuments(query);
+
+    // 5. Query published liked posts with pagination and native MongoDB sorting
+    const posts = await Post.find(query)
+        .skip(skip)
+        .limit(limit)
+        .select("title createdAt numberComments usersSavedPost linkImage date comments likePost status")
+        .sort({ createdAt: -1 }) // Handles reversed order directly at database level
+        .populate({ path: "user", select: "name _id profilePicture" })
+        .populate({ path: "categories", select: "_id name value label color" });
 
     return {
-        data: postsInverted,
+        data: posts,
         meta: {
             total,
             page,
@@ -719,7 +763,7 @@ const userDashboardFollowingPaginatedService = async (page = 1, limit = 10, user
 const topUsersCategoriesService = async () => {
 
     // 1. get users top
-    const users = await User.find()
+    const users = await User.find({status: 'ACTIVE'})
         .sort({ numberPost: -1 })
         .limit(5)
         .select("name profilePicture numberPost email");
@@ -744,6 +788,7 @@ const getUsersByNameOrEmailPaginatedService = async (page = 1, limit = 5, search
 
     // 2. query base 
     const query = {
+        status: 'ACTIVE',
         $or: [
             { name: { $regex: search, $options: "i" } },
             { email: { $regex: search, $options: "i" } }
@@ -772,6 +817,7 @@ const getUsersByNameOrEmailPaginatedService = async (page = 1, limit = 5, search
     };
 };
 
+/** */
 // get blogs recommended to show it with a user is seeing a post
 const getBlogsRecommendedService = async (userId?: string) => {
 
@@ -780,6 +826,7 @@ const getBlogsRecommendedService = async (userId?: string) => {
         .select('recomended')
         .populate({
             path: "recomended.recommendedBlogs",
+            match: { status: "PUBLISHED" },
             select: "linkImage _id title desc categories date comments createdAt",
             populate: {
                 path: "categories",
@@ -818,6 +865,7 @@ const getUsersRecommendedService = async (userId?: string) => {
         .select('recomended')
         .populate({
             path: "recomended.recommendedUsers",
+            match: { status: 'ACTIVE' },
             select: "_id name color email createdAt profilePicture followersUsers",
         });
 
@@ -832,8 +880,8 @@ const createModerService = async (userId: string) => {
 
     // 1. search user and valid user
     const user = await User.findById(userId);
-    
-    if(!user){
+
+    if (!user) {
         throw new ServiceException("User not found", 404);
     }
 
@@ -841,14 +889,14 @@ const createModerService = async (userId: string) => {
     const roles = user.roles.map(r => r.name);
     const isRole = roles.some(r => r === 'ROLE_MOD');
 
-    if(isRole){
+    if (isRole) {
         throw new ServiceException("This user have role mod yet", 400);
     }
 
     // insert new role and save
-    const newRole = {name: 'ROLE_MOD'}
+    const newRole = { name: 'ROLE_MOD' }
     user.roles.push(newRole);
-    
+
     await user.save();
 
     // 3. send notification email 
@@ -859,8 +907,8 @@ const createModerService = async (userId: string) => {
 
     // 4. close all sessions
     await Tokens.updateMany(
-        {userId: user._id, status: 'ACTIVE',}, // filter
-        { $set: {status: 'REVOKED', isRevoked: true}}
+        { userId: user._id, status: 'ACTIVE', }, // filter
+        { $set: { status: 'REVOKED', isRevoked: true } }
     );
 }
 
@@ -868,21 +916,21 @@ const removeModerService = async (userId: string) => {
 
     // 1. search user and valid user
     const user = await User.findById(userId);
-    
-    if(!user){
+
+    if (!user) {
         throw new ServiceException("User not found", 404);
     }
 
     // 2. valid that user does not have role
     const isRole = user.roles.some(r => r.name === 'ROLE_MOD');
 
-    if(!isRole){
+    if (!isRole) {
         throw new ServiceException("This user does not have this role to remove it.", 400);
     }
 
     // insert new role and save
-    user.roles.pull({name: 'ROLE_MOD'});
-    
+    user.roles.pull({ name: 'ROLE_MOD' });
+
     await user.save();
 }
 
@@ -912,7 +960,7 @@ const verifyUserService = async (userId: string) => {
 
     // 1. find user
     const user = await User.findById(userId);
-    if(!user){
+    if (!user) {
         throw new ServiceException("User not found", 404);
     }
 
@@ -926,7 +974,7 @@ const banUserService = async (userId: string) => {
 
     // 1. find user
     const user = await User.findById(userId);
-    if(!user){
+    if (!user) {
         throw new ServiceException("User not found", 404);
     }
 
@@ -940,14 +988,14 @@ const unbanUserService = async (userId: string) => {
 
     // 1. find user
     const user = await User.findById(userId);
-    if(!user){
+    if (!user) {
         throw new ServiceException("User not found", 404);
     }
 
     // 2. verify user
     user.status = 'ACTIVE';
     await user.save();
-    
+
 }
 
 export default {
@@ -979,5 +1027,6 @@ export default {
     searchUsersToAdminPanelService,
     verifyUserService,
     banUserService,
-    unbanUserService
+    unbanUserService,
+    getPostByUserDashboardPaginatedService
 }

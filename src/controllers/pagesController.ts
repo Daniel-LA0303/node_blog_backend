@@ -116,7 +116,7 @@ const getDashboardPostsUserPage = async (req: any, res: any, next: any) => {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 5;
         const userId = req.params.id;
-        const result = await usersServices.getPostByUserPaginatedService(page, limit, userId);
+        const result = await usersServices.getPostByUserDashboardPaginatedService(page, limit, userId);
 
         // mapping response
         res.status(200).json(

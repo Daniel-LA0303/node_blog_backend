@@ -42,6 +42,8 @@ export interface IPost extends Document {
 
   content: string;
 
+  status: string;
+
   linkImage: IImage;
 
   categories: Types.ObjectId[];
