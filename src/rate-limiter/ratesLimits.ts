@@ -11,7 +11,7 @@ export const registerRateLimiter = createRateLimiter({
 
 
 export const loginRateLimiter = createRateLimiter({
-    points: 1,
+    points: 10,
     duration: 60, // 15 min
     message: "Too many login attempts, try again later",
 });

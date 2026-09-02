@@ -3,6 +3,7 @@ import { NewNotificationI } from "../interfaces/notification.interfaces";
 import Notification from "../models/Notification";
 import { getReceiverSocketId, io } from "../socketIO/server";
 import { ServiceException } from "../utils/exception/ServiceException";
+import User from "../models/User";
 
 
 // send new notificarion
@@ -99,8 +100,36 @@ const getNotificationsByUserService = async (page: number = 1, limit: number = 5
 
 }
 
+// send new notificarion
+const sendNotificationUserBannedService = async (userId: string) => {
+
+    // 1. check if user is not banned
+    const user = await User.findById(userId);
+    if(!user){
+        throw new ServiceException("User not found..", 404);
+    }
+    
+    // evit send notfiication if user is already banned
+    if(user?.status === 'BANNED'){
+        throw new ServiceException("This users is already banned.", 400);
+    }
+
+    // 2. change status
+    user.status = 'BANNED';
+    await user.save();
+
+    // SEND NOTIFICATION ONLY IF USER IS ONLINE
+    const receiverSocketId = getReceiverSocketId(userId);
+    if (receiverSocketId) {
+        io.to(receiverSocketId).emit("closeSession", {
+            message: "You has been banned"
+        });
+    }
+}
+
 export default {
     sendNotificationService,
     getNotificationsByUserService,
-    changeStateToReadService
+    changeStateToReadService,
+    sendNotificationUserBannedService
 }

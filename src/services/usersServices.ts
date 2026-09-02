@@ -306,9 +306,12 @@ const loginService = async (
     }
 
     // 3. check password
-    if (!await user.checkPassword(password)) {
-
+    if(!await user.checkPassword(password)) {
         throw new ServiceException("Your password is incorrect", 400);
+    }
+
+    if(user.status === 'BANNED'){
+        throw new ServiceException("You has been banned, you can not use the platform", 400);
     }
 
     // 4. generate report, acces and refresh token
@@ -1024,20 +1027,22 @@ const banUserService = async (userId: string, userR: any, req: any) => {
         throw new ServiceException("User not found", 404);
     }
 
-    // 2. verify user
-    user.status = 'BANNED';
-    await user.save();
-
-    // 3. send email
+    // 2. send email
     const dataEmail: IEmailUserStatusData = {
         email: user.email,
         name: user.name,
         status: 'BANNED',
     }
+    //await emailUserStatusChange(dataEmail);
 
-    await emailUserStatusChange(dataEmail);
+    // 3. revoke all token for this user
+    await Tokens.updateMany(
+        {userId: user._id},
+        { $set: {isRevoked: true, status: 'REVOKED'}}
+    );
 
     // 4. close session via web socket and all tokens
+    await notificationsServices.sendNotificationUserBannedService(user._id.toString());
 
     // 5. add log
     await auditLogServices.createAuditLogService({
@@ -1062,7 +1067,7 @@ const unbanUserService = async (userId: string, userR: any, req: any) => {
         throw new ServiceException("User not found", 404);
     }
 
-    // 2. verify user
+    // 2. change status
     user.status = 'ACTIVE';
     await user.save();
 
@@ -1073,7 +1078,7 @@ const unbanUserService = async (userId: string, userR: any, req: any) => {
         status: 'ACTIVE',
     }
 
-    await emailUserStatusChange(dataEmail);
+    //await emailUserStatusChange(dataEmail);
 
     await auditLogServices.createAuditLogService({
         actor: userR,
