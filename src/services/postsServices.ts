@@ -30,7 +30,7 @@ const saveNewPostService = async (userId: any, postData: any) => {
   //if (postSearch) {
   //throw new ServiceException("Post already exists with this title", 400);
   //}
-
+  
   // 3. assamble the info
   const post = new Post(postData);
   await post.save();
@@ -59,7 +59,7 @@ const updatePostService = async (postId: any, body: any) => {
     if ((body.previousName !== "")) {
       await deleteImage(body.previousName)
     }
-  }
+  }  
 
   // 3. insert new post's data
   await Post.findByIdAndUpdate(
@@ -69,6 +69,7 @@ const updatePostService = async (postId: any, body: any) => {
     content: body.content,
     linkImage: body.linkImage,
     // categoriesPost: body.categoriesPost,
+    status: body.statusPost,
     categories: body.categoriesSelect,
   },
     { new: true }
@@ -79,7 +80,9 @@ const updatePostService = async (postId: any, body: any) => {
 const getOnePostToUpdateService = async (postId: any) => {
 
   // 1. get one post to update
-  const post = await Post.findById(postId).populate({
+  const post = await Post.findById(postId)
+  .select("title desc linkImage user status _id content createdAt")
+  .populate({
     path: 'categories',
     select: '_id name value label color'
   })

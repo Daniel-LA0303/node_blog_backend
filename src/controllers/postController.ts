@@ -28,13 +28,14 @@ const uploadImagePostController = async (req: any, res: any) => {
 const registerPostController = async (req: any, res: any, next: any) => {
   try {
     // 1. extract info 
-    const { user, title, content, categories, desc, date, linkImage } = req.body;
+    const { user, title, content, categories, desc, date, linkImage, status } = req.body;
 
     // 2. call service
     const newPost = await postsServices.saveNewPostService(user, {
       title,
       user,
       content,
+      status,
       categories,
       desc,
       date,
