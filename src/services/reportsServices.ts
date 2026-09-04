@@ -1,4 +1,4 @@
-import { ICreateReport } from "../interfaces/reports.interfaces";
+import { ICreateReport, INewStatusReport } from "../interfaces/reports.interfaces";
 import Categories from "../models/Categories";
 import Post from "../models/Post";
 import Reports from "../models/Reports";
@@ -18,9 +18,9 @@ const createNewReport = async (dto: ICreateReport) => {
     }
 
     // 2. valid user want to report exists
-    const reporter = await User.findById(dto.reportedBy);
+    const user = await User.findById(dto.reportedBy);
 
-    if (!reporter) {
+    if (!user) {
         throw new ServiceException(`This user does not exists.`, 404);
     }
 
@@ -137,14 +137,23 @@ const getUsersPaginatedWithReportsInfoService = async (
     };
 };
 
+interface CategoriesReportFilters {
+    search?: string;
+}
+
 const getCategoriesPaginatedInfoService = async (
     page: number,
     limit: number,
+    filters: CategoriesReportFilters = {}
 ) => {
     const skip = (page - 1) * limit;
 
     const match: Record<string, any> = {};
 
+    if (filters.search) {
+        const re = new RegExp(filters.search, 'i');
+        match.$or = [{ name: re }, { email: re }];
+    }
 
     const pipeline: any[] = [{ $sort: { createdAt: -1 } }];
     if (Object.keys(match).length > 0) {
@@ -186,8 +195,144 @@ const getCategoriesPaginatedInfoService = async (
     };
 };
 
+interface PostsReportFilters {
+    status?: string;
+    search?: string;
+}
+
+const getPostPaginatedWithReportsInfoService = async (
+    page: number,
+    limit: number,
+    filters: PostsReportFilters = {}
+) => {
+
+    const skip = (page - 1) * limit;
+
+    const match: Record<string, any> = {};
+    if (filters.status) match.status = filters.status?.toLocaleUpperCase();
+    if (filters.search) {
+        const re = new RegExp(filters.search, 'i');
+        match.$or = [{ title: re }];
+    }
+
+    const pipeline: any[] = [{ $sort: { createdAt: -1 } }];
+    if (Object.keys(match).length > 0) {
+        pipeline.push({ $match: match });
+    }
+
+    pipeline.push({
+        $facet: {
+            data: [
+                { $skip: skip },
+                { $limit: limit },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "user",
+                        foreignField: "_id",
+                        as: "user"
+                    }
+                },
+                {
+                    $unwind: {
+                        path: "$user",
+                        preserveNullAndEmptyArrays: true // keeps post even if user is missing
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "categories", // collection name in MongoDB
+                        localField: "categories",
+                        foreignField: "_id",
+                        as: "categories"
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "reports",
+                        let: { postId: "$_id" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $eq: ["$targetId", "$$postId"] },
+                                            { $eq: ["$targetType", "Post"] }
+                                        ]
+                                    }
+                                }
+                            },
+                            { $project: { reason: 1, reportedBy: 1, createdAt: 1, status: 1 } }
+                        ],
+                        as: "reports"
+                    }
+                },
+                { $addFields: { reportsCount: { $size: "$reports" } } },
+                {
+                    $project: {
+                        _id: 1,
+                        title: 1,
+                        status: 1,
+                        createdAt: 1,
+                        likePost: 1,
+                        reports: 1,
+
+                        // Specific fields from User
+                        author: {
+                            _id: "$user._id",
+                            name: "$user.name",
+                            profilePicture: "$user.profilePicture"
+                        },
+
+                        // Specific fields from Categories (transforms array of docs)
+                        categories: {
+                            $map: {
+                                input: "$categories",
+                                as: "cat",
+                                in: {
+                                    _id: "$$cat._id",
+                                    name: "$$cat.name",
+                                    color: "$$cat.color",
+                                    createdAt: "$$cat.createdAt"
+                                }
+                            }
+                        }
+                    }
+                }
+            ],
+            totalCount: [{ $count: "count" }]
+        }
+    });
+
+    const result = await Post.aggregate(pipeline);
+    const posts = result[0].data;
+    const total = result[0].totalCount[0]?.count || 0;
+
+    return {
+        posts,
+        meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+};
+
+
+const newStatuReportService = async (data: INewStatusReport) => {
+
+    // 1. validate report
+    const report = await Reports.findById(data.reportId);
+    if(!report){
+        throw new ServiceException(`This report does not exists.`, 404);
+    }
+
+    // 2.  change status and save
+    report.status = data.status;
+    await report.save();
+}
+
+
 export default {
     createNewReport,
     getUsersPaginatedWithReportsInfoService,
-    getCategoriesPaginatedInfoService
+    getCategoriesPaginatedInfoService,
+    getPostPaginatedWithReportsInfoService,
+    newStatuReportService
 }

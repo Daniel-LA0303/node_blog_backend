@@ -544,7 +544,7 @@ const changeStatusInPostService = async (
   post.save();
 
   // 3. send email
-  if (post.user?.email) {
+  /*if (post.user?.email) {
     await emailPostStatusChange({
       email: post.user.email,
       name: post.user.name,
@@ -553,7 +553,7 @@ const changeStatusInPostService = async (
       status,
       reason
     });
-  }
+  }*/
 
   // 4. create log
   await auditLogServices.createAuditLogService({

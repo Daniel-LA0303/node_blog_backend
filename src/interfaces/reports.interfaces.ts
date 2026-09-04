@@ -18,3 +18,10 @@ export interface ICreateReport {
     status:string;
     reportedBy: string
 }
+
+export type ReportStatus = 'PENDING' | 'RESOLVED' | 'DISMISSED';
+
+export interface INewStatusReport{
+    reportId: string;
+    status: ReportStatus;
+}

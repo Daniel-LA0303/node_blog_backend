@@ -963,7 +963,9 @@ const removeModerService = async (userId: string, userR: any, req: any) => {
 }
 
 
-const searchUsersToAdminPanelService = async (search: string) => {
+const searchUsersToAdminPanelService = async (search: string, limit: number, page: number) => {
+
+    const skip = (page - 1) * limit;
 
     // 1. query base 
     const query = {
@@ -976,12 +978,25 @@ const searchUsersToAdminPanelService = async (search: string) => {
     // 2. get users paginated
     const users = await User.find(query)
         // .select("_id name email profilePicture createdAt")
+        .skip(skip)
+        .limit(limit)
         .sort({ createdAt: -1 })
         .select("name email profilePicture roles info");
 
+    // 3. get total
+    const total = await User.countDocuments(query);
 
-    // 5. return info
-    return users;
+
+    // 4. return info
+    return {
+        users,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        },
+    };
 }
 
 const verifyUserService = async (userId: string, userR: any, req: any) => {

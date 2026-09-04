@@ -15,7 +15,7 @@ const ReportsSchema = new Schema<IReport>(
         },
         reason: {
             type: String,
-            required: true
+            required: false
         },
         description: {
             type: String,

@@ -1,4 +1,4 @@
-import { ICreateReport } from "../interfaces/reports.interfaces";
+import { ICreateReport, INewStatusReport } from "../interfaces/reports.interfaces";
 import reportsServices from "../services/reportsServices";
 import { ApiResponse } from "../utils/ApiResponse";
 
@@ -51,7 +51,12 @@ const getCategoriesPaginatedInfoController = async (req: any, res: any, next: an
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
 
-    const r = await reportsServices.getCategoriesPaginatedInfoService(page, limit);
+    const filters = {
+      search: req.query.search || undefined,
+    };
+
+
+    const r = await reportsServices.getCategoriesPaginatedInfoService(page, limit, filters);
 
     res.status(200).json(
       new ApiResponse(200, "/api" + req.path, req.method, "", r, false)
@@ -61,8 +66,52 @@ const getCategoriesPaginatedInfoController = async (req: any, res: any, next: an
   }
 }
 
+const getPostsPaginatedWithReportsInfoController = async (req: any, res: any, next: any) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+
+    const filters = {
+      status: req.query.status || undefined,
+      search: req.query.search || undefined,
+    };
+
+    const r = await reportsServices.getPostPaginatedWithReportsInfoService(page, limit, filters);
+
+    res.status(200).json(
+      new ApiResponse(200, "/api" + req.path, req.method, "", r, false)
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+const changeStatusController = async (req: any, res: any, next: any) => {
+
+    try {
+        await reportsServices.newStatuReportService(req.body as INewStatusReport);
+        
+        // call service to confirm
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "Report status changed successfully",
+                "Report status changed successfully",
+                false
+            )
+        );
+    } catch (error) {
+        next(error);
+    }
+}
+
+
 export default {
     createReportController,
     getUsersPaginatedWithReportsInfoController,
-    getCategoriesPaginatedInfoController
+    getCategoriesPaginatedInfoController,
+    getPostsPaginatedWithReportsInfoController,
+    changeStatusController
 }

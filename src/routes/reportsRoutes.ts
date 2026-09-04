@@ -20,4 +20,14 @@ router.get('/categories-report',
     reportsController.getCategoriesPaginatedInfoController
 );
 
+router.get('/posts-report', 
+    checkRoleAuth,
+    reportsController.getPostsPaginatedWithReportsInfoController
+);
+
+router.post('/change-status-report', 
+    checkRoleAuth,
+    reportsController.changeStatusController
+);
+
 export default router;

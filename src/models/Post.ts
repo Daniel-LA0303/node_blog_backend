@@ -187,6 +187,9 @@ postSchema.pre(
   }
 );
 
+// indexes in status and title
+postSchema.index({ status: 1, title: 1 });
+
 
 const Post: Model<IPost> = mongoose.model<IPost>(
   "Post",
