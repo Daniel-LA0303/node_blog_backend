@@ -262,7 +262,7 @@ const getPostPaginatedWithReportsInfoService = async (
                                     }
                                 }
                             },
-                            { $project: { reason: 1, reportedBy: 1, createdAt: 1, status: 1 } }
+                            { $project: { reason: 1, reportedBy: 1, createdAt: 1, status: 1, reasonUserType: 1, reasonUser: 1 } }
                         ],
                         as: "reports"
                     }

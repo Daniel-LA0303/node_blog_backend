@@ -13,13 +13,26 @@ const ReportsSchema = new Schema<IReport>(
             refPath: 'targetType', // Dynamically references User or Post based on targetType
             required: true
         },
-        reason: {
+        reasonUser: { // write by user to know admin
+            type: String, 
+            required: false,
+            default: ""
+        },
+        reasonUserType: {
             type: String,
-            required: false
+            required: true,
+            enum: ['SPAM', 'SENSITIVE_INFO', 'HARASSMENT', 'OTHER'],
+            default: 'OTHER'
+        },
+        reason: { // write by admin, this information is sendig to use via email
+            type: String,
+            required: false,
+            default: ""
         },
         description: {
             type: String,
-            required: false
+            required: false,
+            default: ""
         },
         status: {
             type: String,
