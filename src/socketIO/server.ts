@@ -4,6 +4,7 @@ dotenv.config();
 import { Server, Socket } from "socket.io";
 import http from "http";
 import express from "express";
+import User from "../models/User";
 
 const app = express();
 
@@ -30,6 +31,8 @@ interface Users {
 // users connected
 const users: Users = {};
 
+const admins: Users = {}
+
 // get socket id by user id
 export const getReceiverSocketId = (
   receiverId: string
@@ -37,8 +40,15 @@ export const getReceiverSocketId = (
   return users[receiverId];
 };
 
+export const getAdminsSocketId = (
+  receiverId: string
+): string | undefined => {
+  return admins[receiverId];
+};
+
+
 // socket connection
-io.on("connection", (socket: Socket) => {
+io.on("connection", async (socket: Socket) => {
 
   const userId = socket.handshake.query.userId as string;
 
@@ -58,6 +68,15 @@ io.on("connection", (socket: Socket) => {
 
   // save new socket
   users[userId] = socket.id;
+
+  // save if is moderator
+  const userMod = await User.findById(userId);
+  if (userMod?.roles?.some(role =>
+    role.name === 'ROLE_MOD' || role.name === 'ROLE_ADMIN'
+  )) {
+    admins[userId] = socket.id; // list only mods
+    socket.join('admins-room'); 
+  }
 
   console.log(
     `User conected: ${userId}, socket.id: ${socket.id}`

@@ -1048,7 +1048,7 @@ const banUserService = async (userId: string, userR: any, req: any) => {
         name: user.name,
         status: 'BANNED',
     }
-    //await emailUserStatusChange(dataEmail);
+    await emailUserStatusChange(dataEmail);
 
     // 3. revoke all token for this user
     await Tokens.updateMany(
@@ -1093,7 +1093,7 @@ const unbanUserService = async (userId: string, userR: any, req: any) => {
         status: 'ACTIVE',
     }
 
-    //await emailUserStatusChange(dataEmail);
+    await emailUserStatusChange(dataEmail);
 
     await auditLogServices.createAuditLogService({
         actor: userR,

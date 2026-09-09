@@ -17,6 +17,8 @@ import messageRoutes from './routes/messageRoutes'
 import paymentRoutes from './routes/paymentsRoutes'
 import notificationsRoutes from './routes/notificationsRoutes'
 import reportsRoutes from './routes/reportsRoutes'
+import dashboardRoutes from './routes/dashboardRoutes'
+import auditLogRoutes from './routes/auditRoutes'
 import { errorHandler } from "./utils/exception/errorHandler";
 
 import { app, server } from "./socketIO/server";
@@ -77,6 +79,8 @@ app.use('/api/message', messageRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/audit-log', auditLogRoutes);
 
 app.use(errorHandler);
 

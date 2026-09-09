@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { NewNotificationI } from "../interfaces/notification.interfaces";
 import Notification from "../models/Notification";
-import { getReceiverSocketId, io } from "../socketIO/server";
+import { getAdminsSocketId, getReceiverSocketId, io } from "../socketIO/server";
 import { ServiceException } from "../utils/exception/ServiceException";
 import User from "../models/User";
 
@@ -103,14 +103,15 @@ const getNotificationsByUserService = async (page: number = 1, limit: number = 5
 // send new notificarion
 const sendNotificationUserBannedService = async (userId: string) => {
 
+
     // 1. check if user is not banned
     const user = await User.findById(userId);
-    if(!user){
+    if (!user) {
         throw new ServiceException("User not found..", 404);
     }
-    
+
     // evit send notfiication if user is already banned
-    if(user?.status === 'BANNED'){
+    if (user?.status === 'BANNED') {
         throw new ServiceException("This users is already banned.", 400);
     }
 
@@ -125,11 +126,28 @@ const sendNotificationUserBannedService = async (userId: string) => {
             message: "You has been banned"
         });
     }
+
+
+}
+
+const sendNotificationNewActionModerLogService = async (userId: string, newLog: any) => {
+
+    // 1. check if user is not banned
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new ServiceException("User not found..", 404);
+    }
+    console.log("***");
+    console.log("sen new log");
+    // SEND NOTIFICATION ONLY IF USER IS ONLINE
+    console.log("yes, user is active");
+    io.to('admins-room').emit("newLog", newLog);
 }
 
 export default {
     sendNotificationService,
     getNotificationsByUserService,
     changeStateToReadService,
-    sendNotificationUserBannedService
+    sendNotificationUserBannedService,
+    sendNotificationNewActionModerLogService
 }
