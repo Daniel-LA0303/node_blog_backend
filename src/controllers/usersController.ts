@@ -3,9 +3,8 @@ import generateID from '../helpers/generateID'
 import { emailNewPassword } from '../helpers/email'
 import usersServices from '../services/usersServices';
 import { ApiResponse } from '../utils/ApiResponse';
-import Conversation from '../models/Conversation';
 import { IInfoUser } from '../interfaces/tokens.interfaces.js';
-import { generateAccessToken, generateRefreshToken } from '../helpers/generateJWT.js';
+import bcrypt from "bcryptjs";
 
 
 // --- Auth Users start --//
@@ -145,7 +144,8 @@ const forgetPasswordController = async (req: any, res: any) => {
             email: user.email,
             name: user.name,
             token: user.token
-        })
+        });
+
         res.json({ msg: "We have sent an email with instructions" });
     } catch (error: any) {
         console.log(error);
@@ -180,10 +180,10 @@ const newPasswordController = async (req: any, res: any) => {
         const user = await User.findOne({ token });
 
         if (user) {
-            user.password = password //se asigna el nuevo password
+            user.password = user.password = await bcrypt.hash(password, 10); //se asigna el nuevo password
             user.token = '' //se reinicia el token
             try {
-                await user.save();
+                await user.save();                
                 res.json({ msg: "Password Modified Correctly" })
             } catch (error) {
                 console.log(error);
@@ -494,8 +494,6 @@ const getUsersRecommendedController = async (req: any, res: any, next: any) => {
 const testRoleController = async (req: any, res: any, next: any) => {
 
     try {
-
-        console.log("test role controller");
         
         // call service to confirm
         res.status(200).json(
