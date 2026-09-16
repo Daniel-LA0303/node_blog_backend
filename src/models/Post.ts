@@ -32,6 +32,11 @@ const postSchema = new Schema<IPost>(
       // BANNED (admin) - DELETED_BY_ADMIN (admin) - HIDDEN_BY_ADMIN (admin)
     },
 
+    typePost: {
+      type: String,
+      default: 'NORMAL',
+      enum: ['NORMAL', 'INVESTIGATION']
+    },
     // description
     desc: {
       type: String,

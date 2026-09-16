@@ -30,7 +30,7 @@ const saveNewPostService = async (userId: any, postData: any) => {
   //if (postSearch) {
   //throw new ServiceException("Post already exists with this title", 400);
   //}
-  
+
   // 3. assamble the info
   const post = new Post(postData);
   await post.save();
@@ -59,7 +59,7 @@ const updatePostService = async (postId: any, body: any) => {
     if ((body.previousName !== "")) {
       await deleteImage(body.previousName)
     }
-  }  
+  }
 
   // 3. insert new post's data
   await Post.findByIdAndUpdate(
@@ -69,7 +69,8 @@ const updatePostService = async (postId: any, body: any) => {
     content: body.content,
     linkImage: body.linkImage,
     // categoriesPost: body.categoriesPost,
-    status: body.statusPost,
+    status: body.status,
+    typePost: body.typePost,
     categories: body.categoriesSelect,
   },
     { new: true }
@@ -81,11 +82,11 @@ const getOnePostToUpdateService = async (postId: any) => {
 
   // 1. get one post to update
   const post = await Post.findById(postId)
-  .select("title desc linkImage user status _id content createdAt")
-  .populate({
-    path: 'categories',
-    select: '_id name value label color'
-  })
+    .select("title desc linkImage user status typePost _id content createdAt")
+    .populate({
+      path: 'categories',
+      select: '_id name value label color'
+    })
   // .select('user');
 
   // 2. check if post exists
@@ -391,7 +392,7 @@ const getAllPostsPaginatedService = async (page = 1, limit = 10) => {
   const posts = await Post.find({ status: 'PUBLISHED' })
     .skip(skip)
     .limit(limit)
-    .select("title linkImage comments _id user categories createdAt date usersSavedPost likePost")
+    .select("title linkImage comments _id user categories createdAt date usersSavedPost likePost typePost")
     .sort({ createdAt: -1 })
     .populate({
       path: "user",

@@ -444,7 +444,7 @@ const getPostByUserPaginatedService = async (page = 1, limit = 5, userId: any) =
             path: 'categories',
             select: '_id name value label color'
         })
-        .select('title createdAt numberComments usersSavedPost linkImage date comments likePost status')
+        .select('title createdAt numberComments usersSavedPost linkImage date comments likePost status typePost')
         .sort({ createdAt: -1 });
 
 
@@ -485,7 +485,7 @@ const getPostByUserDashboardPaginatedService = async (page = 1, limit = 5, userI
             path: 'categories',
             select: '_id name value label color'
         })
-        .select('title createdAt numberComments usersSavedPost linkImage date comments likePost status')
+        .select('title createdAt numberComments usersSavedPost linkImage date comments likePost status typePost')
         .sort({ createdAt: -1 });
 
 
@@ -507,7 +507,7 @@ const getPostByUserDashboardPaginatedService = async (page = 1, limit = 5, userI
 // get all info user to show in profile page
 const getOneUserProfileInfoService = async (userId: any) => {
 
-    const user = await User.findOne({ _id: userId, status: 'ACTIVE' }).populate({
+    const user = await User.findOne({ _id: userId, status: { $in: ['TO_CONFIRM', 'ACTIVE']} }).populate({
         path: "postsSaved",
         populate: {
             path: "posts",
@@ -584,7 +584,7 @@ const userDashboardPostSavedPaginatedService = async (page = 1, limit = 5, userI
     const posts = await Post.find(query)
         .skip(skip)
         .limit(limit)
-        .select("title createdAt numberComments usersSavedPost linkImage date comments likePost status")
+        .select("title createdAt numberComments usersSavedPost linkImage date comments likePost status typePost")
         .sort({ createdAt: -1 })
         .populate({ path: "user", select: "name _id profilePicture" })
         .populate({ path: "categories", select: "_id name value label color" });
@@ -635,7 +635,7 @@ const userDashboardPostLikedPaginatedService = async (page = 1, limit = 5, userI
     const posts = await Post.find(query)
         .skip(skip)
         .limit(limit)
-        .select("title createdAt numberComments usersSavedPost linkImage date comments likePost status")
+        .select("title createdAt numberComments usersSavedPost linkImage date comments likePost status typePost")
         .sort({ createdAt: -1 }) // Handles reversed order directly at database level
         .populate({ path: "user", select: "name _id profilePicture" })
         .populate({ path: "categories", select: "_id name value label color" });

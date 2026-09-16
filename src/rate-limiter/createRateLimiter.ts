@@ -15,10 +15,7 @@ export const createRateLimiter = (config: RateLimitConfig) => {
         keyGenerator = (req: Request) => req.ip || "unknown",
         ...limiterOptions
     } = config;
-
-    console.log("execution here");
     
-
     const limiter = new RateLimiterMemory(limiterOptions);
 
     return async (req: Request, res: Response, next: NextFunction) => {
