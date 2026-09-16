@@ -82,6 +82,16 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/audit-log', auditLogRoutes);
 
+app.get('/api/instance-info', (req, res) => {
+  res.json({
+    pod: process.env.POD_NAME || 'unknown',
+    podIP: process.env.POD_IP || 'unknown',
+    node: process.env.NODE_NAME || 'unknown',
+    hostname: require('os').hostname(),
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.use(errorHandler);
 
 
