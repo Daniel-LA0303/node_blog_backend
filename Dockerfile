@@ -10,10 +10,12 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install only production dependencies (omit dev dependencies)
-RUN npm install --omit=dev
+RUN npm install
 
 # Copy the rest of the application code into the container
 COPY . .
+
+RUN npm run build
 
 # ------------------ Stage 2: Final Image ------------------
 # Start from a fresh Node.js 18 Alpine image for the final lightweight image
@@ -22,12 +24,15 @@ FROM node:18-alpine
 # Set the working directory inside the final image
 WORKDIR /app
 
+COPY package*.json ./
+RUN npm install --omit=dev
+
 # Copy node_modules and application code from the builder stage
-COPY --from=builder /app ./
+COPY --from=builder /app/dist ./dist
 
 # Expose the port the app will run on (read from .env)
 EXPOSE 4000
 
 # Command to run the application
-CMD ["node", "index.js"]
+CMD ["node", "dist/index.js"]
 
