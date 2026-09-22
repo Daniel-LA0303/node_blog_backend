@@ -3,8 +3,9 @@ dotenv.config();
 import connectDB from "./config/db";
 
 import { server } from "./socketIO/server";
+import "./app";
 
-// const app = express();
+//const app = express();
 connectDB();
 
 const PORT = Number(process.env.PORT) || 4000;

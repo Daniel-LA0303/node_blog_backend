@@ -14,6 +14,7 @@ import notificationsRoutes from './routes/notificationsRoutes'
 import reportsRoutes from './routes/reportsRoutes'
 import dashboardRoutes from './routes/dashboardRoutes'
 import auditLogRoutes from './routes/auditRoutes'
+import projectRoutes from './routes/projectRoutes'
 import { errorHandler } from "./utils/exception/errorHandler";
 
 app.use(cors());
@@ -32,6 +33,13 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/audit-log', auditLogRoutes);
+app.use('/api/project', projectRoutes);
+
+app.get('/test', (req, res) => {
+  res.json({
+    message: 'API WORKING'
+  });
+});
 
 app.get('/api/instance-info', (req, res) => {
   res.json({

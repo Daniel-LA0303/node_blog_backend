@@ -13,8 +13,9 @@ const ProjectSchema = new Schema<IProject>(
             type: Schema.Types.ObjectId,
         },
         status: {
+            type: String,
             enum:["ACTIVE", "ARCHIVED", "DELETED"],
-            default: 'ACTIVE'
+            default: "ACTIVE"
         },
         deletedAt:{
             type: Date

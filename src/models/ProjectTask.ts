@@ -24,8 +24,10 @@ const ProjectTaskSchema = new Schema<IProjectTask>(
         },
         createdBy: {
             type: Schema.Types.ObjectId,
+            default: null
         },
         status: {
+            type: String,
             enum: ['ACTIVE', 'DELETED'],
             default: 'ACTIVE'
         }

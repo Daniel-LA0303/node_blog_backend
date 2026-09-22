@@ -16,9 +16,10 @@ const ProjectMemberSchema = new Schema<IProjectMembers>(
         },
         joinedAt:{
             type: Date,
-            //default:
+            default: Date.now
         },
         status:{
+            type: String,
             enum: ["ACTIVE", "REMOVED"],
             default: 'ACTIVE'
         }
