@@ -6,6 +6,7 @@ const ProjectListSchema = new Schema<IProjectList>(
     {
         project: {
             type: Schema.Types.ObjectId,
+            ref: 'Project'
         },
         name: {
             type: String

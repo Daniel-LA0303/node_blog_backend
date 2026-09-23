@@ -36,6 +36,7 @@ import {
     verifyUserController,
     banUserController,
     unbanUserController,
+    searchUsers2Controller,
     //-- User actions end --//
 } from "../controllers/usersController";
 import checkRefreshToken from "../middleware/checkRefreshToken.js";
@@ -143,4 +144,5 @@ router.post('/unban-user',
     checkRoleAuth, 
     unbanUserController);
 
+router.get('/search-users', searchUsers2Controller);
 export default router

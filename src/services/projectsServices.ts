@@ -8,6 +8,59 @@ import User from "../models/User";
 import { ProjectMember } from "../models/ProjectMember";
 
 
+const getProjectWithInfoService = async (projectId: string) => {
+
+    const project = await Project.findById(projectId);
+
+    if (!project) {
+        throw new ServiceException("Project not found", 404);
+    }
+
+    const members = await ProjectMember.find({
+        project: project.id
+    }).populate({
+        path: 'user',
+        select: '_id name email profilePicture'
+    });
+
+    const lists = await ProjectList.find({
+        project: project.id
+    }).lean();
+
+    const tasks = await ProjectTask.find({
+        project: project.id
+    }).populate({
+        path: 'assignedTo',
+        select: '_id name email profilePicture'
+    }).lean();
+
+    const formattedLists = lists.map(list => ({
+        _id: list._id,
+        projectId: list.project,
+        name: list.name,
+        order: list.position
+    }));
+
+    const formattedTasks = tasks.map(task => ({
+        _id: task._id,
+        listId: task.list,
+        title: task.title,
+        description: task.description,
+        order: task.position,
+        assignedUsers: task.assignedTo
+            ? [task.assignedTo]
+            : [],
+    }));
+
+    return {
+        project: {
+            ...project.toObject(),
+            members: members.map(member => member.user)
+        },
+        lists: formattedLists,
+        tasks: formattedTasks
+    };
+};
 
 const createProjectService = async (request: CrateProjectRequestI) => {
 
@@ -181,6 +234,51 @@ const updateProjectMemberService = async (
     return projectMember;
 };
 
+const assignTaskService = async (taskId: string, userId: string) => {
+
+    // 1. search task
+    const task = await ProjectTask.findById(taskId);
+    if (!task) {
+        throw new ServiceException("Task not found", 404);
+    }
+
+    // 2. search user
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new ServiceException("User not found", 404);
+    }
+
+    // 3. the user must be an active member of the task's project
+    const membership = await ProjectMember.findOne({
+        project: task.project,
+        user: userId,
+        status: "ACTIVE",
+    });
+    if (!membership) {
+        throw new ServiceException("User is not a member of this project", 400);
+    }
+
+    // 4. assign (replaces whoever was assigned before)
+    task.assignedTo = userId as any;
+    const newTask = await task.save();
+
+    return newTask;
+};
+
+const unassignTaskService = async (taskId: string) => {
+
+    // 1. search task
+    const task = await ProjectTask.findById(taskId);
+    if (!task) {
+        throw new ServiceException("Task not found", 404);
+    }
+
+    // 2. clear assignment
+    task.assignedTo = undefined as any;
+    const newTask = await task.save();
+
+    return newTask;
+};
 
 export default {
     createProjectService,
@@ -190,5 +288,8 @@ export default {
     createTaskService,
     updateTaskService,
     deleteTaskService,
-    updateProjectMemberService
+    updateProjectMemberService,
+    getProjectWithInfoService,
+    assignTaskService,
+    unassignTaskService
 }

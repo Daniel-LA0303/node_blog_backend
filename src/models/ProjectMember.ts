@@ -6,9 +6,11 @@ const ProjectMemberSchema = new Schema<IProjectMembers>(
     {
         project: {
             type: Schema.Types.ObjectId,
+            ref: 'Project'
         },
         user: {
             type: Schema.Types.ObjectId,
+            ref: 'User'
         },
         role: {
             type: String,

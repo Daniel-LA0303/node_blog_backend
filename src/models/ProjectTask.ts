@@ -6,9 +6,11 @@ const ProjectTaskSchema = new Schema<IProjectTask>(
     {
         project: {
             type: Schema.Types.ObjectId,
+            ref: 'Project'
         },
         list: {
             type: Schema.Types.ObjectId,
+            ref: 'ProjectList'
         },
         title: {
             type: String
@@ -21,10 +23,12 @@ const ProjectTaskSchema = new Schema<IProjectTask>(
         },
         assignedTo: {
             type: Schema.Types.ObjectId,
+            ref: 'User'
         },
         createdBy: {
             type: Schema.Types.ObjectId,
-            default: null
+            default: null,
+            ref: 'User'
         },
         status: {
             type: String,

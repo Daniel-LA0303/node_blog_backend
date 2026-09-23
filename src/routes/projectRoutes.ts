@@ -5,6 +5,10 @@ import projectController from "../controllers/projectController";
 
 const router = express.Router();
 
+router.get('/get-project/:id',
+    checkAuth,
+    projectController.getProjectWithInfoController);
+
 router.post('/create-project',
     checkAuth,
     projectController.createProjectController);
@@ -36,5 +40,13 @@ router.delete('/task/delete-task/:id',
 router.post('/user',
     checkAuth,
     projectController.userInToProjectController);
+
+router.patch('/assign-task/:id',
+    checkAuth,
+    projectController.assignTaskController);
+
+router.patch('/unassign-task/:id',
+    checkAuth,
+    projectController.unassignTaskController);
 
 export default router

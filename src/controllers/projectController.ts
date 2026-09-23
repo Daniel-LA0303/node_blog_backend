@@ -127,6 +127,68 @@ const userInToProjectController = async (req: any, res: any, next: any) => {
     }
 }
 
+const getProjectWithInfoController = async (req: any, res: any, next: any) => {
+
+    try {
+
+        const projectId = req.params.id;
+        const r = await projectsServices.getProjectWithInfoService(projectId);
+
+        res.status(201).json(
+            new ApiResponse(200, "/api" + req.path, req.method, "Get project successfully", r, false)
+        );
+    } catch (error) {
+        next(error);
+    }
+}
+
+const assignTaskController = async (req: any, res: any, next: any) => {
+
+    try {
+        const { id } = req.params;
+        const { userId } = req.body;
+
+        const task = await projectsServices.assignTaskService(id, userId);
+
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "User assigned to task",
+                task,
+                false
+            )
+        );
+
+    } catch (error) {
+        next(error);
+    }
+}
+
+const unassignTaskController = async (req: any, res: any, next: any) => {
+
+    try {
+        const { id } = req.params;
+
+        const task = await projectsServices.unassignTaskService(id);
+
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "User unassigned from task",
+                task,
+                false
+            )
+        );
+
+    } catch (error) {
+        next(error);
+    }
+}
+
 export default {
     createProjectController,
     updateProjectController,
@@ -135,5 +197,8 @@ export default {
     createTaskController,
     updateTaskController,
     deleteTaskController,
-    userInToProjectController
+    userInToProjectController,
+    getProjectWithInfoController,
+    assignTaskController,
+    unassignTaskController
 }
