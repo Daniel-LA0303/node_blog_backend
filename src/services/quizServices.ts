@@ -370,7 +370,7 @@ const submitQuizAttemptService = async (
 
 
 const getQuizService = async (quizId: string) => {
-    
+
 
     // Find the quiz
     const quiz = await Quiz.findById(quizId).lean()
@@ -419,7 +419,7 @@ const getQuizService = async (quizId: string) => {
 
 
 
-    
+
     // Build the questions response
     const quizQuestions = questions.map((question) => {
 
@@ -471,7 +471,7 @@ const getQuizService = async (quizId: string) => {
     const usersAttempts = await getLeaderBoardByQuizService(quizId);
 
     return {
-        owner:user,
+        owner: user,
         quiz: {
             _id: quiz._id,
             title: quiz.title,
@@ -716,17 +716,92 @@ const getLeaderBoardByQuizService = async (quizId: string) => {
     const lq = await LeaderboardEntry.find({
         leaderboard: l._id
     })
-    .sort({ score: -1 })
-    .select('_id user score attempts')
-    .populate({
-        path: 'user',
-        select: 'name _id profilePicture'
-    })
-    .limit(20);
+        .sort({ score: -1 })
+        .select('_id user score attempts')
+        .populate({
+            path: 'user',
+            select: 'name _id profilePicture'
+        })
+        .limit(20);
 
     return lq
 }
 
+const getQuizesPaginatedByUserIdService = async (
+    userId: string,
+    page: number,
+    limit: number
+) => {
+
+    // 1. search user
+    const u = await User.findById(userId);
+    if (!u) {
+        throw new ServiceException(`This user does not exists.`, 404);
+    }
+
+    const skip = (page - 1) * limit;
+    const total = await Quiz.countDocuments({
+        owner: u._id
+    });
+
+    const quizes = await Quiz.find({
+        owner: u._id
+    })
+    .select('-isComplete -createdAt -updatedAt -deletedAt -__v')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+    return {
+        quizes,
+        meta: {
+            total: total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
+}
+
+const getQuizesAttemptPaginatedByUserIdService = async (
+    userId: string,
+    page: number,
+    limit: number
+) => {
+
+    // 1. search user
+    const u = await User.findById(userId);
+    if (!u) {
+        throw new ServiceException(`This user does not exists.`, 404);
+    }
+
+    const skip = (page - 1) * limit;
+    const total = await QuizAttempt.countDocuments({
+        user: u._id
+    });
+
+    const quizesAttempts = await QuizAttempt.find({
+        user: u._id
+    })
+    .populate({
+        path: 'quiz',
+        select: '-__v -updatedAt -createdAt -deletedAt -tags -categories'
+    })
+    .select('-user -__v -updatedAt -createdAt ')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+    return {
+        quizesAttempts,
+        meta: {
+            total: total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
+}
 
 
 export default {
@@ -738,5 +813,7 @@ export default {
     removeQuestionService,
     updateQuestionService,
     updateQuizInfoService,
-    getLeaderBoardByQuizService
+    getLeaderBoardByQuizService,
+    getQuizesPaginatedByUserIdService,
+    getQuizesAttemptPaginatedByUserIdService
 }

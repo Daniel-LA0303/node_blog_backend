@@ -42,5 +42,12 @@ router.get('/get-leaderboard-quiz/:id',
     //checkRoleAuth,
     quizController.getLeaderBoardByQuizController);
 
+router.get('/get-quiz-by-user/:id',
+    //checkRoleAuth,
+    quizController.getQuizesPaginatedByUserIdController);
+
+router.get('/get-quiz-attempt-by-user/:id',
+    //checkRoleAuth,
+    quizController.getQuizesAttemptPaginatedByUserIdController);
 
 export default router
