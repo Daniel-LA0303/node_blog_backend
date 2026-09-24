@@ -1,7 +1,7 @@
 import mongoose, { Model } from "mongoose";
 import { IQuizAttemptAnswer } from "../interfaces/quiz.interfaces";
 
-// to save who user respnds what quiz
+// to save answers user from some quiz
 const QuizAttemptAnswerSchema = new mongoose.Schema<IQuizAttemptAnswer>(
     {
         attempt: {

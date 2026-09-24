@@ -1,7 +1,7 @@
 import mongoose, { Model } from "mongoose";
 import { ILeaderboardEntry } from "../interfaces/quiz.interfaces";
 
-// save users that 
+// save users that response some quiz or another resorce with leader baord
 const LeaderboardEntrySchema = new mongoose.Schema<ILeaderboardEntry>(
     {
         leaderboard: {

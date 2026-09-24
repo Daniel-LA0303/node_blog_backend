@@ -66,15 +66,18 @@ export interface ILeaderboardEntry extends Document {
 }
 
 export interface CreateQuizInfoRequestI {
+    quizId?: string;
     title: string;
     description: string;
     owner: string;
     questionCount: number;
+    status: 'PUBLISHED' | 'HIDDEN' | 'DELETED'| 'BANNED' | 'DELETED_BY_ADMIN' | 'HIDDEN_BY_ADMIN';
     categories?: string[];
     timeLimit: number;
 }
 
 export interface QuizzOptionRequestI {
+    _id?: string;
     isCorrect: boolean,
     order: number,
     text: string,
@@ -82,8 +85,19 @@ export interface QuizzOptionRequestI {
 
 export interface QuizzQuestionRequesI {
     quiz: string;
+    questionId?: string;
     question: string;
     order: number;
     points: number;
     options: QuizzOptionRequestI[];
+}
+
+export interface SubmitQuizAttemptRequest {
+    quizId: string
+    userId: string
+    answers: {
+        questionId: string
+        selectedOptionId: string | null
+    }[]
+    duration: number
 }
