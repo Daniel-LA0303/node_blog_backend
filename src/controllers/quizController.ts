@@ -113,6 +113,21 @@ const updateQuizInfoController = async (req: any, res: any, next: any) => {
     }
 }
 
+const getLeaderBoardByQuizController = async (req: any, res: any, next: any) => {
+    try {
+
+        const id = req.params.id;
+        const r = await quizServices.getLeaderBoardByQuizService(id);
+
+        res.status(200).json(
+            new ApiResponse(201, "/api" + req.path, req.method, "Get Leader info successfully.", r, false)
+        );
+    } catch (error) {
+        next(error);
+    }
+}
+
+
 export default {
     createQuizInfoController,
     createQuestionController,
@@ -121,5 +136,6 @@ export default {
     getQuizToUpdateController,
     removeQuestionController,
     updateQuestionController,
-    updateQuizInfoController
+    updateQuizInfoController,
+    getLeaderBoardByQuizController
 }

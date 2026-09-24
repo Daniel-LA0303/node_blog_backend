@@ -8,6 +8,7 @@ import QuizQuestionOption from "../models/QuizQuestionOption";
 import { ServiceException } from "../utils/exception/ServiceException";
 import QuizAttempt from "../models/QuizAttempt";
 import QuizAttemptAnswer from "../models/QuizAttemptAnswer";
+import User from "../models/User";
 
 const submitQuizAttemptService = async (
     request: SubmitQuizAttemptRequest
@@ -369,10 +370,10 @@ const submitQuizAttemptService = async (
 
 
 const getQuizService = async (quizId: string) => {
+    
 
     // Find the quiz
     const quiz = await Quiz.findById(quizId).lean()
-
     if (!quiz) {
         throw new ServiceException(`This Quiz does not exists.`, 404);
     }
@@ -410,6 +411,15 @@ const getQuizService = async (quizId: string) => {
         {} as Record<string, typeof options>
     )
 
+    const user = await User.findById(quiz.owner.toString())
+        .select('name _id profilePicture');
+    if (!user) {
+        throw new ServiceException(`This User does not exists.`, 404);
+    }
+
+
+
+    
     // Build the questions response
     const quizQuestions = questions.map((question) => {
 
@@ -458,7 +468,10 @@ const getQuizService = async (quizId: string) => {
         >
     )
 
+    const usersAttempts = await getLeaderBoardByQuizService(quizId);
+
     return {
+        owner:user,
         quiz: {
             _id: quiz._id,
             title: quiz.title,
@@ -466,7 +479,8 @@ const getQuizService = async (quizId: string) => {
             timeLimit: quiz.timeLimit,
             questions: quizQuestions
         },
-        answerKey
+        answerKey,
+        usersAttempts
     }
 }
 
@@ -682,6 +696,37 @@ const updateQuestionService = async (r: QuizzQuestionRequesI) => {
     };
 }
 
+const getLeaderBoardByQuizService = async (quizId: string) => {
+
+    // 1. get quiz
+    const q = await Quiz.findById(quizId);
+    if (!q) {
+        throw new ServiceException(`This quiz does not exists.`, 404);
+    }
+
+    // 2. get Leader board
+    const l = await Leaderboard.findOne({
+        type: 'QUIZ',
+        entityId: q._id
+    });
+    if (!l) {
+        throw new ServiceException(`This leaderboard does not exists.`, 404);
+    }
+
+    const lq = await LeaderboardEntry.find({
+        leaderboard: l._id
+    })
+    .sort({ score: -1 })
+    .select('_id user score attempts')
+    .populate({
+        path: 'user',
+        select: 'name _id profilePicture'
+    })
+    .limit(20);
+
+    return lq
+}
+
 
 
 export default {
@@ -692,5 +737,6 @@ export default {
     getQuizToUpdateService,
     removeQuestionService,
     updateQuestionService,
-    updateQuizInfoService
+    updateQuizInfoService,
+    getLeaderBoardByQuizService
 }

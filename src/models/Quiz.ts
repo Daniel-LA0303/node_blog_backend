@@ -81,5 +81,7 @@ const QuizSchema = new mongoose.Schema<IQuiz>(
   }
 );
 
+QuizSchema.index({ score: -1 });
+
 const Quiz: Model<IQuiz> = mongoose.model<IQuiz>("Quiz",QuizSchema);
 export default Quiz;
