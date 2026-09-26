@@ -5,8 +5,6 @@ import "./app"
 
 import { server } from "./socketIO/server";
 
-import "./app"
-
 // const app = express();
 connectDB();
 
