@@ -16,6 +16,7 @@ import dashboardRoutes from './routes/dashboardRoutes'
 import auditLogRoutes from './routes/auditRoutes'
 import { errorHandler } from "./utils/exception/errorHandler";
 import quizRoutes from "./routes/quizRoutes";
+import listsRoutes from "./routes/listsRoutes"
 
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
@@ -34,6 +35,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/audit-log', auditLogRoutes);
 app.use('/api/quiz', quizRoutes);
+app.use('/api/lists', listsRoutes);
 
 app.get('/api/instance-info', (req, res) => {
   res.json({

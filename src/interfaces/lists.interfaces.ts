@@ -2,14 +2,10 @@ import mongoose from "mongoose";
 
 export interface IStudyList extends Document{
   _id?: mongoose.Types.ObjectId;
-
   owner: mongoose.Types.ObjectId;
-
   title: string;
   description?: string;
-
   status: 'ACTIVE' | 'HIDDEN' | 'DELETED';
-
   createdAt: Date;
   updatedAt: Date;
 }
