@@ -7,12 +7,15 @@ const createBadgeController = async (req: any, res: any, next: any) => {
 
     try {
 
+        const u = req.user;
         const r = await badgesServices.createBadgeService(
-            req.body
+            req.body,
+            u,
+            req
         );
 
         res.status(200).json(
-            new ApiResponse(200,"/api" + req.path,req.method,"Bagde Created successfully",r,false)
+            new ApiResponse(200, "/api" + req.path, req.method, "Bagde Created successfully", r, false)
         );
 
     } catch (error) {
@@ -20,21 +23,24 @@ const createBadgeController = async (req: any, res: any, next: any) => {
     }
 };
 
-const getBadgesPaginatedController = async (req: any,res: any, next: any) => {
+const getBadgesPaginatedController = async (req: any, res: any, next: any) => {
 
     try {
-
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 10;
 
+        const filters = {
+            status: req.query.status || undefined,
+            search: req.query.search || undefined,
+        };
+
         const r = await badgesServices.getBadgesPaginatedService(
             page,
-            limit
+            limit,
+            filters
         );
 
-        res.status(200).json(
-            new ApiResponse(200,"/api" + req.path,req.method,r,"Badges paginated",false)
-        );
+        res.status(200).json(r);
 
     } catch (error) {
         next(error);
@@ -46,14 +52,17 @@ const updateBadgeController = async (req: any, res: any, next: any) => {
     try {
 
         const badgeId = req.params.id;
+        const u = req.user;
 
         const r = await badgesServices.updateBadgeService(
             badgeId,
-            req.body as IUpdateBadge
+            req.body as IUpdateBadge,
+            u,
+            req
         );
 
         res.status(200).json(
-            new ApiResponse(200,"/api" + req.path,req.method,"Update bagde successfully",r,false)
+            new ApiResponse(200, "/api" + req.path, req.method, "Update bagde successfully", r, false)
         );
 
     } catch (error) {
@@ -65,13 +74,16 @@ const deleteBadgeController = async (req: any, res: any, next: any) => {
     try {
 
         const badgeId = req.params.id;
+        const u = req.user;
 
         const r = await badgesServices.deleteBadgeService(
-            badgeId
+            badgeId,
+            u,
+            req
         );
 
         res.status(200).json(
-            new ApiResponse(200,"/api" + req.path,req.method,"Delete bagde successfully",r,false)
+            new ApiResponse(200, "/api" + req.path, req.method, "Delete bagde successfully", r, false)
         );
 
     } catch (error) {

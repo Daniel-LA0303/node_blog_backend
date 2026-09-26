@@ -29,7 +29,7 @@ const AuditLogSchema = new Schema<IAuditLog>(
         target: {
             entityType: {
                 type: String,
-                enum: ['User', 'Post', 'Categories', 'Comment']
+                enum: ['User', 'Post', 'Categories', 'Comment', 'Badge']
             },
             entityId: {
                 type: Schema.Types.ObjectId,

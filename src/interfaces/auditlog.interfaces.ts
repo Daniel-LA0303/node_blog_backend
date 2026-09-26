@@ -10,7 +10,7 @@ export interface IAuditLog extends Document {
     action: string;
     category: 'AUTH' | 'MODERATION' | 'CONTENT' | 'SYSTEM'
     target?: {
-        entityType: 'User' | 'Post' | 'Categories' | 'Comment';
+        entityType: 'User' | 'Post' | 'Categories' | 'Comment' | 'Badge';
         entityId: mongoose.Types.ObjectId;
         name: string;
     };
@@ -29,7 +29,7 @@ export interface LogInput {
     action: string;
     category: 'AUTH' | 'MODERATION' | 'CONTENT' | 'SYSTEM';
     target?: {
-        entityType: 'User' | 'Post' | 'Categories' | 'Comment';
+        entityType: 'User' | 'Post' | 'Categories' | 'Comment' | 'Badge';
         entityId: any;
         name: string;
     }

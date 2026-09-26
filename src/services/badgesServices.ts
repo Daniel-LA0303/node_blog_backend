@@ -2,9 +2,10 @@ import { ICreateBadge, IUpdateBadge } from "../interfaces/badges.interfaces";
 import { Badge } from "../models/Badge";
 import User from "../models/User";
 import { ServiceException } from "../utils/exception/ServiceException";
+import auditLogServices from "./auditLogServices";
 
 
-const createBadgeService = async (dto: ICreateBadge) => {
+const createBadgeService = async (dto: ICreateBadge, u: any, req: any) => {
 
     // 1. validate name is not already used
     const existingBadge = await Badge.findOne({
@@ -40,26 +41,74 @@ const createBadgeService = async (dto: ICreateBadge) => {
 
     await newBadge.save();
 
+    await auditLogServices.createAuditLogService({
+        actor: u,
+        action: 'CREATE_BADGE',
+        category: 'MODERATION',
+        target: {
+            entityType: 'Badge',
+            entityId: newBadge._id,
+            name: newBadge.name
+        },
+        req
+    });
+
+
     return newBadge;
 };
 
-const getBadgesPaginatedService = async (
-    page = 1,
-    limit = 10
-) => {
+interface BadgeReportsFilters {
+    status?: string;
+    search?: string;
+}
 
+const getBadgesPaginatedService = async (
+    page: number,
+    limit: number,
+    filters: BadgeReportsFilters = {}
+) => {
     const skip = (page - 1) * limit;
 
-    const badges = await Badge.find({
-        //status: { $ne: 'DELETED' }
-    })
-        .skip(skip)
-        .limit(limit)
-        .sort({ createdAt: -1 });
+    const match: Record<string, any> = {};
 
-    const total = await Badge.countDocuments({
-        //status: { $ne: 'DELETED' }
+    if (filters.status) {
+        match.status = filters.status;
+    }
+
+    if (filters.search) {
+        const re = new RegExp(filters.search, 'i');
+        match.$or = [
+            { name: re },
+            //{ description: re }
+        ];
+    }
+
+    const pipeline: any[] = [
+        { $sort: { createdAt: -1 } }
+    ];
+
+    if (Object.keys(match).length > 0) {
+        pipeline.push({
+            $match: match
+        });
+    }
+
+    pipeline.push({
+        $facet: {
+            data: [
+                { $skip: skip },
+                { $limit: limit }
+            ],
+            totalCount: [
+                { $count: "count" }
+            ]
+        }
     });
+
+    const result = await Badge.aggregate(pipeline);
+
+    const badges = result[0].data;
+    const total = result[0].totalCount[0]?.count || 0;
 
     return {
         data: badges,
@@ -74,7 +123,9 @@ const getBadgesPaginatedService = async (
 
 const updateBadgeService = async (
     badgeId: string,
-    dto: IUpdateBadge
+    dto: IUpdateBadge,
+    u: any,
+    req: any
 ) => {
 
     // 1. validate badge exists
@@ -111,28 +162,52 @@ const updateBadgeService = async (
     badge.condition = dto.condition;
     badge.status = dto.status;
 
-
     // 4. save
     await badge.save();
+
+    await auditLogServices.createAuditLogService({
+        actor: u,
+        action: 'UPDATE_BADGE',
+        category: 'MODERATION',
+        target: {
+            entityType: 'Badge',
+            entityId: badge._id,
+            name: badge.name
+        },
+        req
+    });
 
     return badge;
 };
 
-const deleteBadgeService = async (badgeId: string) => {
+const deleteBadgeService = async (badgeId: string, u: any, req: any) => {
 
     const badge = await Badge.findById(badgeId);
 
     if (!badge) {
-        throw new ServiceException('This badge does not exist.',404);
+        throw new ServiceException('This badge does not exist.', 404);
     }
 
     if (badge.status === 'DELETED') {
-        throw new ServiceException('This badge is already deleted.',400);
+        throw new ServiceException('This badge is already deleted.', 400);
     }
 
     badge.status = 'DELETED';
 
     await badge.save();
+
+    await auditLogServices.createAuditLogService({
+        actor: u,
+        action: 'DELETE_BADGE',
+        category: 'MODERATION',
+        target: {
+            entityType: 'Badge',
+            entityId: badge._id,
+            name: badge.name
+        },
+        req
+    });
+
 
     return 'Badge deleted successfully';
 };

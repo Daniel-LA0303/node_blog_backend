@@ -6,25 +6,25 @@ const router = express.Router();
 
 router.post(
     '/create-badge',
-    //checkRoleAuth,
+    checkRoleAuth,
     badgesController.createBadgeController
 );
 
 router.get(
     '/get-badges',
-    //checkRoleAuth,
+    checkRoleAuth,
     badgesController.getBadgesPaginatedController
 );
 
 router.put(
     '/update-badge/:id',
-    //checkRoleAuth,
+    checkRoleAuth,
     badgesController.updateBadgeController
 );
 
 router.delete(
     '/delete-badge/:id',
-    //checkRoleAuth,
+    checkRoleAuth,
     badgesController.deleteBadgeController
 );
 
