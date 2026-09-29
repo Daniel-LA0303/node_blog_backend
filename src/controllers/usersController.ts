@@ -657,6 +657,33 @@ const unbanUserController = async (req: any, res: any, next: any) => {
     }
 }
 
+const searchUsers2Controller = async (req: any, res: any, next: any) => {
+
+    try {
+        const { query } = req.query;
+
+        // ajusta esto al campo real que tu middleware de auth mete en req
+        // (por ejemplo req.user.userId o req.userId)
+        const currentUserId = req.user?.userId;
+
+        const users = await usersServices.searchUsersService(query as string, currentUserId);
+
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "Users found",
+                users,
+                false
+            )
+        );
+
+    } catch (error) {
+        next(error);
+    }
+}
+
 export {
     //-- auth user start --//
     registerUserController,
@@ -692,5 +719,6 @@ export {
     searchUsersToAdminPanelController,
     verifyUserController,
     banUserController,
-    unbanUserController
+    unbanUserController,
+    searchUsers2Controller
 }

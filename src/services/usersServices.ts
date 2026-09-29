@@ -1110,6 +1110,27 @@ const unbanUserService = async (userId: string, userR: any, req: any) => {
 
 }
 
+const searchUsersService = async (query: string, excludeUserId?: string) => {
+
+    const filters: any = excludeUserId ? { _id: { $ne: excludeUserId } } : {};
+
+    // sin query devolvemos un listado general (para cuando se abre el modal
+    // de invitar/asignar sin haber escrito nada todavía)
+    if (query && query.trim()) {
+        const regex = new RegExp(query.trim(), 'i');
+        filters.$or = [
+            { name: regex },
+            { email: regex }
+        ];
+    }
+
+    const users = await User.find(filters)
+        .select('_id name email profilePicture')
+        .limit(20);
+
+    return users;
+};
+
 export default {
     updateProfileService,
     userFollowATagService,
@@ -1140,5 +1161,6 @@ export default {
     verifyUserService,
     banUserService,
     unbanUserService,
-    getPostByUserDashboardPaginatedService
+    getPostByUserDashboardPaginatedService,
+    searchUsersService
 }
