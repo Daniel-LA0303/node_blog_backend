@@ -410,13 +410,8 @@ const getGlobalSearchController = async (req: any, res: any) => {
 
         if(userId){
             // we call service to save search 
-            console.log("user is auth");
             await saveHistory(userId, q);
-        }else{
-            console.log("user is not auth");
-            
         }
-
 
         const [posts, categories, users] = await Promise.all([
             postsServices.getPostsByTitlePaginatedService(page, limit, q),
