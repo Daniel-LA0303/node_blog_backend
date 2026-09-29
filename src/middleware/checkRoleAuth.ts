@@ -46,11 +46,7 @@ const checkRoleAuth = async (req: any, res: any, next: any) => {
             req.user = user;
             return next();
         } catch (error) {
-            // 401 triggers the frontend refresh flow
-            console.log("catch");
-            
-            console.log(error);
-            
+            // 401 triggers the frontend refresh flow            
             return res.status(401).json(
                 new ApiResponse(401, '/api' + req.path, req.method, 'Access token expired or invalid', null, true)
             );

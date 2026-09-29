@@ -428,7 +428,6 @@ const searchUsersController = async (req: any, res: any) => {
 
         res.status(200).json(users);
     } catch (error) {
-        console.log("Error in searchUsers:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 };

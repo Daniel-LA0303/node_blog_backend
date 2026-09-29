@@ -14,7 +14,6 @@ export const sendMessageController = async (req: any, res: any) => {
 
     res.status(201).json(populatedMessage);
   } catch (error) {
-    console.log("Error in sendMessage", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -33,7 +32,6 @@ export const getMessagesController = async (req: any, res: any) => {
 
     res.status(200).json(data);
   } catch (error) {
-    console.log("Error al obtener mensajes", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 };
@@ -49,7 +47,6 @@ export const getConversationsController = async (req: any, res: any) => {
 
     res.status(200).json(data);
   } catch (error) {
-    console.log("Error al obtener mensajes", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 };
@@ -65,7 +62,6 @@ export const getUnreadMessagesCountController = async (req: any, res: any) => {
 
     res.status(200).json({ unreadMessagesCount });
   } catch (error) {
-    console.log("Error al obtener los mensajes no leídos", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 };
