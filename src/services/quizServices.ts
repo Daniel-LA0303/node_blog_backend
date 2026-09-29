@@ -654,38 +654,53 @@ const removeQuestionService = async (questionId: string) => {
 
 const updateQuestionService = async (r: QuizzQuestionRequesI) => {
 
-    // 1. search quizz
     const quiz = await Quiz.findById(r.quiz);
-    if (!quiz) {
-        throw new ServiceException(`This Quizz does not exists.`, 404);
-    }
+    if (!quiz) throw new ServiceException(`This Quizz does not exists.`, 404);
 
-
-    // 2. search question and save it
     const q = await QuizQuestion.findById(r.questionId);
-    if (!q) {
-        throw new ServiceException(`This question does not exists.`, 404);
-    }
+    if (!q) throw new ServiceException(`This question does not exists.`, 404);
+
     q.question = r.question;
     q.points = r.points;
     q.order = r.order;
     await q.save();
 
+    // 1. borrar las opciones que ya no vienen en el payload
+    const incomingIds = r.options.filter(o => o._id).map(o => o._id);
+    await QuizQuestionOption.deleteMany({
+        question: q._id,
+        _id: { $nin: incomingIds }
+    });
 
-    // 3. create multiple options
-    const options = await Promise.all(
-        r.options.map((option) =>
-            QuizQuestionOption.findByIdAndUpdate(
+    // 2. mover temporalmente las existentes a un order alto para liberar el índice único
+    const OFFSET = 1000;
+    if (incomingIds.length > 0) {
+        await QuizQuestionOption.updateMany(
+            { question: q._id, _id: { $in: incomingIds } },
+            { $inc: { order: OFFSET } }
+        );
+    }
+
+    // 3. actualizar (o crear) SECUENCIALMENTE, no en paralelo
+    const options = [];
+    for (const option of r.options) {
+        if (option._id) {
+            const updated = await QuizQuestionOption.findByIdAndUpdate(
                 option._id,
-                {
-                    text: option.text,
-                    isCorrect: option.isCorrect,
-                    order: option.order
-                },
+                { text: option.text, isCorrect: option.isCorrect, order: option.order },
                 { new: true }
-            )
-        )
-    );
+            );
+            options.push(updated);
+        } else {
+            const created = await QuizQuestionOption.create({
+                question: q._id,
+                text: option.text,
+                isCorrect: option.isCorrect,
+                order: option.order
+            });
+            options.push(created);
+        }
+    }
 
     return {
         _id: q.id,

@@ -247,6 +247,23 @@ const getResourceListMembershipController = async (req: any, res: any, next: any
     }
 };
 
+const getGlobalStudyListsController = async (req: any, res: any, next: any) => {
+    try {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+        const search = typeof req.query.q === 'string' ? req.query.q.trim() : undefined;
+        const mine = req.query.mine === 'true';
+
+        const r = await listsServices.getGlobalStudyListsPaginatedService(
+            req.user._id.toString(), page, limit, search, mine
+        );
+
+        res.status(200).json(new ApiResponse(200, "/api" + req.path, req.method, "", r, false));
+    } catch (error) {
+        next(error);
+    }
+};
+
 
 export default {
     createStudyListController,
@@ -259,5 +276,7 @@ export default {
     getStudyListItemsController,
     getStudyListController,
     reorderStudyListItemsController,
-    getResourceListMembershipController
+    getResourceListMembershipController,
+    getGlobalStudyListsController,
+    
 };

@@ -70,5 +70,7 @@ router.patch(
     listsController.reorderStudyListItemsController
 );
 
+router.get('/study-lists', checkAuth, listsController.getGlobalStudyListsController);
+
 
 export default router;

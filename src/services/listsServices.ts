@@ -459,6 +459,40 @@ const getResourceListMembershipService = async (
         }));
 };
 
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const getGlobalStudyListsPaginatedService = async (
+    userId: string,
+    page: number,
+    limit: number,
+    search?: string,
+    mine?: boolean
+) => {
+
+    const skip = (page - 1) * limit;
+
+    const filter: any = mine
+        ? { owner: userId, status: { $ne: 'DELETED' } }
+        : {
+            $or: [
+                { owner: userId, status: { $ne: 'DELETED' } },
+                { owner: { $ne: userId }, status: 'ACTIVE' }
+            ]
+        };
+
+    if (search) {
+        filter.title = { $regex: escapeRegex(search), $options: 'i' };
+    }
+
+    const [data, total] = await Promise.all([
+        StudyList.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        StudyList.countDocuments(filter)
+    ]);
+
+    return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+};
+
+
 export default {
     createStudyListService,
     updateStudyListService,
@@ -470,5 +504,6 @@ export default {
     getStudyListItemsPaginatedService,
     getStudyListService,
     reorderStudyListItemsService,
-    getResourceListMembershipService
+    getResourceListMembershipService,
+    getGlobalStudyListsPaginatedService,
 };
