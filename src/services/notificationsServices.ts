@@ -137,10 +137,6 @@ const sendNotificationNewActionModerLogService = async (userId: string, newLog: 
     if (!user) {
         throw new ServiceException("User not found..", 404);
     }
-    console.log("***");
-    console.log("sen new log");
-    // SEND NOTIFICATION ONLY IF USER IS ONLINE
-    console.log("yes, user is active");
     io.to('admins-room').emit("newLog", newLog);
 }
 

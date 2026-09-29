@@ -9,6 +9,7 @@ import { ServiceException } from "../utils/exception/ServiceException";
 import QuizAttempt from "../models/QuizAttempt";
 import QuizAttemptAnswer from "../models/QuizAttemptAnswer";
 import User from "../models/User";
+import SaveResource from "../models/SaveResource";
 
 const submitQuizAttemptService = async (
     request: SubmitQuizAttemptRequest
@@ -803,6 +804,167 @@ const getQuizesAttemptPaginatedByUserIdService = async (
     }
 }
 
+// get paginated with print save button
+/*const getQuizesAttemptPaginatedByUserIdService = async (
+  userId: string,
+  page: number,
+  limit: number,
+  currentAuthUserId?: string // ID del usuario logueado en la app
+) => {
+  const u = await User.findById(userId);
+  if (!u) {
+    throw new ServiceException(`This user does not exist.`, 404);
+  }
+
+  const skip = (page - 1) * limit;
+  const total = await QuizAttempt.countDocuments({ user: u._id });
+
+  const quizesAttempts = await QuizAttempt.find({ user: u._id })
+    .populate({
+      path: 'quiz',
+      select: '-__v -updatedAt -createdAt -deletedAt -tags -categories',
+    })
+    .select('-user -__v -updatedAt -createdAt')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean(); // .lean() devuelve objetos JavaScript planos para poder editarlos
+
+  // Si hay un usuario autenticado consultando, calculamos qué quizes tiene guardados
+  if (currentAuthUserId && quizesAttempts.length > 0) {
+    const quizIds = quizesAttempts.map((item: any) => item.quiz._id);
+
+    // Buscamos cuáles de esos quizes están guardados por currentAuthUserId
+    const savedResources = await SaveResource.find({
+      user: currentAuthUserId,
+      resourceType: 'QUIZ',
+      resource: { $in: quizIds },
+    }).select('resource');
+
+    const savedSet = new Set(savedResources.map((s) => s.resource.toString()));
+
+    // Inyectamos el flag isSaved a cada objeto
+    quizesAttempts.forEach((item: any) => {
+      if (item.quiz) {
+        item.quiz.isSaved = savedSet.has(item.quiz._id.toString());
+      }
+    });
+  }
+
+  return {
+    quizesAttempts,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};*/
+
+// change save blog or quiz
+export const toggleSaveResourceService = async (
+  userId: string,
+  resourceId: string,
+  resourceType: 'Post' | 'Quiz'
+) => {
+  // 1. search resource
+  const existingSave = await SaveResource.findOne({
+    user: userId,
+    resource: resourceId,
+    resourceType: resourceType,
+  });
+
+  // 2. if resource exists tehn
+  if (existingSave) {
+    await SaveResource.findByIdAndDelete(existingSave._id);
+    return {
+      isSaved: false,
+      message: `${resourceType} remove it from saver resource.`,
+    };
+  }
+
+  // 3. if does not exists save it new
+  await SaveResource.create({
+    user: userId,
+    resource: resourceId,
+    resourceType: resourceType,
+  });
+
+  return {
+    isSaved: true,
+    message: `${resourceType} save it successfully.`,
+  };
+};
+
+
+// global: todos los quizzes publicados, sin filtrar por dueño
+const getQuizesPaginatedService = async (
+    page: number,
+    limit: number
+) => {
+
+    const skip = (page - 1) * limit;
+
+    const filters = { status: 'PUBLISHED' };
+
+    const total = await Quiz.countDocuments(filters);
+
+    const quizes = await Quiz.find(filters)
+        .select('-isComplete -createdAt -updatedAt -deletedAt -__v')
+        .sort({ publishedAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+    return {
+        quizes,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    };
+};
+
+// búsqueda por título, descripción o tags — mismo filtro base (PUBLISHED)
+const searchQuizesService = async (
+    query: string,
+    page: number,
+    limit: number
+) => {
+
+    const skip = (page - 1) * limit;
+
+    const filters: any = { status: 'PUBLISHED' };
+
+    if (query && query.trim()) {
+        const regex = new RegExp(query.trim(), 'i');
+        filters.$or = [
+            { title: regex },
+            { description: regex },
+            { tags: regex }
+        ];
+    }
+
+    const total = await Quiz.countDocuments(filters);
+
+    const quizes = await Quiz.find(filters)
+        .select('-isComplete -createdAt -updatedAt -deletedAt -__v')
+        .sort({ publishedAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+    return {
+        quizes,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    };
+};
 
 export default {
     createQuizInfoService,
@@ -815,5 +977,8 @@ export default {
     updateQuizInfoService,
     getLeaderBoardByQuizService,
     getQuizesPaginatedByUserIdService,
-    getQuizesAttemptPaginatedByUserIdService
+    getQuizesAttemptPaginatedByUserIdService,
+    toggleSaveResourceService,
+    getQuizesPaginatedService,
+    searchQuizesService
 }

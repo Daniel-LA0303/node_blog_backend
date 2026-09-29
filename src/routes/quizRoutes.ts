@@ -50,4 +50,10 @@ router.get('/get-quiz-attempt-by-user/:id',
     //checkRoleAuth,
     quizController.getQuizesAttemptPaginatedByUserIdController);
 
+router.get('/get-quizzes', 
+    checkAuth, 
+    quizController.getQuizesPaginatedController);
+router.get('/search-quizzes', 
+    checkAuth, 
+    quizController.searchQuizesController);
 export default router

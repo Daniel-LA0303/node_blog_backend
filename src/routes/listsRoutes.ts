@@ -54,9 +54,21 @@ router.get(
     listsController.getStudyListItemsController
 );
 
+router.get('/study-lists/resource-membership', 
+    checkAuth, 
+    listsController.getResourceListMembershipController);
+
+
 router.get(
     "/study-lists/:listId",
     listsController.getStudyListController
 );
+
+router.patch(
+    '/study-lists/:listId/items/reorder', 
+    checkAuth, 
+    listsController.reorderStudyListItemsController
+);
+
 
 export default router;

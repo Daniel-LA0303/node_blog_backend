@@ -1,6 +1,7 @@
 import StudyListItem from "../models/StudyListItem";
 import StudyList from "../models/StudyListSchema";
 import { ServiceException } from "../utils/exception/ServiceException";
+import mongoose from "mongoose"
 
 
 const createStudyListService = async (
@@ -184,9 +185,6 @@ const getStudyListsPaginatedService = async (
 ) => {
 
     const skip = (page - 1) * limit;
-
-    console.log(owner);
-    
 
     const [data, total] = await Promise.all([
         StudyList.find({
@@ -373,6 +371,94 @@ const getStudyListService = async (
     return studyList;
 };
 
+
+// servitce to reorder OUR LIST
+const reorderStudyListItemsService = async (
+    listId: string,
+    userId: string,
+    items: { _id: string; order: number }[]
+) => {
+
+    // 1. basic payload validation
+    if (!Array.isArray(items) || items.length === 0) {
+        throw new ServiceException("Items are required.", 400);
+    }
+
+    const ids = items.map((i) => String(i._id));
+    const orders = items.map((i) => i.order);
+
+    if (ids.some((id) => !mongoose.Types.ObjectId.isValid(id))) {
+        throw new ServiceException("Invalid item id.", 400);
+    }
+
+    if (orders.some((o) => !Number.isInteger(o) || o < 0)) {
+        throw new ServiceException("Order must be a non-negative integer.", 400);
+    }
+
+    // no repeated ids or repeated orders
+    if (new Set(ids).size !== ids.length || new Set(orders).size !== orders.length) {
+        throw new ServiceException("Repeated ids or orders are not allowed.", 400);
+    }
+
+    // 2. the list must exist
+    const studyList = await StudyList.findOne({
+        _id: listId,
+        status: { $ne: 'DELETED' }
+    });
+
+    if (!studyList) {
+        throw new ServiceException("This study list does not exist.", 404);
+    }
+
+    // 3. only the owner can reorder (the front hides the drag, but we check here too)
+    if (studyList.owner.toString() !== userId) {
+        throw new ServiceException("You are not allowed to reorder this list.", 403);
+    }
+
+    // 4. every item must belong to this list
+    const count = await StudyListItem.countDocuments({
+        _id: { $in: ids },
+        listId
+    });
+
+    if (count !== ids.length) {
+        throw new ServiceException("Some items do not belong to this list.", 400);
+    }
+
+    // 5. apply all the new orders in one round trip
+    await StudyListItem.bulkWrite(
+        items.map((i) => ({
+            updateOne: {
+                filter: { _id: i._id, listId },
+                update: { $set: { order: i.order } }
+            }
+        }))
+    );
+
+    return items;
+};
+
+// to get resources
+const getResourceListMembershipService = async (
+    owner: string,
+    resourceType: 'POST' | 'QUIZ',
+    resourceId: string
+) => {
+
+    // busca TODOS los items con ese recurso, sin importar la lista...
+    const items = await StudyListItem.find({ resourceType, resourceId })
+        // ...y aquí filtramos a que la lista sea del usuario. Si no matchea,
+        // populate deja "listId" en null en vez de tronar
+        .populate({ path: 'listId', match: { owner, status: { $ne: 'DELETED' } }, select: '_id' });
+
+    return items
+        .filter((item: any) => item.listId) // descarta las que no son del usuario
+        .map((item: any) => ({
+            listId: item.listId._id.toString(),
+            itemId: item._id.toString(), // lo necesitas para poder quitarlo después
+        }));
+};
+
 export default {
     createStudyListService,
     updateStudyListService,
@@ -382,5 +468,7 @@ export default {
     deleteStudyListItemService,
     getStudyListsPaginatedService,
     getStudyListItemsPaginatedService,
-    getStudyListService
+    getStudyListService,
+    reorderStudyListItemsService,
+    getResourceListMembershipService
 };

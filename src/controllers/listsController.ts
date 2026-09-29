@@ -210,6 +210,44 @@ const getStudyListController = async (
     }
 };
 
+const reorderStudyListItemsController = async (
+    req: any,
+    res: any,
+    next: any
+) => {
+    try {
+
+        const { listId } = req.params;
+        const { items } = req.body;
+        const userId = req.user._id.toString();
+
+        const r = await listsServices.reorderStudyListItemsService(listId, userId, items);
+
+        res.status(200).json(new ApiResponse(200, "/api" + req.path, req.method, "Items reordered", r, false));
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+const getResourceListMembershipController = async (req: any, res: any, next: any) => {
+    try {
+        const { resourceType, resourceId } = req.query;
+        const userId = req.user._id.toString();
+
+        if (!resourceType || !resourceId) {
+            throw new ServiceException("resourceType and resourceId are required.", 400);
+        }
+
+        const r = await listsServices.getResourceListMembershipService(userId, resourceType, resourceId);
+
+        res.status(200).json(new ApiResponse(200, "/api" + req.path, req.method, "", r, false));
+    } catch (error) {
+        next(error);
+    }
+};
+
+
 export default {
     createStudyListController,
     updateStudyListController,
@@ -219,5 +257,7 @@ export default {
     deleteStudyListItemController,
     getStudyListsController,
     getStudyListItemsController,
-    getStudyListController
+    getStudyListController,
+    reorderStudyListItemsController,
+    getResourceListMembershipController
 };

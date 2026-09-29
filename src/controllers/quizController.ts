@@ -1,3 +1,4 @@
+import SaveResource from "../models/SaveResource";
 import quizServices from "../services/quizServices";
 import { ApiResponse } from "../utils/ApiResponse";
 
@@ -127,35 +128,80 @@ const getLeaderBoardByQuizController = async (req: any, res: any, next: any) => 
     }
 }
 
-export const getQuizesPaginatedByUserIdController = async (req: any, res: any) => {
-  try {
-    const id = req.params.id;
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 20;
+export const getQuizesPaginatedByUserIdController = async (req: any, res: any, next: any) => {
+    try {
+        const id = req.params.id;
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 20;
 
-    const data = await quizServices.getQuizesPaginatedByUserIdService(id, page, limit);
+        const data = await quizServices.getQuizesPaginatedByUserIdService(id, page, limit);
 
-    res.status(200).json(data);
-  } catch (error) {
-    console.log("Error al obtener mensajes", error);
-    res.status(500).json({ error: "Error interno del servidor" });
-  }
+        res.status(200).json(data);
+    } catch (error) {
+        next(error);
+    }
 };
 
-export const getQuizesAttemptPaginatedByUserIdController = async (req: any, res: any) => {
-  try {
-    const id = req.params.id;
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 20;
+export const getQuizesAttemptPaginatedByUserIdController = async (req: any, res: any, next: any) => {
+    try {
+        const id = req.params.id;
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 20;
 
-    const data = await quizServices.getQuizesAttemptPaginatedByUserIdService(id, page, limit);
+        const data = await quizServices.getQuizesAttemptPaginatedByUserIdService(id, page, limit);
 
-    res.status(200).json(data);
-  } catch (error) {
-    console.log("Error al obtener mensajes", error);
-    res.status(500).json({ error: "Error interno del servidor" });
-  }
+        res.status(200).json(data);
+    } catch (error) {
+        next(error);
+    }
 };
+
+// change save
+const toggleSaveResourceController = async (req: any, res: any, next: any) => {
+    try {
+        // Asumiendo que obtienes el userId del token/middleware de autenticación
+        const userId = req.user._id.toString();
+        const { resourceId, resourceType } = req.body; // resourceType: 'BLOG' | 'QUIZ'
+
+        const result = await quizServices.toggleSaveResourceService(
+            userId,
+            resourceId,
+            resourceType
+        );
+
+        res.status(200).json(result);
+    } catch (error: any) {
+        next(error);
+    }
+};
+
+const getQuizesPaginatedController = async (req: any, res: any, next: any) => {
+    try {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+
+        const r = await quizServices.getQuizesPaginatedService(page, limit);
+
+        res.status(200).json(new ApiResponse(200, "/api" + req.path, req.method, "", r, false));
+    } catch (error) {
+        next(error);
+    }
+};
+
+const searchQuizesController = async (req: any, res: any, next: any) => {
+    try {
+        const query = String(req.query.query || '');
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+
+        const r = await quizServices.searchQuizesService(query, page, limit);
+
+        res.status(200).json(new ApiResponse(200, "/api" + req.path, req.method, "", r, false));
+    } catch (error) {
+        next(error);
+    }
+};
+
 
 
 export default {
@@ -169,5 +215,8 @@ export default {
     updateQuizInfoController,
     getLeaderBoardByQuizController,
     getQuizesPaginatedByUserIdController,
-    getQuizesAttemptPaginatedByUserIdController
+    getQuizesAttemptPaginatedByUserIdController,
+    toggleSaveResourceController,
+    getQuizesPaginatedController,
+    searchQuizesController
 }
