@@ -1,6 +1,7 @@
 import { ICreateBadge, IUpdateBadge } from "../interfaces/badges.interfaces";
 import { Badge } from "../models/Badge";
 import User from "../models/User";
+import { UserBadge } from "../models/UserBadge";
 import { ServiceException } from "../utils/exception/ServiceException";
 import auditLogServices from "./auditLogServices";
 
@@ -212,10 +213,44 @@ const deleteBadgeService = async (badgeId: string, u: any, req: any) => {
     return 'Badge deleted successfully';
 };
 
+const getBadgesByUserPaginatedService = async (userId: string, page: number, limit: number) => {
+    const skip = (page - 1) * limit;
+
+    // 1. ids of badges that are still visible (not hidden / deleted)
+    const visibleBadgeIds = await Badge.distinct('_id', { status: 'ACTIVE' });
+
+    // 2. badges awarded to this user, only visible ones
+    const filter = {
+        user: userId,
+        badge: { $in: visibleBadgeIds }
+    };
+
+    const [badges, total] = await Promise.all([
+        UserBadge.find(filter)
+            .sort({ awardedAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate('badge', 'name description img icon type condition')
+            .lean(),
+        UserBadge.countDocuments(filter)
+    ]);
+
+    return {
+        badges,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    };
+};
+
 
 export default {
     createBadgeService,
     getBadgesPaginatedService,
     updateBadgeService,
-    deleteBadgeService
+    deleteBadgeService,
+    getBadgesByUserPaginatedService
 }

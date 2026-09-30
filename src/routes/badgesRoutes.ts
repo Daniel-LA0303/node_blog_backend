@@ -1,6 +1,7 @@
 import express from "express";
 import checkRoleAuth from "../middleware/checkRoleAuth";
 import badgesController from "../controllers/badgesController";
+import checkAuth from "../middleware/checkAuth";
 
 const router = express.Router();
 
@@ -27,5 +28,9 @@ router.delete(
     checkRoleAuth,
     badgesController.deleteBadgeController
 );
+
+router.get('/badges-by-user/:userId', 
+    checkAuth, 
+    badgesController.getBadgesByUserController);
 
 export default router;

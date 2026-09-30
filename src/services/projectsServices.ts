@@ -280,6 +280,75 @@ const unassignTaskService = async (taskId: string) => {
     return newTask;
 };
 
+const getProjectsByOwnerPaginatedService = async (userId: string, page: number, limit: number) => {
+    const skip = (page - 1) * limit;
+
+    const projects = await Project.find({
+        owner: userId,
+        status: { $ne: 'DELETED' }
+    })
+        .skip(skip)
+        .limit(limit)
+        .populate('owner', 'name')
+        .sort({ createdAt: -1 });
+
+    const total = await Project.countDocuments({
+        owner: userId,
+        status: { $ne: 'DELETED' }
+    });
+
+    return {
+        projects,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    }
+}
+
+
+const getProjectsAsColaboratorPaginatedService = async (userId: string, page: number, limit: number) => {
+    const skip = (page - 1) * limit;
+
+    // 1. ids of the projects where the user is an active member
+    const projectIds = await ProjectMember.distinct('project', {
+        user: userId,
+        status: 'ACTIVE'
+    });
+
+    // 2. those projects, excluding the ones the user owns and deleted ones
+    const filter = {
+        _id: { $in: projectIds },
+        owner: { $ne: userId },
+        status: { $ne: 'DELETED' }
+    };
+
+    const [projects, total] = await Promise.all([
+        Project.find(filter)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate('owner', 'name') // optional: show who owns the project
+            .lean(),
+        Project.countDocuments(filter)
+    ]);
+
+    return {
+        projects,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        }
+    };
+};
+
+
+
+
 export default {
     createProjectService,
     updateProjectService,
@@ -291,5 +360,7 @@ export default {
     updateProjectMemberService,
     getProjectWithInfoService,
     assignTaskService,
-    unassignTaskService
+    unassignTaskService,
+    getProjectsByOwnerPaginatedService,
+    getProjectsAsColaboratorPaginatedService
 }

@@ -19,6 +19,12 @@ import Tokens from "../models/Tokens";
 import { hashToken } from "../utils/hashToken";
 import bcrypt from "bcryptjs";
 import auditLogServices from "./auditLogServices";
+import { Project } from "../models/Projects";
+import { ProjectMember } from "../models/ProjectMember";
+import Quiz from "../models/Quiz";
+import QuizAttempt from "../models/QuizAttempt";
+import StudyList from "../models/StudyListSchema";
+import { UserBadge } from "../models/UserBadge";
 
 
 // update profile service with new info
@@ -539,6 +545,7 @@ const getOneUserProfileInfoService = async (userId: any) => {
 // user dashboard info
 const userDashboardInfoService = async (userId: any) => {
 
+    // search counts activity
     const userData = await User.findById(userId)
         .select('posts followersUsers likePost postsSaved followsTags followedUsers')
         .populate('posts')
@@ -551,14 +558,48 @@ const userDashboardInfoService = async (userId: any) => {
     if (!userData) {
         throw new ServiceException("User not found", 404);
     }
+    
+    // count projets
+    const projectsCount = await Project
+    .find({
+        owner: userId
+    }).count();
+
+    const projectsInCollaborationCount = await ProjectMember.find({
+        user: userId
+    }).count();
+
+    const quizzesCount = await Quiz.find({
+        owner: userId
+    }).count();
+
+    const quizzesAttemptsCount = await QuizAttempt.find({
+        user: userId
+    }).count();
+
+    const listsCount = await StudyList.find({
+        owner: userId
+    }).count();
+
+    const badgeCount = await UserBadge.find({
+        user: userId
+    }).count();
 
     const responseData = {
+        // activity data
         postsCount: userData.posts.length,
         followersCount: userData.followersUsers.followers.length,
         likePostsCount: userData.likePost.posts.length,
         savedPostsCount: userData.postsSaved.posts.length,
         tagsCount: userData.followsTags.tags.length,
         followedUsersCount: userData.followedUsers.followed.length,
+        // colab data
+        projectsCount,
+        projectsInCollaborationCount,
+        quizzesCount,
+        quizzesAttemptsCount,
+        listsCount,
+        badgeCount
     };
     return responseData;
 }

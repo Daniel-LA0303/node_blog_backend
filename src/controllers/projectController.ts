@@ -189,6 +189,47 @@ const unassignTaskController = async (req: any, res: any, next: any) => {
     }
 }
 
+const getProjectsByOwnerPaginatedController = async (req: any, res: any, next: any) => {
+    try {
+
+        const id = req.params.id;
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+
+        const result = await projectsServices.getProjectsByOwnerPaginatedService(id, page, limit);
+
+        // mapping response
+        res.status(200).json(
+            new ApiResponse(200, "/api/page" + req.path, req.method, "Success get porjects by user paginated", result, false)
+        );
+
+    } catch (error: any) {
+        next(error);
+    }
+}
+
+const getProjectsAsColaboratorController = async (req: any, res: any, next: any) => {
+    try {
+
+        const id = req.params.id;
+        console.log(id);
+        
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+
+        const r = await projectsServices.getProjectsAsColaboratorPaginatedService(
+            id,
+            page,
+            limit
+        );
+
+        res.status(200).json(new ApiResponse(200, "/api" + req.path, req.method, "", r, false));
+    } catch (error) {
+        next(error);
+    }
+};
+
+
 export default {
     createProjectController,
     updateProjectController,
@@ -200,5 +241,7 @@ export default {
     userInToProjectController,
     getProjectWithInfoController,
     assignTaskController,
-    unassignTaskController
+    unassignTaskController,
+    getProjectsByOwnerPaginatedController,
+    getProjectsAsColaboratorController
 }

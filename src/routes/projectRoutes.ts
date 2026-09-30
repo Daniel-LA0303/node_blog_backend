@@ -49,4 +49,12 @@ router.patch('/unassign-task/:id',
     checkAuth,
     projectController.unassignTaskController);
 
+router.get('/get-projects-by-owner/:id',
+    checkAuth,
+    projectController.getProjectsByOwnerPaginatedController);
+
+router.get('/projects-as-collaborator/:id', 
+    checkAuth, 
+    projectController.getProjectsAsColaboratorController);
+
 export default router
