@@ -57,4 +57,6 @@ router.get('/projects-as-collaborator/:id',
     checkAuth, 
     projectController.getProjectsAsColaboratorController);
 
+router.put('/list/reorder', checkAuth,  projectController.reorderListsController);
+
 export default router

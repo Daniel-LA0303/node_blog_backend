@@ -1,5 +1,6 @@
-import { CrateProjectRequestI, CreateListRequestI, CreateProjectTaskRequestI, UpdateListRequestI, UpdateProjectRequestI, UpdateProjectTaskRequestI } from "../interfaces/projects.interfaces";
+import { CrateProjectRequestI, CreateListRequestI, CreateProjectTaskRequestI, UpdateListRequestI, UpdateProjectRequestI } from "../interfaces/projects.interfaces";
 import projectsServices from "../services/projectsServices";
+import { emitToProject } from "../socketIO/projectEmitter";
 import { ApiResponse } from "../utils/ApiResponse";
 
 
@@ -7,8 +8,10 @@ const createProjectController = async (req: any, res: any, next: any) => {
 
     try {
 
-        const data = req.body;
-        const r = await projectsServices.createProjectService(data as CrateProjectRequestI);
+        let data: CrateProjectRequestI = req.body;
+        const user = req.user._id.toString();
+        data.userAction = user;
+        const r = await projectsServices.createProjectService(data);
 
         res.status(201).json(
             new ApiResponse(200, "/api" + req.path, req.method, "Create project successfully", r, false)
@@ -23,9 +26,11 @@ const updateProjectController = async (req: any, res: any, next: any) => {
 
     try {
 
-        const data = req.body;
+        let data: UpdateProjectRequestI = req.body;
+        const user = req.user._id.toString();
+        data.userAction = user;
         const projectId = req.params.id;
-        const r = await projectsServices.updateProjectService(projectId, data as UpdateProjectRequestI);
+        const r = await projectsServices.updateProjectService(projectId, data);
 
         res.status(201).json(
             new ApiResponse(200, "/api" + req.path, req.method, "Update project successfully", r, false)
@@ -39,9 +44,18 @@ const createListController = async (req: any, res: any, next: any) => {
 
     try {
 
-        const data = req.body;
-        const r = await projectsServices.createListService(data as CreateListRequestI);
+        let data: CreateListRequestI = req.body;
+        const user = req.user._id.toString();
+        data.userAction = user;
 
+        const r = await projectsServices.createListService(data);
+
+        emitToProject(req, r.project.toString(), 'list:created', {
+            _id: r._id,
+            projectId: r.project.toString(),
+            name: r.name,
+            order: r.position,
+        });
         res.status(201).json(
             new ApiResponse(200, "/api" + req.path, req.method, "Create list successfully", r, false)
         );
@@ -54,9 +68,11 @@ const updateListController = async (req: any, res: any, next: any) => {
 
     try {
 
-        const data = req.body;
+        let data: UpdateListRequestI = req.body;
+        const user = req.user._id.toString();
+        data.userAction = user;
         const listId = req.params.id;
-        const r = await projectsServices.updateListService(listId, data as UpdateListRequestI);
+        const r = await projectsServices.updateListService(listId, data);
 
         res.status(201).json(
             new ApiResponse(200, "/api" + req.path, req.method, "Update project successfully", r, false)
@@ -70,8 +86,15 @@ const createTaskController = async (req: any, res: any, next: any) => {
 
     try {
 
-        const data = req.body;
-        const r = await projectsServices.createTaskService(data as CreateProjectTaskRequestI);
+        let data: CreateProjectTaskRequestI = req.body;
+        const user = req.user._id.toString();
+        data.userAction = user;
+        const r = await projectsServices.createTaskService(data);
+
+        emitToProject(req, r.project.toString(), 'task:created', {
+            _id: r._id, listId: r.list, title: r.title, description: r.description,
+            order: r.position, assignedUsers: [],
+        })
 
         res.status(201).json(
             new ApiResponse(200, "/api" + req.path, req.method, "Create task successfully", r, false)
@@ -82,15 +105,29 @@ const createTaskController = async (req: any, res: any, next: any) => {
 }
 
 const updateTaskController = async (req: any, res: any, next: any) => {
-
     try {
-
-        const data = req.body;
         const taskId = req.params.id;
-        const r = await projectsServices.updateTaskService(taskId, data as UpdateProjectTaskRequestI);
+        const data = { ...req.body, userAction: req.user._id.toString() };
 
-        res.status(201).json(
-            new ApiResponse(200, "/api" + req.path, req.method, "Update project successfully", r, false)
+        const { task, moved } = await projectsServices.updateTaskService(taskId, data);
+        const projectId = task.project.toString();
+
+        if (moved) {
+            emitToProject(req, projectId, 'task:moved', {
+                taskId,
+                toListId: task.list.toString(),
+                toIndex: task.position,
+            });
+        } else {
+            emitToProject(req, projectId, 'task:updated', {
+                _id: task._id,
+                title: task.title,
+                description: task.description,
+            });
+        }
+
+        res.status(200).json(
+            new ApiResponse(200, "/api" + req.path, req.method, "Update task successfully", task, false)
         );
     } catch (error) {
         next(error);
@@ -102,7 +139,10 @@ const deleteTaskController = async (req: any, res: any, next: any) => {
     try {
 
         const taskId = req.params.id;
-        const r = await projectsServices.deleteTaskService(taskId);
+        const user = req.user._id.toString();
+        const r = await projectsServices.deleteTaskService(taskId, user);
+
+        emitToProject(req, r, 'task:deleted', { taskId });
 
         res.status(201).json(
             new ApiResponse(200, "/api" + req.path, req.method, "Delete task successfully", r, false)
@@ -117,7 +157,7 @@ const userInToProjectController = async (req: any, res: any, next: any) => {
     try {
 
         const body = req.body;
-        const r = await projectsServices.updateProjectMemberService(body);
+        const r = await projectsServices.updateProjectMemberService(body, req);
 
         res.status(201).json(
             new ApiResponse(200, "/api" + req.path, req.method, "Add user to project successfully", r, false)
@@ -147,8 +187,26 @@ const assignTaskController = async (req: any, res: any, next: any) => {
     try {
         const { id } = req.params;
         const { userId } = req.body;
+        const userR = req.user._id.toString();
 
-        const task = await projectsServices.assignTaskService(id, userId);
+        const r = await projectsServices.assignTaskService(id, userId, userR);
+        const taskId = r.newTask._id.toString();
+        const user = r.user;
+
+        emitToProject(
+            req,
+            r.projectId,
+            'task:assigned',
+            {
+                taskId, user: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    profilePicture: user.profilePicture
+                }
+            }
+        )
+
 
         res.status(200).json(
             new ApiResponse(
@@ -156,7 +214,7 @@ const assignTaskController = async (req: any, res: any, next: any) => {
                 "/api" + req.path,
                 req.method,
                 "User assigned to task",
-                task,
+                r.newTask,
                 false
             )
         );
@@ -213,7 +271,7 @@ const getProjectsAsColaboratorController = async (req: any, res: any, next: any)
 
         const id = req.params.id;
         console.log(id);
-        
+
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 10;
 
@@ -229,6 +287,26 @@ const getProjectsAsColaboratorController = async (req: any, res: any, next: any)
     }
 };
 
+const reorderListsController = async (req: any, res: any, next: any) => {
+    try {
+        const { projectId, lists } = req.body;
+        const user = req.user._id.toString();
+
+        await projectsServices.reorderListsService(projectId, lists, user);
+
+        emitToProject(req, projectId, 'lists:reordered', lists);
+
+        res.status(200).json(
+            new ApiResponse(200, "/api" + req.path, req.method, "Lists reordered successfully", { ok: true }, false)
+        );
+    } catch (error) {
+        next(error);
+    }
+}
+
+const getLastActivity = async () => {
+    
+}
 
 export default {
     createProjectController,
@@ -243,5 +321,6 @@ export default {
     assignTaskController,
     unassignTaskController,
     getProjectsByOwnerPaginatedController,
-    getProjectsAsColaboratorController
+    getProjectsAsColaboratorController,
+    reorderListsController
 }

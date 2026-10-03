@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { app } from "./socketIO/server";
+import { errorHandler } from "./utils/exception/errorHandler";
 
 import usersRoutes from './routes/usersRoutes';
 import postsRoutes from './routes/postsRoutes'
@@ -14,14 +15,22 @@ import notificationsRoutes from './routes/notificationsRoutes'
 import reportsRoutes from './routes/reportsRoutes'
 import dashboardRoutes from './routes/dashboardRoutes'
 import auditLogRoutes from './routes/auditRoutes'
-import projectRoutes from './routes/projectRoutes'
-import { errorHandler } from "./utils/exception/errorHandler";
+import badgesRoutes from './routes/badgesRoutes'
 import quizRoutes from "./routes/quizRoutes";
+import projectRoutes from './routes/projectRoutes'
 import listsRoutes from "./routes/listsRoutes"
 
-import badgesRoutes from './routes/badgesRoutes';
 
-app.use(cors());
+
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:4173",
+    process.env.FRONTEND_URL as string,
+    process.env.FRONTEND_URL_WEB as string,
+  ],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-socket-id'],
+}));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ limit: '1mb', extended: true }));
 
@@ -39,8 +48,9 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/audit-log', auditLogRoutes);
 app.use('/api/bagdes', badgesRoutes);
 app.use('/api/quiz', quizRoutes);
-app.use('/api/lists', listsRoutes);
 app.use('/api/project', projectRoutes);
+app.use('/api/lists', listsRoutes);
+
 
 
 app.get('/api/instance-info', (req, res) => {

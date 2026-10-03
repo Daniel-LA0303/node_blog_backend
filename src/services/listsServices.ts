@@ -371,9 +371,73 @@ const getStudyListService = async (
     return studyList;
 };
 
+const reorderStudyListItemsService = async (
+    listId: string,
+    userId: string,
+    items: { _id: string; order: number }[]
+) => {
+
+    // 1. basic payload validation
+    if (!Array.isArray(items) || items.length === 0) {
+        throw new ServiceException("Items are required.", 400);
+    }
+
+    const ids = items.map((i) => String(i._id));
+    const orders = items.map((i) => i.order);
+
+    if (ids.some((id) => !mongoose.Types.ObjectId.isValid(id))) {
+        throw new ServiceException("Invalid item id.", 400);
+    }
+
+    if (orders.some((o) => !Number.isInteger(o) || o < 0)) {
+        throw new ServiceException("Order must be a non-negative integer.", 400);
+    }
+
+    // no repeated ids or repeated orders
+    if (new Set(ids).size !== ids.length || new Set(orders).size !== orders.length) {
+        throw new ServiceException("Repeated ids or orders are not allowed.", 400);
+    }
+
+    // 2. the list must exist
+    const studyList = await StudyList.findOne({
+        _id: listId,
+        status: { $ne: 'DELETED' }
+    });
+
+    if (!studyList) {
+        throw new ServiceException("This study list does not exist.", 404);
+    }
+
+    // 3. only the owner can reorder (the front hides the drag, but we check here too)
+    if (studyList.owner.toString() !== userId) {
+        throw new ServiceException("You are not allowed to reorder this list.", 403);
+    }
+
+    // 4. every item must belong to this list
+    const count = await StudyListItem.countDocuments({
+        _id: { $in: ids },
+        listId
+    });
+
+    if (count !== ids.length) {
+        throw new ServiceException("Some items do not belong to this list.", 400);
+    }
+
+    // 5. apply all the new orders concurrently
+    await Promise.all(
+        items.map((i) =>
+            StudyListItem.updateOne(
+                { _id: i._id, listId },
+                { $set: { order: i.order } }
+            )
+        )
+    );
+
+    return items;
+};
 
 // servitce to reorder OUR LIST
-const reorderStudyListItemsService = async (
+/*const reorderStudyListItemsService = async (
     listId: string,
     userId: string,
     items: { _id: string; order: number }[]
@@ -436,7 +500,7 @@ const reorderStudyListItemsService = async (
     );
 
     return items;
-};
+};**/
 
 // to get resources
 const getResourceListMembershipService = async (

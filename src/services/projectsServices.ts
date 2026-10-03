@@ -1,12 +1,73 @@
 import { assign } from "nodemailer/lib/shared";
-import { CrateProjectRequestI, CreateListRequestI, CreateProjectTaskRequestI, UpdateListRequestI, UpdateProjectMemberRequestI, UpdateProjectRequestI, UpdateProjectTaskRequestI } from "../interfaces/projects.interfaces";
+import { CrateProjectRequestI, CreateEventI, CreateListRequestI, CreateProjectTaskRequestI, UpdateListRequestI, UpdateProjectMemberRequestI, UpdateProjectRequestI, UpdateProjectTaskRequestI } from "../interfaces/projects.interfaces";
 import { ProjectList } from "../models/ProjectList";
 import { Project } from "../models/Projects";
 import { ProjectTask } from "../models/ProjectTask";
 import { ServiceException } from "../utils/exception/ServiceException";
 import User from "../models/User";
 import { ProjectMember } from "../models/ProjectMember";
+import { ProjectEvent } from "../models/ProjectEvents";
+import { ActionProject } from "../enums/projects.enums";
+import { getReceiverSocketId, io } from "../socketIO/server";
+import { emitToProject, emitToProjectRoom } from "../socketIO/projectEmitter";
+//import { emitToProject } from "../socketIO/projectEmitter";
+//import { getReceiverSocketId, io } from "../socketIO/server";
 
+const createEventProjectService = async (d: CreateEventI) => {
+
+    // search user
+    const u = await User.findById(d.user);
+
+    const desc = (() => {
+        switch (d.type) {
+            case ActionProject.CREATE_PROJECT:
+                return `${u?.name} has created a project`;
+
+            case ActionProject.UPDATE_PROJECT:
+                return `${u?.name} has updated a project`;
+
+            case ActionProject.CREATE_TASK:
+                return `${u?.name} has created a task`;
+
+            case ActionProject.UPDATE_TASK:
+                return `${u?.name} has updated a task`;
+
+            case ActionProject.DELETE_TASK:
+                return `${u?.name} has deleted a task`;
+
+            case ActionProject.CREATE_LIST:
+                return `${u?.name} has created a list`;
+
+            case ActionProject.UPDATE_LIST:
+                return `${u?.name} has updated a list`;
+
+            case ActionProject.ASSING_USER:
+                return `${u?.name} has assigned a user`;
+
+            default:
+                return `${u?.name} performed an action`;
+        }
+    })();
+
+    const event = await ProjectEvent.create({
+        project: d.project,
+        user: d.user,
+        description: desc,
+        type: d.type,
+        entity: d.entity,
+        entityId: d.entityId
+    });
+
+    // el socket nunca debe romper la petición HTTP
+    try {
+        // JSON round trip: convierte ObjectId y fechas a string, igual que verá el front
+        emitToProjectRoom(d.project, 'activity:created', JSON.parse(JSON.stringify(event)));
+    } catch (error) {
+        console.error('activity emit error:', error);
+    }
+
+    return event;
+}
 
 const getProjectWithInfoService = async (projectId: string) => {
 
@@ -52,13 +113,16 @@ const getProjectWithInfoService = async (projectId: string) => {
             : [],
     }));
 
+    const r = await getLastActivityProjectService(project._id.toString());
+
     return {
         project: {
             ...project.toObject(),
             members: members.map(member => member.user)
         },
         lists: formattedLists,
-        tasks: formattedTasks
+        tasks: formattedTasks,
+        lastAcivity: r
     };
 };
 
@@ -71,6 +135,15 @@ const createProjectService = async (request: CrateProjectRequestI) => {
         owner: request.owner
     });
 
+    const nE: CreateEventI = {
+        project: newProject._id.toString(),
+        user: request.owner,
+        type: ActionProject.CREATE_PROJECT,
+        entity: 'Project',
+        entityId: newProject._id.toString()
+    }
+
+    await createEventProjectService(nE);
 
     return {
         projectId: newProject._id
@@ -90,6 +163,16 @@ const updateProjectService = async (projectId: string, request: UpdateProjectReq
     project.description = request.description;
     const newP = await project.save();
 
+    const nE: CreateEventI = {
+        project: project._id.toString(),
+        user: request?.userAction,
+        type: ActionProject.UPDATE_PROJECT,
+        entity: 'Project',
+        entityId: project._id.toString()
+    }
+
+    await createEventProjectService(nE);
+
     return {
         name: newP.name,
         description: newP.description
@@ -104,6 +187,16 @@ const createListService = async (request: CreateListRequestI) => {
         name: request.name,
         position: request.position
     });
+
+    const nE: CreateEventI = {
+        project: request.project,
+        user: request?.userAction,
+        type: ActionProject.CREATE_LIST,
+        entity: 'ProjectList',
+        entityId: newList._id.toString()
+    }
+
+    await createEventProjectService(nE);
 
     return newList;
 }
@@ -120,6 +213,16 @@ const updateListService = async (listId: string, request: UpdateListRequestI) =>
     list.name = request.name;
     list.position = request.position;
     const newL = await list.save();
+
+    const nE: CreateEventI = {
+        project: list.project.toString(),
+        user: request?.userAction,
+        type: ActionProject.UPDATE_LIST,
+        entity: 'ProjectList',
+        entityId: list._id.toString()
+    }
+
+    await createEventProjectService(nE);
 
     return {
         name: newL.name,
@@ -140,13 +243,20 @@ const createTaskService = async (request: CreateProjectTaskRequestI) => {
         createdBy: request.createdBy,
     });
 
+    const nE: CreateEventI = {
+        project: newTask.project.toString(),
+        user: request?.userAction,
+        type: ActionProject.CREATE_TASK,
+        entity: 'ProjectTask',
+        entityId: newTask._id.toString()
+    }
+
+    await createEventProjectService(nE);
+
     return newTask;
 }
 
-
 const updateTaskService = async (taskId: string, request: UpdateProjectTaskRequestI) => {
-
-    // 1. search task
     const task = await ProjectTask.findById(taskId);
     if (!task) {
         throw new ServiceException("Task not found", 404);
@@ -157,21 +267,166 @@ const updateTaskService = async (taskId: string, request: UpdateProjectTaskReque
         throw new ServiceException("Project not found", 404);
     }
 
-    const list = await ProjectList.findById(task.list);
-    if (!list) {
-        throw new ServiceException("List not found", 404);
+    const fromListId = task.list.toString();
+    const toListId = request.list ?? fromListId;
+    const oldPosition = task.position;
+    const isChangingList = request.list !== undefined && request.list !== fromListId;
+    const isChangingPosition = request.position !== undefined && request.position !== oldPosition;
+    const moved = isChangingList || isChangingPosition;
+
+    if (request.list) {
+        const list = await ProjectList.findById(request.list);
+        if (!list) {
+            throw new ServiceException("List not found", 404);
+        }
     }
 
-    task.title = request.title;
-    task.description = request.description;
-    task.position = request.position;
+    if (request.title !== undefined) task.title = request.title;
+    if (request.description !== undefined) task.description = request.description;
 
-    const newT = await task.save();
+    if (moved) {
+        const targetCount = await ProjectTask.countDocuments({
+            list: toListId,
+            _id: { $ne: task._id },
+        });
 
-    return newT
-}
+        // Asegurar que la nueva posición no exceda el límite disponible
+        const newPosition = Math.min(request.position ?? targetCount, targetCount);
 
-const deleteTaskService = async (taskId: string) => {
+        if (isChangingList) {
+            // 1. Abrir espacio en la lista destino (incrementar las posiciones >= newPosition)
+            await ProjectTask.updateMany(
+                { list: toListId, position: { $gte: newPosition } },
+                { $inc: { position: 1 } }
+            );
+
+            // 2. Cerrar el hueco en la lista origen (decrementar las posiciones > oldPosition)
+            await ProjectTask.updateMany(
+                { list: fromListId, position: { $gt: oldPosition } },
+                { $inc: { position: -1 } }
+            );
+        } else if (isChangingPosition) {
+            // Reordenamiento dentro de la misma lista
+            if (newPosition > oldPosition) {
+                // Mover hacia abajo: decrementar las intermedias
+                await ProjectTask.updateMany(
+                    {
+                        list: fromListId,
+                        _id: { $ne: task._id },
+                        position: { $gt: oldPosition, $lte: newPosition },
+                    },
+                    { $inc: { position: -1 } }
+                );
+            } else {
+                // Mover hacia arriba: incrementar las intermedias
+                await ProjectTask.updateMany(
+                    {
+                        list: fromListId,
+                        _id: { $ne: task._id },
+                        position: { $gte: newPosition, $lt: oldPosition },
+                    },
+                    { $inc: { position: 1 } }
+                );
+            }
+        }
+
+        task.list = toListId as any;
+        task.position = newPosition;
+    }
+
+    const saved = await task.save();
+
+    await createEventProjectService({
+        project: project._id.toString(),
+        user: request?.userAction,
+        type: ActionProject.UPDATE_TASK,
+        entity: "ProjectTask",
+        entityId: task._id.toString(),
+    });
+
+    return { task: saved, moved };
+};
+
+/*const updateTaskService = async (taskId: string, request: UpdateProjectTaskRequestI) => {
+
+    const task = await ProjectTask.findById(taskId);
+    if (!task) {
+        throw new ServiceException("Task not found", 404);
+    }
+
+    const project = await Project.findById(task.project);
+    if (!project) {
+        throw new ServiceException("Project not found", 404);
+    }
+
+    const fromListId = task.list.toString();
+    const toListId = request.list ?? fromListId;
+    const moved = request.list !== undefined || request.position !== undefined;
+
+    if (request.list) {
+        const list = await ProjectList.findById(request.list);
+        if (!list) {
+            throw new ServiceException("List not found", 404);
+        }
+    }
+
+    if (request.title !== undefined) task.title = request.title;
+    if (request.description !== undefined) task.description = request.description;
+
+    if (moved) {
+        // tareas de la lista destino, sin la que se mueve
+        const siblings = await ProjectTask.find({
+            list: toListId,
+            _id: { $ne: task._id },
+        }).sort({ position: 1 });
+
+        const idx = Math.min(request.position ?? siblings.length, siblings.length);
+
+        // hacer espacio: las que quedan antes de idx conservan i, las demás suben una posición
+        if (siblings.length > 0) {
+            await ProjectTask.bulkWrite(
+                siblings.map((t, i) => ({
+                    updateOne: {
+                        filter: { _id: t._id },
+                        update: { $set: { position: i < idx ? i : i + 1 } },
+                    },
+                }))
+            );
+        }
+
+        task.list = toListId as any;
+        task.position = idx;
+    }
+
+    const saved = await task.save();
+
+    // cerrar el hueco en la lista origen (después del save, para que la tarea ya no cuente ahí)
+    if (moved && fromListId !== toListId) {
+        const source = await ProjectTask.find({ list: fromListId }).sort({ position: 1 });
+        if (source.length > 0) {
+            await ProjectTask.bulkWrite(
+                source.map((t, i) => ({
+                    updateOne: {
+                        filter: { _id: t._id },
+                        update: { $set: { position: i } },
+                    },
+                }))
+            );
+        }
+    }
+
+    await createEventProjectService({
+        project: project._id.toString(),
+        user: request?.userAction,
+        type: ActionProject.UPDATE_TASK,
+        entity: 'ProjectTask',
+        entityId: task._id.toString(),
+    });
+
+    return { task: saved, moved };
+}*/
+
+const deleteTaskService = async (taskId: string, userAction: string) => {
 
     // 1. search task
     const task = await ProjectTask.findById(taskId);
@@ -179,12 +434,27 @@ const deleteTaskService = async (taskId: string) => {
         throw new ServiceException("Task not found", 404);
     }
 
+    const tI = task.project.toString();
+
+    const nE: CreateEventI = {
+        project: task.project.toString(),
+        user: userAction,
+        type: ActionProject.DELETE_TASK,
+        entity: 'ProjectTask',
+        entityId: task._id.toString()
+    }
+
+    await createEventProjectService(nE);
+
     await task.remove();
+
+    return tI
 }
 
 
 const updateProjectMemberService = async (
-    request: UpdateProjectMemberRequestI
+    request: UpdateProjectMemberRequestI,
+    r: any
 ) => {
 
     // 1. Search project
@@ -229,12 +499,22 @@ const updateProjectMemberService = async (
     // 5. Update existing membership
     projectMember.status = request.status;
 
+    // send socket when delete an user form project
+    const sid = getReceiverSocketId(user._id.toString())
+    const pI = project._id.toString();
+    const uI = project._id.toString();
+    if (sid) {
+        io.to(sid).emit('project:kicked', { pI })
+        io.in(sid).socketsLeave(`project:${pI}`)
+    }
+    emitToProject(r, project._id.toString(), 'member:removed', { uI })
+
     await projectMember.save();
 
     return projectMember;
 };
 
-const assignTaskService = async (taskId: string, userId: string) => {
+const assignTaskService = async (taskId: string, userId: string, userAction: string) => {
 
     // 1. search task
     const task = await ProjectTask.findById(taskId);
@@ -262,7 +542,21 @@ const assignTaskService = async (taskId: string, userId: string) => {
     task.assignedTo = userId as any;
     const newTask = await task.save();
 
-    return newTask;
+    const nE: CreateEventI = {
+        project: task.project.toString(),
+        user: userAction,
+        type: ActionProject.ASSING_USER,
+        entity: 'ProjectMember',
+        entityId: task._id.toString()
+    }
+
+    await createEventProjectService(nE);
+
+    return {
+        newTask,
+        projectId: task.project.toString(),
+        user
+    };
 };
 
 const unassignTaskService = async (taskId: string) => {
@@ -346,7 +640,86 @@ const getProjectsAsColaboratorPaginatedService = async (userId: string, page: nu
     };
 };
 
+const reorderListsService = async (
+    projectId: string,
+    lists: { _id: string; order: number }[],
+    userAction: string
+) => {
+    if (!Array.isArray(lists) || lists.length === 0) {
+        throw new ServiceException("Lists are required", 400);
+    }
 
+    // Validar que todas las listas pertenezcan al proyecto
+    const ids = lists.map((l) => l._id);
+    const count = await ProjectList.countDocuments({ _id: { $in: ids }, project: projectId });
+    if (count !== ids.length) {
+        throw new ServiceException("Invalid lists for this project", 400);
+    }
+
+    // Actualizar las posiciones ejecutando updateOne en paralelo
+    await Promise.all(
+        lists.map((l) =>
+            ProjectList.updateOne(
+                { _id: l._id, project: projectId },
+                { $set: { position: l.order } }
+            )
+        )
+    );
+
+    await createEventProjectService({
+        project: projectId,
+        user: userAction,
+        type: ActionProject.UPDATE_LIST,
+        entity: 'ProjectList',
+        entityId: ids[0],
+    });
+};
+/*const reorderListsService = async (
+    projectId: string,
+    lists: { _id: string; order: number }[],
+    userAction: string
+) => {
+    if (!Array.isArray(lists) || lists.length === 0) {
+        throw new ServiceException("Lists are required", 400);
+    }
+
+    // todas deben pertenecer al proyecto
+    const ids = lists.map((l) => l._id);
+    const count = await ProjectList.countDocuments({ _id: { $in: ids }, project: projectId });
+    if (count !== ids.length) {
+        throw new ServiceException("Invalid lists for this project", 400);
+    }
+
+    await ProjectList.bulkWrite(
+        lists.map((l) => ({
+            updateOne: {
+                filter: { _id: l._id, project: projectId },
+                update: { $set: { position: l.order } },
+            },
+        }))
+    );
+
+    await createEventProjectService({
+        project: projectId,
+        user: userAction,
+        type: ActionProject.UPDATE_LIST,
+        entity: 'ProjectList',
+        entityId: ids[0], 
+    });
+};*/
+
+const getLastActivityProjectService = async (projectId: string) => {
+
+    const lastActivity = ProjectEvent.find({
+        project: projectId
+    })
+        .limit(20)
+        .sort({
+            createdAt: -1
+        });
+
+    return lastActivity;
+}
 
 
 export default {
@@ -362,5 +735,6 @@ export default {
     assignTaskService,
     unassignTaskService,
     getProjectsByOwnerPaginatedService,
-    getProjectsAsColaboratorPaginatedService
+    getProjectsAsColaboratorPaginatedService,
+    reorderListsService,
 }

@@ -5,6 +5,8 @@ import { Server, Socket } from "socket.io";
 import http from "http";
 import express from "express";
 import User from "../models/User";
+import { Project } from "../models/Projects";
+import { ProjectMember } from "../models/ProjectMember";
 
 const app = express();
 
@@ -54,6 +56,28 @@ io.on("connection", async (socket: Socket) => {
 
   if (!userId) return;
 
+  const roomOf = (projectId: string) => `project:${projectId}`
+  socket.on('project:join', async (projectId: string, ack?: (r: { ok: boolean }) => void) => {
+    console.log('join request:', projectId, 'user:', userId)
+    try {
+      const isOwner = await Project.exists({ _id: projectId, owner: userId })
+      const isMember =
+        isOwner ||
+        (await ProjectMember.exists({ project: projectId, user: userId, status: 'ACTIVE' }))
+      if (!isMember) return ack?.({ ok: false })
+
+      socket.join(`project:${projectId}`)
+      ack?.({ ok: true })
+    } catch (err) {
+      console.error('join error:', err)
+      ack?.({ ok: false })
+    }
+  })
+
+  socket.on('project:leave', (projectId: string) => {
+    socket.leave(`project:${projectId}`)
+  })
+
   // if user already connected, disconnect old socket
   if (users[userId]) {
 
@@ -75,7 +99,7 @@ io.on("connection", async (socket: Socket) => {
     role.name === 'ROLE_MOD' || role.name === 'ROLE_ADMIN'
   )) {
     admins[userId] = socket.id; // list only mods
-    socket.join('admins-room'); 
+    socket.join('admins-room');
   }
 
   console.log(
@@ -113,6 +137,7 @@ io.on("connection", async (socket: Socket) => {
       );
     }
   });
+
 });
 
 export { app, io, server };
