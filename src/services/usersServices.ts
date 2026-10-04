@@ -317,11 +317,11 @@ const loginService = async (
     }
 
     // 3. check password
-    if(!await user.checkPassword(password)) {
+    if (!await user.checkPassword(password)) {
         throw new ServiceException("Your password is incorrect", 400);
     }
 
-    if(user.status === 'BANNED'){
+    if (user.status === 'BANNED') {
         throw new ServiceException("You has been banned, you can not use the platform", 400);
     }
 
@@ -518,7 +518,7 @@ const getPostByUserDashboardPaginatedService = async (page = 1, limit = 5, userI
 // get all info user to show in profile page
 const getOneUserProfileInfoService = async (userId: any) => {
 
-    const user = await User.findOne({ _id: userId, status: { $in: ['TO_CONFIRM', 'ACTIVE']} }).populate({
+    const user = await User.findOne({ _id: userId, status: { $in: ['TO_CONFIRM', 'ACTIVE'] } }).populate({
         path: "postsSaved",
         populate: {
             path: "posts",
@@ -543,7 +543,30 @@ const getOneUserProfileInfoService = async (userId: any) => {
     if (!user) {
         throw new ServiceException("User not found", 404);
     }
-    return user;
+
+
+    const userBadges = await UserBadge.find({ user: userId, isDisplayed: true })
+        .populate({
+            path: 'badge',
+            match: { status: 'ACTIVE' },
+            select: 'name description img icon type condition',
+        })
+        .sort({ awardedAt: -1 })
+        .lean();
+
+    const badges = userBadges
+        .filter(ub => ub.badge)
+        .map(ub => ({
+            ...(ub.badge as any),
+            awardedAt: ub.awardedAt,
+        }));
+
+
+
+    return {
+        user,
+        badges
+    };
 
 }
 
@@ -563,19 +586,26 @@ const userDashboardInfoService = async (userId: any) => {
     if (!userData) {
         throw new ServiceException("User not found", 404);
     }
-    
+
+    const postsCount = await Post.find({
+        user: userId,
+        status: { $in: ['PUBLISHED', 'HIDDEN'] }
+    }).count();
+
     // count projets
     const projectsCount = await Project
-    .find({
-        owner: userId
-    }).count();
+        .find({
+            owner: userId,
+            status: { $in: ['ACTIVE', 'ARCHIVED'] }
+        }).count();
 
     const projectsInCollaborationCount = await ProjectMember.find({
         user: userId
     }).count();
 
     const quizzesCount = await Quiz.find({
-        owner: userId
+        owner: userId,
+        status: { $in: ['ACTIVE', 'HIDDEN'] }
     }).count();
 
     const quizzesAttemptsCount = await QuizAttempt.find({
@@ -583,7 +613,8 @@ const userDashboardInfoService = async (userId: any) => {
     }).count();
 
     const listsCount = await StudyList.find({
-        owner: userId
+        owner: userId,
+        status: { $in: ['ACTIVE', 'HIDDEN'] }
     }).count();
 
     const badgeCount = await UserBadge.find({
@@ -592,7 +623,7 @@ const userDashboardInfoService = async (userId: any) => {
 
     const responseData = {
         // activity data
-        postsCount: userData.posts.length,
+        postsCount: postsCount,
         followersCount: userData.followersUsers.followers.length,
         likePostsCount: userData.likePost.posts.length,
         savedPostsCount: userData.postsSaved.posts.length,
@@ -1007,7 +1038,7 @@ const removeModerService = async (userId: string, userR: any, req: any) => {
         req
     });
 }
- 
+
 
 const searchUsersToAdminPanelService = async (search: string, limit: number, page: number) => {
 
@@ -1098,8 +1129,8 @@ const banUserService = async (userId: string, userR: any, req: any) => {
 
     // 3. revoke all token for this user
     await Tokens.updateMany(
-        {userId: user._id},
-        { $set: {isRevoked: true, status: 'REVOKED'}}
+        { userId: user._id },
+        { $set: { isRevoked: true, status: 'REVOKED' } }
     );
 
     // 4. close session via web socket and all tokens

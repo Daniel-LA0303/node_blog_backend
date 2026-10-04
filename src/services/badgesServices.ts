@@ -20,11 +20,11 @@ type BadgeConditionType = 'BLOG_COUNT' | 'COMMENT_COUNT' | 'QUIZ_COUNT' | 'FOLLO
 type Counter = (userId: Types.ObjectId) => PromiseLike<number>;
 
 const counters: Partial<Record<BadgeConditionType, Counter>> = {
-    COMMENT_COUNT:  (userId) => Comment.countDocuments({ author: userId }),
-    BLOG_COUNT:     (userId) => Post.countDocuments({ author: userId, status: 'PUBLISHED' }),
-    LIST_COUNT:     (userId) => StudyList.countDocuments({ owner: userId }),
-    PROJECT_COUNT:  (userId) => Project.countDocuments({ owner: userId }),
-    QUIZ_COUNT:     (userId) => Quiz.countDocuments({ author: userId }),
+    COMMENT_COUNT: (userId) => Comment.countDocuments({ author: userId }),
+    BLOG_COUNT: (userId) => Post.countDocuments({ author: userId, status: 'PUBLISHED' }),
+    LIST_COUNT: (userId) => StudyList.countDocuments({ owner: userId }),
+    PROJECT_COUNT: (userId) => Project.countDocuments({ owner: userId }),
+    QUIZ_COUNT: (userId) => Quiz.countDocuments({ author: userId }),
     FOLLOWER_COUNT: async (userId) => {
         const user = await User.findById(userId).select('followersUsers.conutFollowers').lean();
         return user?.followersUsers?.conutFollowers ?? 0;
@@ -100,10 +100,7 @@ const createBadgeService = async (dto: ICreateBadge, u: any, req: any) => {
     });
 
     if (existingBadge) {
-        throw new ServiceException(
-            'A badge with this name already exists.',
-            400
-        );
+        throw new ServiceException('A badge with this name already exists.', 400);
     }
 
     // 2. validate creator exists
@@ -339,5 +336,5 @@ export default {
     updateBadgeService,
     deleteBadgeService,
     getBadgesByUserPaginatedService,
-    checkAndAwardBadges
+    checkAndAwardBadges,
 }

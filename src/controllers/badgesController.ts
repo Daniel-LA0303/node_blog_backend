@@ -105,6 +105,7 @@ const deleteBadgeController = async (req: any, res: any, next: any) => {
     }
 };
 
+
 export default {
     createBadgeController,
     getBadgesPaginatedController,
