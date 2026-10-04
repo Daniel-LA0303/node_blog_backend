@@ -6,6 +6,7 @@ import { ServiceException } from "../utils/exception/ServiceException";
 import { NewNotificationI } from "../interfaces/notification.interfaces";
 import { EntityType, NotificationType } from "../enums/notifications.enums";
 import notificationsServices from "./notificationsServices";
+import badgesServices from "./badgesServices";
 
 // create a new comment
 const newCommentService = async (postId: any, commentBody: any) => {
@@ -66,8 +67,11 @@ const newCommentService = async (postId: any, commentBody: any) => {
         };
 
         await notificationsServices.sendNotificationService(notificationData);
-
     }
+
+    // check changes in badges
+    await badgesServices.checkAndAwardBadges(user.id, 'COMMENT_COUNT')
+    .catch(err => console.error('[badges] error', err));
 
     return populatedComment;
 }

@@ -33,4 +33,7 @@ const UserBadgeSchema = new Schema<IUserBadge>(
     }
 );
 
+// unique 
+UserBadgeSchema.index({ user: 1, badge: 1 }, { unique: true });
+
 export const UserBadge = mongoose.model<IUserBadge>('UserBadge', UserBadgeSchema);

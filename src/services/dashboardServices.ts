@@ -1,3 +1,4 @@
+import { Model } from "mongoose";
 import { CategoryMetricResult, EngagementStatsResult } from "../interfaces/dahsboard.interfaces";
 import { AuditLog } from "../models/AuditLog";
 import Categories from "../models/Categories";
@@ -6,8 +7,11 @@ import Conversation from "../models/Conversation";
 import Message from "../models/Message";
 import Notification from "../models/Notification";
 import Post from "../models/Post";
+import { Project } from "../models/Projects";
+import Quiz from "../models/Quiz";
 import Reply from "../models/Replies";
 import Reports from "../models/Reports";
+import StudyList from "../models/StudyListSchema";
 import User from "../models/User"
 
 interface StatusAggregate {
@@ -26,6 +30,9 @@ const getAllCountDocumentsService = async () => {
     data.countReports = await Reports.countDocuments();
     data.countConversations = await Conversation.countDocuments();
     data.countNotifications = await Notification.countDocuments();
+    data.countLists = await StudyList.countDocuments();
+    data.countQuiz = await Quiz.countDocuments();
+    data.countProjects = await Project.countDocuments();
 
     return data;
 }
@@ -776,6 +783,60 @@ const getModerationActionsByDateRangeService = async (
   };
 };
 
+const pad = (n: number) => String(n).padStart(2, "0");
+
+const getCreationActivityLast7DaysService = async () => {
+    const today = new Date();
+    const y = today.getUTCFullYear();
+    const m = today.getUTCMonth();
+    const d = today.getUTCDate();
+
+    const startDate = new Date(Date.UTC(y, m, d - 6, 0, 0, 0, 0));
+    const endDate = new Date(Date.UTC(y, m, d, 23, 59, 59, 999));
+
+    // Los 7 días una sola vez (se reutilizan para los 3 modelos)
+    const days = Array.from({ length: 7 }, (_, i) => {
+        const date = new Date(Date.UTC(y, m, d - (6 - i), 0, 0, 0, 0));
+        return {
+            key: date.toISOString().split("T")[0], // YYYY-MM-DD
+            label: `${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}-${date.getUTCFullYear()}`,
+        };
+    });
+
+    const countByDay = async (model: Model<any>) => {
+        const aggregation = await model.aggregate([
+            { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "UTC" },
+                    },
+                    count: { $sum: 1 },
+                },
+            },
+        ]);
+
+        const countMap = new Map<string, number>(
+            aggregation.map((item) => [item._id, item.count])
+        );
+
+        return days.map(({ key, label }) => ({
+            date: label,
+            count: countMap.get(key) || 0,
+        }));
+    };
+
+    const [projects, quizzes, lists] = await Promise.all([
+        countByDay(Project),
+        countByDay(Quiz),
+        countByDay(StudyList),
+    ]);
+
+    return {
+        data: { projects, quizzes, lists },
+    };
+};
+
 export default {
     getAllCountDocumentsService,
     getCountPostsByStatusService,
@@ -788,5 +849,6 @@ export default {
     getMessagesLast7DaysService,
     getNotificationsLast7DaysService,
     getUsersByStatusDateRangeService,
-    getModerationActionsByDateRangeService
+    getModerationActionsByDateRangeService,
+    getCreationActivityLast7DaysService
 }

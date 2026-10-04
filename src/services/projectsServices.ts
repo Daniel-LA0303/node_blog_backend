@@ -10,6 +10,7 @@ import { ProjectEvent } from "../models/ProjectEvents";
 import { ActionProject } from "../enums/projects.enums";
 import { getReceiverSocketId, io } from "../socketIO/server";
 import { emitToProject, emitToProjectRoom } from "../socketIO/projectEmitter";
+import badgesServices from "./badgesServices";
 //import { emitToProject } from "../socketIO/projectEmitter";
 //import { getReceiverSocketId, io } from "../socketIO/server";
 
@@ -144,6 +145,9 @@ const createProjectService = async (request: CrateProjectRequestI) => {
     }
 
     await createEventProjectService(nE);
+
+    await badgesServices.checkAndAwardBadges(request.owner, 'PROJECT_COUNT')
+            .catch(err => console.error('[badges] error', err));
 
     return {
         projectId: newProject._id

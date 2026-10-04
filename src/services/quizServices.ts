@@ -10,6 +10,7 @@ import QuizAttempt from "../models/QuizAttempt";
 import QuizAttemptAnswer from "../models/QuizAttemptAnswer";
 import User from "../models/User";
 import SaveResource from "../models/SaveResource";
+import badgesServices from "./badgesServices";
 
 const submitQuizAttemptService = async (
     request: SubmitQuizAttemptRequest
@@ -506,6 +507,10 @@ const createQuizInfoService = async (request: CreateQuizInfoRequestI) => {
         entityId: quiz.id,
         name: quiz.title,
     });
+
+    await badgesServices.checkAndAwardBadges(request.owner, 'QUIZ_COUNT')
+        .catch(err => console.error('[badges] error', err));
+    
 
     return {
         id: quiz._id,

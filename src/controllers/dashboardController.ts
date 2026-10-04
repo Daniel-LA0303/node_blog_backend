@@ -282,6 +282,29 @@ const getModerationActionsByDateRangeSController = async (req: any, res: any, ne
 
 }
 
+const getListProjectQuizLast7DaysController = async (req: any, res: any, next: any) => {
+
+    try {
+
+        const r = await dashboardServices.getCreationActivityLast7DaysService();
+
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                "/api" + req.path,
+                req.method,
+                "Category created successfully",
+                r,
+                false
+            )
+        );
+    } catch (error) {
+
+        next(error);
+    }
+
+}
+
 export {
     getAllCountDocumentsController,
     getCountPostsByStatusController,
@@ -293,5 +316,6 @@ export {
     getMessagesLast7DaysController,
     getNotificationsLast7DaysController,
     getUsersByStatusDateRangeController,
-    getModerationActionsByDateRangeSController
+    getModerationActionsByDateRangeSController,
+    getListProjectQuizLast7DaysController
 }

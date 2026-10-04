@@ -2,6 +2,7 @@ import StudyListItem from "../models/StudyListItem";
 import StudyList from "../models/StudyListSchema";
 import { ServiceException } from "../utils/exception/ServiceException";
 import mongoose from "mongoose"
+import badgesServices from "./badgesServices";
 
 
 const createStudyListService = async (
@@ -18,6 +19,9 @@ const createStudyListService = async (
     });
 
     const result = await studyList.save();
+
+    await badgesServices.checkAndAwardBadges(owner, 'LIST_COUNT')
+        .catch(err => console.error('[badges] error', err));
 
     return result;
 };
@@ -36,7 +40,7 @@ const updateStudyListService = async (
     });
 
     if (!studyList) {
-         throw new ServiceException("This study lits does not exists.", 404);
+        throw new ServiceException("This study lits does not exists.", 404);
     }
 
     studyList.title = title;
@@ -52,15 +56,15 @@ const deleteStudyListService = async (
     listId: string,
     owner: string
 ) => {
-    
-    
+
+
     const studyList = await StudyList.findOne({
         _id: listId,
         owner
     });
 
     if (!studyList) {
-         throw new ServiceException("This study lists does not exists.", 404);
+        throw new ServiceException("This study lists does not exists.", 404);
     }
 
     studyList.status = 'DELETED';
@@ -228,7 +232,7 @@ const getStudyListItemsPaginatedService = async (
     });
 
     if (!studyList) {
-        throw new ServiceException("This study lists does not exists.",404);
+        throw new ServiceException("This study lists does not exists.", 404);
     }
 
     const [data, total] = await Promise.all([

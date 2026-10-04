@@ -12,6 +12,7 @@ import auditLogServices from "./auditLogServices";
 import { AnyMxRecord } from "node:dns";
 import { CHANGE_STATUS, IUserPopulated } from "../interfaces/post.interfaces";
 import { emailPostStatusChange } from "../helpers/email";
+import badgesServices from "./badgesServices";
 
 
 // save new post
@@ -39,6 +40,9 @@ const saveNewPostService = async (userId: any, postData: any) => {
   user.numberPost = user.numberPost + 1;
   user.posts.push(post._id);
   await user.save();
+
+  await badgesServices.checkAndAwardBadges(userId, 'BLOG_COUNT')
+    .catch(err => console.error('[badges] error', err));
 
   // 5. return response
   return post;

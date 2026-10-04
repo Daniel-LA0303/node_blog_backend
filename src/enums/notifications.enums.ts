@@ -7,7 +7,8 @@ export enum NotificationType {
     FOLLOW_USER = "FOLLOW_USER",
     MESSAGE = "MESSAGE",
     MENTION = "MENTION",
-    SYSTEM = "SYSTEM"
+    SYSTEM = "SYSTEM",
+    BADGE_AWARDED = "BADGE_AWARDED",
 }
 
 export enum EntityType {
@@ -15,5 +16,6 @@ export enum EntityType {
     CATEGORY = "CATEGORY",
     COMMENT = "COMMENT",
     REPLY = "REPLY",
-    USER = "USER"
+    USER = "USER",
+    BADGE = "BADGE",
 }

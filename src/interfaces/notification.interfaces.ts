@@ -4,7 +4,7 @@ import { EntityType, NotificationType } from "../enums/notifications.enums";
 
 export interface NotificationI {
     recipientId: Types.ObjectId;
-    senderId: Types.ObjectId;
+    senderId?: Types.ObjectId;
     type: NotificationType;
     entityId: Types.ObjectId; 
     entityType: EntityType;
@@ -15,7 +15,7 @@ export interface NotificationI {
 
 export interface NewNotificationI {
     recipientId: Types.ObjectId;
-    senderId: Types.ObjectId;
+    senderId?: Types.ObjectId;
     entityId: Types.ObjectId; 
     message: string;
     entityType: EntityType;

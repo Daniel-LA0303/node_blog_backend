@@ -25,6 +25,7 @@ import Quiz from "../models/Quiz";
 import QuizAttempt from "../models/QuizAttempt";
 import StudyList from "../models/StudyListSchema";
 import { UserBadge } from "../models/UserBadge";
+import badgesServices from "./badgesServices";
 
 
 // update profile service with new info
@@ -226,6 +227,10 @@ const followUserService = async (userFollowedId: any, userProfileId: any) => {
         type: NotificationType.FOLLOW_USER,
         isCheck: true
     };
+
+    // 6. badges: SEND TO USER THAT RECEIVED FOLLOW
+    badgesServices.checkAndAwardBadges(userFollowedId, 'FOLLOWER_COUNT')
+        .catch(err => console.error('[badges] error', err));
 
     await notificationsServices.sendNotificationService(notificationData);
 };
@@ -1002,7 +1007,7 @@ const removeModerService = async (userId: string, userR: any, req: any) => {
         req
     });
 }
-
+ 
 
 const searchUsersToAdminPanelService = async (search: string, limit: number, page: number) => {
 

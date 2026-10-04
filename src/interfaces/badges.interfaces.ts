@@ -6,7 +6,11 @@ export interface IBadgeCondition extends Document{
         | 'COMMENT_COUNT'
         | 'QUIZ_COUNT'
         | 'FOLLOWER_COUNT'
-        | 'QUIZ_SCORE';
+        | 'QUIZ_SCORE'
+        | 'QUIZ_COUNT'
+        | 'PROJECT_COUNT'
+        | 'LIST_COUNT'
+        | 'COLLABORATION_COUNT'
 
     value: number;
 }

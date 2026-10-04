@@ -1,6 +1,6 @@
 import express from "express";
 import checkRoleAuth from "../middleware/checkRoleAuth";
-import { getAllCountDocumentsController, getCategoriesInfoController, getCountPostsByStatusController, getCountReportsByStatusController, getEngagementStatsByDateRangeController, getMessagesLast7DaysController, getModerationActionsByDateRangeSController, getNotificationsLast7DaysController, getRecentLogsInfoController, getTopModeratorsController, getUsersByStatusDateRangeController } from "../controllers/dashboardController";
+import { getAllCountDocumentsController, getCategoriesInfoController, getCountPostsByStatusController, getCountReportsByStatusController, getEngagementStatsByDateRangeController, getListProjectQuizLast7DaysController, getMessagesLast7DaysController, getModerationActionsByDateRangeSController, getNotificationsLast7DaysController, getRecentLogsInfoController, getTopModeratorsController, getUsersByStatusDateRangeController } from "../controllers/dashboardController";
 
 const router = express.Router();
 
@@ -47,5 +47,9 @@ router.get('/get-users-info',
 router.get('/get-moderation-info', 
     checkRoleAuth,
     getModerationActionsByDateRangeSController); 
+
+router.get('/get-creation-activity', 
+    checkRoleAuth,
+    getListProjectQuizLast7DaysController); 
 
 export default router
