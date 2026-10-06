@@ -1,9 +1,9 @@
-import User from '../models/User.js'
+import User from '../models/User'
 import generateID from '../helpers/generateID'
 import { emailNewPassword } from '../helpers/email'
 import usersServices from '../services/usersServices';
 import { ApiResponse } from '../utils/ApiResponse';
-import { IInfoUser } from '../interfaces/tokens.interfaces.js';
+import { IInfoUser } from '../interfaces/tokens.interfaces';
 import bcrypt from "bcryptjs";
 
 
@@ -14,22 +14,34 @@ const registerUserController = async (req: any, res: any, next: any) => {
         const { email } = req.body;
 
         await usersServices.registerNewUserService(email, req.body);
-
-        res.status(201).json(
-            new ApiResponse(
-                201,
-                "/api" + req.path,
-                req.method,
-                "User created correctly, check your email to confirm.",
-                "User created",
-                false
-            )
-        );
+        res.status(201).json(new ApiResponse(201, "/api" + req.path, req.method, "User created correctly, check your email to confirm.", "User created", false));
 
     } catch (error) {
         next(error);
     }
 }
+
+// register with google
+const googleAuthController = async (req: any, res: any, next: any) => {
+    try {
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip;
+        const userAgent = req.headers['user-agent'];
+        //const origin = req.headers['origin'] || req.headers['referer'];
+        const host = req.headers['host'];
+
+        const info: IInfoUser = {
+            ip,
+            userAgent,
+            //origin,
+            host
+        }
+
+        const data = await usersServices.googleAuthService(req.body.credential, info);
+        res.status(200).json(new ApiResponse(200, "/api" + req.path, req.method, "Login successfully", data, false));
+    } catch (error) {
+        next(error);
+    }
+};
 
 const refreshTokenController = async (req: any, res: any, next: any) => {
     try {
@@ -183,7 +195,7 @@ const newPasswordController = async (req: any, res: any) => {
             user.password = user.password = await bcrypt.hash(password, 10); //se asigna el nuevo password
             user.token = '' //se reinicia el token
             try {
-                await user.save();                
+                await user.save();
                 res.json({ msg: "Password Modified Correctly" })
             } catch (error) {
                 console.log(error);
@@ -493,7 +505,7 @@ const getUsersRecommendedController = async (req: any, res: any, next: any) => {
 const testRoleController = async (req: any, res: any, next: any) => {
 
     try {
-        
+
         // call service to confirm
         res.status(200).json(
             new ApiResponse(
@@ -518,7 +530,7 @@ const createModerController = async (req: any, res: any, next: any) => {
         const userId = req.body.userId;
         const userR = req.user;
         await usersServices.createModerService(userId, userR, req);
-        
+
         // call service to confirm
         res.status(200).json(
             new ApiResponse(
@@ -542,7 +554,7 @@ const removeModerController = async (req: any, res: any, next: any) => {
         const userId = req.body.userId;
         const userR = req.user;
         await usersServices.removeModerService(userId, userR, req);
-        
+
         // call service to confirm
         res.status(200).json(
             new ApiResponse(
@@ -568,7 +580,7 @@ const searchUsersToAdminPanelController = async (req: any, res: any, next: any) 
 
         const q = req.query.search;
         const r = await usersServices.searchUsersToAdminPanelService(q, limit, page);
-        
+
         // call service to confirm
         res.status(200).json(
             new ApiResponse(
@@ -592,7 +604,7 @@ const verifyUserController = async (req: any, res: any, next: any) => {
         const userId = req.body.userId;
         const userR = req.user;
         await usersServices.verifyUserService(userId, userR, req);
-        
+
         // call service to confirm
         res.status(200).json(
             new ApiResponse(
@@ -616,7 +628,7 @@ const banUserController = async (req: any, res: any, next: any) => {
         const userId = req.body.userId;
         const user = req.user;
         await usersServices.banUserService(userId, user, req);
-        
+
         // call service to confirm
         res.status(200).json(
             new ApiResponse(
@@ -640,7 +652,7 @@ const unbanUserController = async (req: any, res: any, next: any) => {
         const userId = req.body.userId
         const userR = req.user;
         await usersServices.unbanUserService(userId, userR, req);
-        
+
         // call service to confirm
         res.status(200).json(
             new ApiResponse(
@@ -662,31 +674,22 @@ const searchUsers2Controller = async (req: any, res: any, next: any) => {
     try {
         const { query } = req.query;
 
-        // ajusta esto al campo real que tu middleware de auth mete en req
-        // (por ejemplo req.user.userId o req.userId)
         const currentUserId = req.user?.userId;
 
         const users = await usersServices.searchUsersService(query as string, currentUserId);
 
-        res.status(200).json(
-            new ApiResponse(
-                200,
-                "/api" + req.path,
-                req.method,
-                "Users found",
-                users,
-                false
-            )
-        );
+        res.status(200).json(new ApiResponse(200, "/api" + req.path, req.method, "Users found", users, false));
 
     } catch (error) {
         next(error);
     }
 }
 
+
 export {
     //-- auth user start --//
     registerUserController,
+    googleAuthController,
     loginController,
     confirmController,
     forgetPasswordController,

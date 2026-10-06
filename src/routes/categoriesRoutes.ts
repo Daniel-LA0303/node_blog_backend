@@ -6,8 +6,8 @@ import {
     getOneCategory,
     updateCategories, 
     searchCategoryController
-} from "../controllers/categoriesController.js";
-import checkRoleAuth from "../middleware/checkRoleAuth.js";
+} from "../controllers/categoriesController";
+import checkRoleAuth from "../middleware/checkRoleAuth";
 
 const router = express.Router();
 

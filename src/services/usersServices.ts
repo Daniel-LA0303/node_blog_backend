@@ -26,6 +26,10 @@ import QuizAttempt from "../models/QuizAttempt";
 import StudyList from "../models/StudyListSchema";
 import { UserBadge } from "../models/UserBadge";
 import badgesServices from "./badgesServices";
+import { OAuth2Client } from 'google-auth-library'
+
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
 
 // update profile service with new info
@@ -294,68 +298,6 @@ const getUserInfoToEditService = async (userId: any, userAuthId: any) => {
     return user;
 }
 
-const loginService = async (
-    email: string,
-    password: string,
-    info: IInfoUser
-) => {
-    // 1. check if user exists
-    const user = await User.findOne({ email: email });
-    if (!user) {
-        throw new ServiceException("User not found", 404);
-    }
-
-    // get plan suscription
-    const suscription = await Subscriptions.findOne({ user: user._id });
-
-    // get plan
-    const plan = await PlanSuscription.findById(suscription?.planSubscription);
-
-    // 2. check if user is confirmed
-    if (!user.confirm) {
-        throw new ServiceException("This account has not been confirmed", 400);
-    }
-
-    // 3. check password
-    if (!await user.checkPassword(password)) {
-        throw new ServiceException("Your password is incorrect", 400);
-    }
-
-    if (user.status === 'BANNED') {
-        throw new ServiceException("You has been banned, you can not use the platform", 400);
-    }
-
-    // 4. generate report, acces and refresh token
-    const refreshToken = generateRefreshToken(user._id, user.roles);
-    const accessToken = generateAccessToken(user._id, user.roles);
-
-    const tokenInfo = new Tokens({
-        token: hashToken(refreshToken),
-        ipAddress: info.ip,
-        userAgent: info.userAgent,
-        origin: info.origin,
-        host: info.host,
-        userId: user._id
-    });
-
-    // save token
-    await tokenInfo.save();
-
-    return {
-        _id: user.id,
-        name: user.name,
-        email: user.email,
-        profileImage: user.profilePicture.secure_url,
-        accessToken,
-        refreshToken,
-        roles: user.roles,
-        expiresAt: suscription?.expiresAt,
-        isFree: suscription?.isFree,
-        plan: plan
-    }
-
-}
-
 const refreshTokenService = async (
     oldTokenDoc: any,
     user: any,
@@ -388,6 +330,26 @@ const refreshTokenService = async (
     }
 }
 
+const loginService = async (email: string, password: string, info: IInfoUser) => {
+    const user = await User.findOne({ email });
+    if (!user) throw new ServiceException("User not found", 404);
+
+    if (!user.confirm) throw new ServiceException("This account has not been confirmed", 400);
+
+    if (!user.password) {
+        throw new ServiceException("This account uses Google sign-in. Please log in with Google.", 400);
+    }
+
+    if (!await user.checkPassword(password)) {
+        throw new ServiceException("Your password is incorrect", 400);
+    }
+
+    if (user.status === 'BANNED') {
+        throw new ServiceException("You has been banned, you can not use the platform", 400);
+    }
+
+    return buildSession(user, info);
+};
 
 // register new user
 const registerNewUserService = async (email: any, body: any) => {
@@ -415,6 +377,90 @@ const registerNewUserService = async (email: any, body: any) => {
         token: user.token
     });
 }
+
+const buildSession = async (user: any, info: IInfoUser) => {
+    const suscription = await Subscriptions.findOne({ user: user._id });
+    const plan = await PlanSuscription.findById(suscription?.planSubscription);
+
+    const refreshToken = generateRefreshToken(user._id, user.roles);
+    const accessToken = generateAccessToken(user._id, user.roles);
+
+    await new Tokens({
+        token: hashToken(refreshToken),
+        ipAddress: info.ip,
+        userAgent: info.userAgent,
+        origin: info.origin,
+        host: info.host,
+        userId: user._id,
+    }).save();
+
+    return {
+        _id: user.id,
+        name: user.name,
+        email: user.email,
+        profileImage: user.profilePicture.secure_url,
+        accessToken,
+        refreshToken,
+        roles: user.roles,
+        expiresAt: suscription?.expiresAt,
+        isFree: suscription?.isFree,
+        plan,
+    };
+};
+
+// register wwith google
+const googleAuthService = async (credential: string, info: IInfoUser) => {
+
+    console.log("execute google service");
+    
+    const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    console.log("payleoad " + payload);
+    
+
+    if (!payload?.email || !payload.email_verified) {
+        throw new ServiceException("Google email not verified", 400);
+    }
+
+    let user = await User.findOne({ email: payload.email });
+
+    if (!user) {
+        console.log("this user is not register, creating user...");
+        
+        user = await User.create({
+            name: payload.name,
+            email: payload.email,
+            googleId: payload.sub,
+            authProvider: 'google',
+            confirm: true,
+            token: generateID(),
+            profilePicture: { secure_url: payload.picture ?? '', public_id: '' },
+        });
+        await emailRegister({
+            email: user.email,
+            name: user.name,
+            token: user.token,
+        });
+
+    } else if (!user.googleId) {
+        console.log("this user has not googleid, checking...");
+        user.googleId = payload.sub;
+        user.confirm = true;
+        user.token = undefined;
+        await user.save();
+    } else if (user.googleId !== payload.sub) {
+        throw new ServiceException("Google account mismatch", 400);
+    }
+
+    if (user.status === 'BANNED') {
+        throw new ServiceException("You has been banned, you can not use the platform", 400);
+    }
+
+    return buildSession(user, info);
+};
 
 // to confirm user 
 const userConfirmedService = async (token: any) => {
@@ -1215,6 +1261,7 @@ export default {
     getUserInfoToEditService,
     loginService,
     registerNewUserService,
+    googleAuthService,
     userConfirmedService,
     followUserService,
     unfollowUserService,

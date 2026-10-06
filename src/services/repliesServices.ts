@@ -1,12 +1,12 @@
-import { ServiceException } from "../utils/exception/ServiceException.js";
-import Comment from "../models/Comments.js";
-import Post from "../models/Post.js";
-import User from "../models/User.js";
-import Replies from "../models/Replies.js";
+import { ServiceException } from "../utils/exception/ServiceException";
+import Comment from "../models/Comments";
+import Post from "../models/Post";
+import User from "../models/User";
+import Replies from "../models/Replies";
 import mongoose from "mongoose";
-import { NewNotificationI } from "../interfaces/notification.interfaces.js";
-import { EntityType, NotificationType } from "../enums/notifications.enums.js";
-import notificationsServices from "./notificationsServices.js";
+import { NewNotificationI } from "../interfaces/notification.interfaces";
+import { EntityType, NotificationType } from "../enums/notifications.enums";
+import notificationsServices from "./notificationsServices";
 
 
 // new reply

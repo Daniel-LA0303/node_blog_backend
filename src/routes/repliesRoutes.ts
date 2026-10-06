@@ -5,8 +5,8 @@ import {
     deleteReplyController, 
     getRepliesPaginatedByCommentIdController, 
     updateReplyController
-} from "../controllers/repliesController.js";
-import checkAuth from "../middleware/checkAuth.js";
+} from "../controllers/repliesController";
+import checkAuth from "../middleware/checkAuth";
 
 const router = express.Router();
 

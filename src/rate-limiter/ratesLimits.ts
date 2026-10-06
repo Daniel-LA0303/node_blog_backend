@@ -22,7 +22,6 @@ export const sendMessageRateLimiter = createRateLimiter({
     duration: 60, // 20 mgs by minute
     message: "You're sending messages too fast",
     keyGenerator: (req: Request) => {
-        // checkauth first so we get info
-        return req.user?._id?.toString() ?? req.ip ?? "unknown";
+        return (req as any).user?._id?.toString() ?? req.ip ?? "unknown";
     },
 });

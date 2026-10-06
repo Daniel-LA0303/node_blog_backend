@@ -58,46 +58,27 @@ interface IRole {
 }
 
 export interface IUser extends Document {
-
     name: string;
-
-    password: string;
-
+    password?: string;
     email: string;
-
     token?: string;
-
     confirm: boolean;
-
+    googleId?: string
+    authProvider: 'local' | 'google'  
     profilePicture: IProfilePicture;
-
     numberPost: number;
-
     info: IInfo;
-
     likePost: ILikePost;
-
     status: string;
-
     postsSaved: IPostsSaved;
-
     followsTags: IFollowsTags;
-
     followersUsers: IFollowersUsers;
-
-    followedUsers: IFollowedUsers;
-
+    followedUsers: IFollowedUsers
     posts: Types.ObjectId[];
-
     notifications: INotification[];
-
     historySearch: string[];
-    
     recomended: any;
-
     activityTracker: any;
-
     roles: Types.DocumentArray<IRole>;
-
     checkPassword(passwordForm: string): Promise<boolean>;
 }

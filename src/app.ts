@@ -1,4 +1,5 @@
 import express from "express";
+import os from 'os';
 import cors from "cors";
 import { app } from "./socketIO/server";
 import { errorHandler } from "./utils/exception/errorHandler";
@@ -19,8 +20,6 @@ import badgesRoutes from './routes/badgesRoutes'
 import quizRoutes from "./routes/quizRoutes";
 import projectRoutes from './routes/projectRoutes'
 import listsRoutes from "./routes/listsRoutes"
-
-
 
 app.use(cors({
   origin: [
@@ -54,12 +53,22 @@ app.use('/api/lists', listsRoutes);
 
 
 app.get('/api/instance-info', (req, res) => {
+  const memory = process.memoryUsage();
+
   res.json({
     pod: process.env.POD_NAME || 'unknown',
     podIP: process.env.POD_IP || 'unknown',
     node: process.env.NODE_NAME || 'unknown',
-    hostname: require('os').hostname(),
-    timestamp: new Date().toISOString()
+    hostname: os.hostname(),
+    timestamp: new Date().toISOString(),
+
+    memory: {
+      rss: `${(memory.rss / 1024 / 1024).toFixed(2)} MB`,
+      heapTotal: `${(memory.heapTotal / 1024 / 1024).toFixed(2)} MB`,
+      heapUsed: `${(memory.heapUsed / 1024 / 1024).toFixed(2)} MB`,
+      external: `${(memory.external / 1024 / 1024).toFixed(2)} MB`,
+      arrayBuffers: `${(memory.arrayBuffers / 1024 / 1024).toFixed(2)} MB`,
+    }
   });
 });
 

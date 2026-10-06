@@ -2,6 +2,8 @@ import dotenv from "dotenv";
 dotenv.config();
 import nodemailer from "nodemailer"
 
+const isProduction = process.env.PRODUCTION === 'true'
+
 export interface IEmailStatusData {
     email: string;
     name: string;
@@ -18,22 +20,39 @@ export interface IEmailUserStatusData {
     reason?: string;
 }
 
+const transport = nodemailer.createTransport(
+    isProduction
+        ? {
+            // Gmail con OAuth2
+            host: process.env.SMTP_HOST,
+            port: Number(process.env.SMTP_PORT),
+            secure: Number(process.env.SMTP_PORT) === 465,
+            auth: {
+                type: 'OAuth2',
+                user: process.env.SMTP_USER,
+                clientId: process.env.GOOGLE_CLIENT_ID,
+                clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+                refreshToken: process.env.SMTP_PASS,
+            },
+        }
+        : {
+            // Mailtrap
+            host: process.env.SMTP_HOST,
+            port: Number(process.env.SMTP_PORT),
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS,
+            },
+        }
+)
+
 export const emailPostStatusChange = async (datos: IEmailStatusData) => {
     const { email, name, postTitle, postId, status, reason } = datos;
-
-    const transport = nodemailer.createTransport({
-        host: process.env.MAILTRAP_HOST as string,
-        port: Number(process.env.MAILTRAP_PORT),
-        auth: {
-            user: process.env.MAILTRAP_USER as string,
-            pass: process.env.MAILTRAP_PASS as string,
-        },
-    });
 
     // 1. Content Factory for Post Status Actions
     const statusConfig: Record<string, { subject: string; message: string; buttonText?: string; link?: string }> = {
         BANNED: {
-            subject: 'Daniel-LA Blog - Your Post Has Been Banned',
+            subject: 'uKnowly - Your Post Has Been Banned',
             message: `
         <p style="font-size:16px; line-height:1.5;">
           Your post <b>"${postTitle}"</b> has been <b>banned</b> by our moderation team for violating community guidelines.
@@ -41,7 +60,7 @@ export const emailPostStatusChange = async (datos: IEmailStatusData) => {
       `,
         },
         DELETED_BY_ADMIN: {
-            subject: 'Daniel-LA Blog - Your Post Was Removed',
+            subject: 'uKnowly - Your Post Was Removed',
             message: `
         <p style="font-size:16px; line-height:1.5;">
           Your post <b>"${postTitle}"</b> was permanently removed by an administrator. This action cannot be undone.
@@ -49,7 +68,7 @@ export const emailPostStatusChange = async (datos: IEmailStatusData) => {
       `,
         },
         HIDDEN_BY_ADMIN: {
-            subject: 'Daniel-LA Blog - Your Post Is Now Hidden',
+            subject: 'uKnowly - Your Post Is Now Hidden',
             message: `
         <p style="font-size:16px; line-height:1.5;">
           Your post <b>"${postTitle}"</b> has been set to <b>Hidden</b> by an administrator and is no longer visible to the public.
@@ -59,7 +78,7 @@ export const emailPostStatusChange = async (datos: IEmailStatusData) => {
             link: `${process.env.FRONTEND_URL}/profile/posts`,
         },
         PUBLISHED: {
-            subject: 'Daniel-LA Blog - Your Post Has Been Restored',
+            subject: 'uKnowly - Your Post Has Been Restored',
             message: `
         <p style="font-size:16px; line-height:1.5;">
           Great news! Your post <b>"${postTitle}"</b> has been reviewed and restored to public view.
@@ -71,7 +90,7 @@ export const emailPostStatusChange = async (datos: IEmailStatusData) => {
     };
 
     const currentConfig = statusConfig[status] || {
-        subject: 'Daniel-LA Blog - Post Status Update',
+        subject: 'uKnowly - Post Status Update',
         message: `
       <p style="font-size:16px; line-height:1.5;">
         The status of your post <b>"${postTitle}"</b> has been updated to: <b>${status}</b>.
@@ -108,7 +127,7 @@ export const emailPostStatusChange = async (datos: IEmailStatusData) => {
 
     // 3. Send Email
     await transport.sendMail({
-        from: 'Daniel-LA Blog <no-reply@daniella-blog.com>',
+        from: `uKnowly <${process.env.MAIL_FROM}>`,
         to: email,
         subject: currentConfig.subject,
         text: `Hi ${name}, ${currentConfig.subject}. ${reason ? `Reason: ${reason}` : ''}`,
@@ -118,32 +137,20 @@ export const emailPostStatusChange = async (datos: IEmailStatusData) => {
 
 // email new user
 export const emailRegister = async (datos: any) => {
+
     const { email, name, token } = datos;
-
-    const transport = nodemailer.createTransport({
-        host: process.env.MAILTRAP_HOST as string,
-
-        port: Number(process.env.MAILTRAP_PORT),
-
-        auth: {
-            user: process.env.MAILTRAP_USER as string,
-
-            pass: process.env.MAILTRAP_PASS as string,
-        },
-    });
-
 
     // INFO EMAIL
     const info = await transport.sendMail({
-        from: 'Daniel-LA Blog',
+        from: `uKnowly <${process.env.MAIL_FROM}>`,
         to: email,
-        subject: "Blog Daniel-LA, Check your account",
-        text: "Check your account at Daniel-LA Blog",
+        subject: "uKnowly, Check your account",
+        text: "Check your account at uKnowly",
         html: `
             <div style="background-color:#121212; color:white; padding:20px; font-family:Arial, sans-serif;">
             <h2 style="color:#ffffff; text-align:center;">Hi ${name},</h2>
             <p style="font-size:16px; line-height:1.5;">
-                Check your account at <b>Daniel-LA Blog</b>.
+                Check your account at <b>uKnowly</b>.
             </p>
             <p style="font-size:16px; line-height:1.5;">
                 Your account is almost ready, just check with the following link:
@@ -167,25 +174,16 @@ export const emailRegister = async (datos: any) => {
 export const emailNewPassword = async (datos: any) => {
     const { email, name, token } = datos;
 
-    const transport = nodemailer.createTransport({
-        host: process.env.MAILTRAP_HOST as string,
-        port: Number(process.env.MAILTRAP_PORT),
-        auth: {
-            user: process.env.MAILTRAP_USER as string,
-            pass: process.env.MAILTRAP_PASS as string,
-        },
-    });
-
     const info = await transport.sendMail({
-        from: 'Daniel-LA Blog',
+        from: `uKnowly <${process.env.MAIL_FROM}>`,
         to: email,
-        subject: "Daniel-LA Blog - Reset your Password",
-        text: "Reset your Password in Daniel-LA Blog",
+        subject: "uKnowly - Reset your Password",
+        text: "Reset your Password in uKnowly",
         html: `
             <div style="background-color:#121212; color:white; padding:20px; font-family:Arial, sans-serif;">
                 <h2 style="color:#ffffff; text-align:center;">Hi ${name},</h2>
                 <p style="font-size:16px; line-height:1.5;">
-                    We received a request to reset your password at <b>Daniel-LA Blog</b>.
+                    We received a request to reset your password at <b>uKnowly</b>.
                 </p>
                 <p style="font-size:16px; line-height:1.5;">
                     Click the button below to set a new password:
@@ -206,22 +204,8 @@ export const emailNewPassword = async (datos: any) => {
 
 export const emailPaymentSuccess = async (data: any) => {
     const { email, name, plan, amount, currency, interval, expiresAt } = data
-
-    const transport = nodemailer.createTransport({
-        host: process.env.MAILTRAP_HOST as string,
-
-        port: Number(process.env.MAILTRAP_PORT),
-
-        auth: {
-            user: process.env.MAILTRAP_USER as string,
-
-            pass: process.env.MAILTRAP_PASS as string,
-        },
-    });
-
-
     await transport.sendMail({
-        from: 'Daniel-LA Blog',
+        from: `uKnowly <${process.env.MAIL_FROM}>`,
         to: email,
         subject: 'Payment confirmed — your plan is active',
         text: `Your payment was successful. Plan: ${plan}`,
@@ -258,22 +242,8 @@ export const emailPaymentSuccess = async (data: any) => {
 
 export const emailPaymentFailed = async (data: any) => {
     const { email, name, plan, amount, currency } = data
-
-    const transport = nodemailer.createTransport({
-        host: process.env.MAILTRAP_HOST as string,
-
-        port: Number(process.env.MAILTRAP_PORT),
-
-        auth: {
-            user: process.env.MAILTRAP_USER as string,
-
-            pass: process.env.MAILTRAP_PASS as string,
-        },
-    });
-
-
     await transport.sendMail({
-        from: 'Daniel-LA Blog',
+        from: `uKnowly <${process.env.MAIL_FROM}>`,
         to: email,
         subject: 'Payment failed — action required',
         text: `Your payment for the ${plan} plan could not be processed.`,
@@ -311,27 +281,17 @@ export const emailPaymentFailed = async (data: any) => {
 export const emailAddModerator = async (datos: { email: string; name: string; token?: string }) => {
     const { email, name, token } = datos;
 
-    const transport = nodemailer.createTransport({
-        host: process.env.MAILTRAP_HOST as string,
-        port: Number(process.env.MAILTRAP_PORT),
-        auth: {
-            user: process.env.MAILTRAP_USER as string,
-            pass: process.env.MAILTRAP_PASS as string,
-        },
-    });
-
-
     // INFO EMAIL
     const info = await transport.sendMail({
-        from: 'Daniel-LA Blog <no-reply@daniella-blog.com>',
+        from: `uKnowly <${process.env.MAIL_FROM}>`,
         to: email,
-        subject: "Daniel-LA Blog - You've been assigned as a Moderator",
+        subject: "uKnowly - You've been assigned as a Moderator",
         text: `Hi ${name}, an administrator has added you as a moderator. All active sessions have been closed for security reasons. Please re-login to access your new permissions: ${process.env.FRONTEND_URL}/login`,
         html: `
             <div style="background-color:#121212; color:white; padding:20px; font-family:Arial, sans-serif;">
                 <h2 style="color:#ffffff; text-align:center;">Hi ${name},</h2>
                 <p style="font-size:16px; line-height:1.5;">
-                    An administrator has promoted your account to <b>Moderator</b> on <b>Daniel-LA Blog</b>.
+                    An administrator has promoted your account to <b>Moderator</b> on <b>uKnowly</b>.
                 </p>
                 <p style="font-size:16px; line-height:1.5;">
                     For security reasons, all of your active sessions have been closed. Please log back in to activate your new permissions:
@@ -355,22 +315,13 @@ export const emailAddModerator = async (datos: { email: string; name: string; to
 export const emailUserStatusChange = async (datos: IEmailUserStatusData) => {
     const { email, name, status, reason } = datos;
 
-    const transport = nodemailer.createTransport({
-        host: process.env.MAILTRAP_HOST as string,
-        port: Number(process.env.MAILTRAP_PORT),
-        auth: {
-            user: process.env.MAILTRAP_USER as string,
-            pass: process.env.MAILTRAP_PASS as string,
-        },
-    });
-
     // 1. Content Factory for User Actions
-    let subject = 'Daniel-LA Blog - Account Status Update';
+    let subject = 'uKnowly - Account Status Update';
     let messageHtml = '';
     let buttonHtml = '';
 
     if (status === 'BANNED') {
-        subject = 'Daniel-LA Blog - Your Account Has Been Banned';
+        subject = 'uKnowly - Your Account Has Been Banned';
         messageHtml = `
       <p style="font-size:16px; line-height:1.5;">
         Your account has been <b>suspended/banned</b> by an administrator due to a violation of our community guidelines.
@@ -380,10 +331,10 @@ export const emailUserStatusChange = async (datos: IEmailUserStatusData) => {
       </p>
     `;
     } else if (status === 'ACTIVE') {
-        subject = 'Daniel-LA Blog - Your Account Has Been Restored';
+        subject = 'uKnowly - Your Account Has Been Restored';
         messageHtml = `
       <p style="font-size:16px; line-height:1.5;">
-        Great news! An administrator has restored your account access on <b>Daniel-LA Blog</b>.
+        Great news! An administrator has restored your account access on <b>uKnowly</b>.
       </p>
       <p style="font-size:16px; line-height:1.5;">
         You can now log back in and continue using your account normally.
@@ -398,7 +349,7 @@ export const emailUserStatusChange = async (datos: IEmailUserStatusData) => {
       </p>
     `;
     } else if (status === 'VERIFIED') {
-        subject = 'Daniel-LA Blog - Your Email Has Been Verified';
+        subject = 'uKnowly - Your Email Has Been Verified';
         messageHtml = `
       <p style="font-size:16px; line-height:1.5;">
         Your email address has been <b>successfully verified</b>.
@@ -432,7 +383,7 @@ export const emailUserStatusChange = async (datos: IEmailUserStatusData) => {
 
     // 3. Send Email
     await transport.sendMail({
-        from: 'Daniel-LA Blog <no-reply@daniella-blog.com>',
+        from: `uKnowly <${process.env.MAIL_FROM}>`,
         to: email,
         subject,
         text: `Hi ${name}, ${subject}. ${reason ? `Reason: ${reason}` : ''}`,

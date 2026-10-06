@@ -19,11 +19,11 @@ import {
     getProfileInfoPage,
     getUsersSearchController,
     getViewPostPage,
-} from "../controllers/pagesController.js";
-import { getProfileEditUserPage } from "../controllers/pagesController.js";
-import { getEditPostPage } from "../controllers/pagesController.js";
-import checkAuth from "../middleware/checkAuth.js";
-import optionalAuth from "../middleware/optionalAuth.js";
+} from "../controllers/pagesController";
+import { getProfileEditUserPage } from "../controllers/pagesController";
+import { getEditPostPage } from "../controllers/pagesController";
+import checkAuth from "../middleware/checkAuth";
+import optionalAuth from "../middleware/optionalAuth";
 
 const router = express.Router();
 

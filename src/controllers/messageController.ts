@@ -1,6 +1,6 @@
-import { SendNewMessageI } from "../interfaces/message.interfaces.js";
-import Message from "../models/Message.js";
-import chatsServices from "../services/chatsServices.js";
+import { SendNewMessageI } from "../interfaces/message.interfaces";
+import Message from "../models/Message";
+import chatsServices from "../services/chatsServices";
 
 // send message
 export const sendMessageController = async (req: any, res: any) => {

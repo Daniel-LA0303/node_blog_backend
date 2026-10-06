@@ -1,6 +1,5 @@
 import mongoose, { Schema } from "mongoose";
 import { IAuditLog } from "../interfaces/auditlog.interfaces";
-import { ref } from "node:process";
 
 
 const AuditLogSchema = new Schema<IAuditLog>(

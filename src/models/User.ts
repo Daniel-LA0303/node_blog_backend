@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import mongoose, { Model, Schema } from "mongoose";
-import { IUser } from "../interfaces/user.interfaces.js";
+import { IUser } from "../interfaces/user.interfaces";
 
 const usersSchema = new Schema<IUser>(
   {
@@ -12,10 +12,23 @@ const usersSchema = new Schema<IUser>(
 
     password: {
       type: String,
-      required: true,
       trim: true,
+      required: function (this: IUser) {
+        return this.authProvider !== 'google'
+      },
     },
 
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true, 
+    },
+
+    authProvider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local',
+    },
     email: {
       type: String,
       required: true,

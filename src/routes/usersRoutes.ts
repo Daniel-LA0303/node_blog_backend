@@ -1,6 +1,6 @@
 import express from "express";
 import fileUpload from "express-fileupload";
-import checkAuth from "../middleware/checkAuth.js"
+import checkAuth from "../middleware/checkAuth"
 import { 
     //-- auth user start --//
     registerUserController, 
@@ -37,11 +37,12 @@ import {
     banUserController,
     unbanUserController,
     searchUsers2Controller,
+    googleAuthController,
     //-- User actions end --//
 } from "../controllers/usersController";
-import checkRefreshToken from "../middleware/checkRefreshToken.js";
-import { loginRateLimiter } from "../rate-limiter/ratesLimits.js";
-import checkRoleAuth from "../middleware/checkRoleAuth.js";
+import checkRefreshToken from "../middleware/checkRefreshToken";
+import { loginRateLimiter } from "../rate-limiter/ratesLimits";
+import checkRoleAuth from "../middleware/checkRoleAuth";
 
 const router = express.Router();
 
@@ -50,6 +51,9 @@ const router = express.Router();
 router.post('/', 
     // rete limit
     registerUserController); 
+
+// login with google
+router.post('/google', googleAuthController)
 
 // auth user login --
 router.post('/login', 
@@ -145,4 +149,6 @@ router.post('/unban-user',
     unbanUserController);
 
 router.get('/search-users', searchUsers2Controller);
+
+
 export default router

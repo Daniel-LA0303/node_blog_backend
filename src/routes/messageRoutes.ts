@@ -6,8 +6,8 @@ import {
     getUnreadMessagesCountController, 
     markAsReadController, 
     sendMessageController
-} from "../controllers/messageController.js";
-import checkAuth from "../middleware/checkAuth.js";
+} from "../controllers/messageController";
+import checkAuth from "../middleware/checkAuth";
 
 
 const router = express.Router();

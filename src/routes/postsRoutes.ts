@@ -15,9 +15,9 @@ import {
     getPostPaginated,
     getPostsByCategoryPaginatedController,
     changePostStatusController,
-} from "../controllers/postController.js";
-import checkAuth from "../middleware/checkAuth.js";
-import checkRoleAuth from "../middleware/checkRoleAuth.js";
+} from "../controllers/postController";
+import checkAuth from "../middleware/checkAuth";
+import checkRoleAuth from "../middleware/checkRoleAuth";
 
 
 const router = express.Router();

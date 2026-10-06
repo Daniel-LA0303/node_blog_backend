@@ -1,6 +1,6 @@
-import Post from '../models/Post.js';
-import User from '../models/User.js';
-import Categories from '../models/Categories.js';
+import Post from '../models/Post';
+import User from '../models/User';
+import Categories from '../models/Categories';
 import fs from "fs-extra"
 import { uploadImagePost } from '../config/cloudinary';
 import postsServices from '../services/postsServices';
