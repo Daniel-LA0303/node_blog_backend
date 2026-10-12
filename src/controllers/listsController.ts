@@ -1,5 +1,6 @@
 import listsServices from "../services/listsServices";
 import { ApiResponse } from "../utils/ApiResponse";
+import { ServiceException } from "../utils/exception/ServiceException";
 
 
 const createStudyListController = async (req: any, res: any, next: any) => {

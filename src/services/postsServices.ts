@@ -24,7 +24,7 @@ const saveNewPostService = async (userId: any, postData: any) => {
     throw new ServiceException("User not found", 404);
   }
 
-  await trackActivityService(user._id.toString());
+  //await trackActivityService(user._id.toString());
 
   // 2. valid if title exists
   //const postSearch = await Post.findOne({ title: postData.title });

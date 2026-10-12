@@ -717,7 +717,7 @@ const getLastActivityProjectService = async (projectId: string) => {
     const lastActivity = ProjectEvent.find({
         project: projectId
     })
-        .limit(20)
+        .limit(10)
         .sort({
             createdAt: -1
         });

@@ -1,7 +1,7 @@
-import "./config/env"; 
+import "./config/env";
 import connectDB from "./config/db";
 import "./app";
-import { server } from "./socketIO/server";
+import { initRedis, server } from "./socketIO/server";
 
 console.log("NODE_ENV:", process.env.NODE_ENV);
 console.log("PRODUCTION:", process.env.PRODUCTION);
@@ -11,9 +11,19 @@ console.log("SMTP_USER:", process.env.SMTP_USER);
 console.log("SMTP_PASS:", process.env.SMTP_PASS ? "(defined)" : "(empty)");
 console.log("MAIL_FROM:", process.env.MAIL_FROM);
 console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+console.log("FRONTEND_URL_WEB:", process.env.FRONTEND_URL_WEB);
 
-connectDB();
 const PORT = Number(process.env.PORT) || 4000;
-server.listen(PORT, "0.0.0.0", () => {
-    console.log(`server on ${PORT}`);
+
+const start = async () => {
+    await connectDB();
+    await initRedis();
+    server.listen(PORT, "0.0.0.0", () => {
+        console.log(`server on ${PORT}`);
+    });
+};
+
+start().catch((err) => {
+    console.error("Startup error:", err);
+    process.exit(1);
 });

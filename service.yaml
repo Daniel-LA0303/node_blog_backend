@@ -4,6 +4,7 @@ metadata:
   name: blog-service-test
 spec:
   type: NodePort
+  sessionAffinity: None
   selector:
     app: blog-app
   ports:
