@@ -351,7 +351,7 @@ const loginService = async (email: string, password: string, info: IInfoUser) =>
     return buildSession(user, info);
 };
 
-// register new user
+// register new user normal without gmail
 const registerNewUserService = async (email: any, body: any) => {
 
     // 1. check if email exists
@@ -1031,6 +1031,9 @@ const createModerService = async (userId: string, userR: any, req: any) => {
         email: user.email,
         name: user.name,
     });
+
+    // 3.1 close session
+    notificationsServices.sendNotificationNewUserModService(user._id.toString());
 
     // 4. close all sessions
     await Tokens.updateMany(

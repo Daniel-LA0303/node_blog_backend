@@ -131,10 +131,21 @@ const updateCategories = async (req: any, res: any, next: any) => {
 /**
  * Get categories for new post THIS IS A SERVICE
  */
-const getCategories = async () => {
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const getCategories = async ({ page, limit, search }: { page: number; limit: number; search: string }) => {
     try {
-        const cats = await Categories.find()
-        return cats;
+        const filter = search ? { name: { $regex: escapeRegex(search), $options: 'i' } } : {}
+
+        const [categories, total] = await Promise.all([
+            Categories.find(filter)
+                .sort({ createdAt: -1, _id: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .lean(),
+            Categories.countDocuments(filter),
+        ])
+
+        return { categories, page, limit, total, hasMore: page * limit < total }
     } catch (error) {
         console.error("Error in getCategories:", error);
         throw new Error('Error to find categories');

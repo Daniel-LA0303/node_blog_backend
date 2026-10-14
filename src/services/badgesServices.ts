@@ -17,34 +17,41 @@ import { EntityType, NotificationType } from "../enums/notifications.enums";
 type BadgeConditionType = 'BLOG_COUNT' | 'COMMENT_COUNT' | 'QUIZ_COUNT' | 'FOLLOWER_COUNT'
     | 'PROJECT_COUNT' | 'LIST_COUNT' | 'COLLABORATION_COUNT' | 'QUIZ_SCORE';
 
-type Counter = (userId: Types.ObjectId) => PromiseLike<number>;
+interface Options { notify?: boolean }
+
+type Counter = (userId: Types.ObjectId) => Promise<number>;
+
+// strictQuery: 'throw' hace que un campo que no existe en el schema lance error
+// en vez de ignorarse y contar toda la colección (Mongoose 7+)
+const strictCount = (model: any, filter: Record<string, any>) =>
+    model.countDocuments(filter).setOptions({ strictQuery: 'throw' });
 
 const counters: Partial<Record<BadgeConditionType, Counter>> = {
-    COMMENT_COUNT: (userId) => Comment.countDocuments({ author: userId }),
-    BLOG_COUNT: (userId) => Post.countDocuments({ author: userId, status: 'PUBLISHED' }),
-    LIST_COUNT: (userId) => StudyList.countDocuments({ owner: userId }),
-    PROJECT_COUNT: (userId) => Project.countDocuments({ owner: userId }),
-    QUIZ_COUNT: (userId) => Quiz.countDocuments({ author: userId }),
+    COMMENT_COUNT: (userId) => strictCount(Comment, { userID: userId }), 
+    BLOG_COUNT: (userId) => strictCount(Post, { user: userId }),
+    LIST_COUNT: (userId) => strictCount(StudyList, { owner: userId }),
+    PROJECT_COUNT: (userId) => strictCount(Project, { owner: userId, }),
+    QUIZ_COUNT: (userId) => strictCount(Quiz, { owner: userId }),
     FOLLOWER_COUNT: async (userId) => {
-        const user = await User.findById(userId).select('followersUsers.conutFollowers').lean();
+        const user = await User.findById(userId)
+            .select('followersUsers.conutFollowers')
+            .lean();
         return user?.followersUsers?.conutFollowers ?? 0;
     },
 };
-
-interface Options { notify?: boolean }
 
 const checkAndAwardBadges = async (
     userIdInput: string | Types.ObjectId,
     conditionType: BadgeConditionType,
     { notify = true }: Options = {}
 ) => {
-
-    const userId = new Types.ObjectId(userIdInput);
+    const userId = new Types.ObjectId(String(userIdInput));
 
     const counter = counters[conditionType];
     if (!counter) return [];
 
     const count = await counter(userId);
+    if (count <= 0) return [];
 
     // 1. Badges activas de este tipo que el usuario ya alcanzó
     const eligible = await Badge.find({
@@ -55,7 +62,7 @@ const checkAndAwardBadges = async (
 
     if (!eligible.length) return [];
 
-    // 2. Cuáles ya tiene
+    // 2. Cuáles ya tiene (retiene la lógica: si ya la tiene, no se repite)
     const owned = await UserBadge.distinct('badge', {
         user: userId,
         badge: { $in: eligible.map(b => b._id) },
@@ -63,8 +70,10 @@ const checkAndAwardBadges = async (
     const ownedSet = new Set(owned.map(String));
     const missing = eligible.filter(b => !ownedSet.has(String(b._id)));
 
-    // 3. Asignar una por una (si hay duplicado por concurrencia, solo se salta esa)
-    const awarded = [];
+    if (!missing.length) return [];
+
+    // 3. Asignar en fila, de menor a mayor valor
+    const awarded: typeof eligible = [];
     for (const badge of missing) {
         try {
             await UserBadge.create({ user: userId, badge: badge._id });
@@ -75,23 +84,27 @@ const checkAndAwardBadges = async (
         }
     }
 
-    // 4. Notificar solo las que realmente se insertaron
+    // 4. Notificar en fila solo las realmente insertadas.
+    //    Un fallo de notificación no rompe la entrega.
     if (notify) {
         for (const badge of awarded) {
-            await notificationsServices.sendNotificationService({
-                recipientId: userId,
-                type: NotificationType.BADGE_AWARDED,
-                entityId: badge._id,
-                entityType: EntityType.BADGE,
-                message: `¡You get it a badge "${badge.name}"!`,
-                isCheck: false,
-            });
+            try {
+                await notificationsServices.sendNotificationService({
+                    recipientId: userId,
+                    type: NotificationType.BADGE_AWARDED,
+                    entityId: badge._id,
+                    entityType: EntityType.BADGE,
+                    message: `You earned the badge "${badge.name}"!`,
+                    isCheck: false,
+                });
+            } catch (err) {
+                console.error('[badges] notification failed:', badge._id, err);
+            }
         }
     }
 
     return awarded;
 };
-
 const createBadgeService = async (dto: ICreateBadge, u: any, req: any) => {
 
     // 1. validate name is not already used

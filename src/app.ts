@@ -25,6 +25,7 @@ app.use(cors({
   origin: [
     "http://localhost:5173",
     "http://localhost:4173",
+    process.env.FRONTEND_URL_DEV as string,
     process.env.FRONTEND_URL as string,
     process.env.FRONTEND_URL_WEB as string,
   ],

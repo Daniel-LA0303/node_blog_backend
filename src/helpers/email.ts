@@ -126,13 +126,24 @@ export const emailPostStatusChange = async (datos: IEmailStatusData) => {
   `;
 
     // 3. Send Email
-    await transport.sendMail({
-        from: `uKnowly <${process.env.MAIL_FROM}>`,
-        to: email,
-        subject: currentConfig.subject,
-        text: `Hi ${name}, ${currentConfig.subject}. ${reason ? `Reason: ${reason}` : ''}`,
-        html: htmlContent,
-    });
+    try {
+        await transport.sendMail({
+            from: `uKnowly <${process.env.MAIL_FROM}>`,
+            to: email,
+            subject: currentConfig.subject,
+            text: `Hi ${name}, ${currentConfig.subject}. ${reason ? `Reason: ${reason}` : ''}`,
+            html: htmlContent,
+        });
+    } catch (error: any) {
+        console.error(`[mail] Failed to send moderator email to ${email}:`, {
+            message: error.message,
+            code: error.code,
+            command: error.command,
+            response: error.response,
+        });
+
+        throw error;
+    }
 };
 
 // email new user
@@ -141,12 +152,14 @@ export const emailRegister = async (datos: any) => {
     const { email, name, token } = datos;
 
     // INFO EMAIL
-    const info = await transport.sendMail({
-        from: `uKnowly <${process.env.MAIL_FROM}>`,
-        to: email,
-        subject: "uKnowly, Check your account",
-        text: "Check your account at uKnowly",
-        html: `
+
+    try {
+        const info = await transport.sendMail({
+            from: `uKnowly <${process.env.MAIL_FROM}>`,
+            to: email,
+            subject: "uKnowly, Check your account",
+            text: "Check your account at uKnowly",
+            html: `
             <div style="background-color:#121212; color:white; padding:20px; font-family:Arial, sans-serif;">
             <h2 style="color:#ffffff; text-align:center;">Hi ${name},</h2>
             <p style="font-size:16px; line-height:1.5;">
@@ -166,7 +179,18 @@ export const emailRegister = async (datos: any) => {
             </p>
             </div>
         `
-    });
+        });
+    } catch (error: any) {
+        console.error(`[mail] Failed to send moderator email to ${email}:`, {
+            message: error.message,
+            code: error.code,
+            command: error.command,
+            response: error.response,
+        });
+
+        throw error;
+    }
+
 
 }
 
@@ -174,12 +198,13 @@ export const emailRegister = async (datos: any) => {
 export const emailNewPassword = async (datos: any) => {
     const { email, name, token } = datos;
 
-    const info = await transport.sendMail({
-        from: `uKnowly <${process.env.MAIL_FROM}>`,
-        to: email,
-        subject: "uKnowly - Reset your Password",
-        text: "Reset your Password in uKnowly",
-        html: `
+    try {
+        const info = await transport.sendMail({
+            from: `uKnowly <${process.env.MAIL_FROM}>`,
+            to: email,
+            subject: "uKnowly - Reset your Password",
+            text: "Reset your Password in uKnowly",
+            html: `
             <div style="background-color:#121212; color:white; padding:20px; font-family:Arial, sans-serif;">
                 <h2 style="color:#ffffff; text-align:center;">Hi ${name},</h2>
                 <p style="font-size:16px; line-height:1.5;">
@@ -199,8 +224,155 @@ export const emailNewPassword = async (datos: any) => {
                 </p>
             </div>
         `
-    })
+        })
+    } catch (error: any) {
+        console.error(`[mail] Failed to send moderator email to ${email}:`, {
+            message: error.message,
+            code: error.code,
+            command: error.command,
+            response: error.response,
+        });
+
+        throw error;
+    }
+
 }
+
+export const emailAddModerator = async (datos: { email: string; name: string; token?: string }) => {
+    const { email, name, token } = datos;
+
+    // INFO EMAIL
+    try {
+        const info = await transport.sendMail({
+            from: `uKnowly <${process.env.MAIL_FROM}>`,
+            to: email,
+            subject: "uKnowly - You've been assigned as a Moderator",
+            text: `Hi ${name}, an administrator has added you as a moderator. All active sessions have been closed for security reasons. Please re-login to access your new permissions: ${process.env.FRONTEND_URL}/login`,
+            html: `
+            <div style="background-color:#121212; color:white; padding:20px; font-family:Arial, sans-serif;">
+                <h2 style="color:#ffffff; text-align:center;">Hi ${name},</h2>
+                <p style="font-size:16px; line-height:1.5;">
+                    An administrator has promoted your account to <b>Moderator</b> on <b>uKnowly</b>.
+                </p>
+                <p style="font-size:16px; line-height:1.5;">
+                    For security reasons, all of your active sessions have been closed. Please log back in to activate your new permissions:
+                </p>
+                <p style="text-align:center; margin:25px 0;">
+                    <a href="${process.env.FRONTEND_URL}/login" 
+                       style="background-color:#ffffff; color:#121212; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">
+                        Re-login to Your Account
+                    </a>
+                </p>
+                <p style="font-size:14px; color:#bbbbbb;">
+                    If you believe this was done in error, please contact support or an administrator immediately.
+                </p>
+            </div>
+        `
+        });
+
+        return info;
+    } catch (error: any) {
+        console.error(`[mail] Failed to send moderator email to ${email}:`, {
+            message: error.message,
+            code: error.code,
+            command: error.command,
+            response: error.response,
+        });
+
+        throw error;
+    }
+};
+
+export const emailUserStatusChange = async (datos: IEmailUserStatusData) => {
+    const { email, name, status, reason } = datos;
+
+    // 1. Content Factory for User Actions
+    let subject = 'uKnowly - Account Status Update';
+    let messageHtml = '';
+    let buttonHtml = '';
+
+    if (status === 'BANNED') {
+        subject = 'uKnowly - Your Account Has Been Banned';
+        messageHtml = `
+      <p style="font-size:16px; line-height:1.5;">
+        Your account has been <b>suspended/banned</b> by an administrator due to a violation of our community guidelines.
+      </p>
+      <p style="font-size:16px; line-height:1.5;">
+        For security reasons, all active sessions have been terminated and you will no longer be able to log in.
+      </p>
+    `;
+    } else if (status === 'ACTIVE') {
+        subject = 'uKnowly - Your Account Has Been Restored';
+        messageHtml = `
+      <p style="font-size:16px; line-height:1.5;">
+        Great news! An administrator has restored your account access on <b>uKnowly</b>.
+      </p>
+      <p style="font-size:16px; line-height:1.5;">
+        You can now log back in and continue using your account normally.
+      </p>
+    `;
+        buttonHtml = `
+      <p style="text-align:center; margin:25px 0;">
+        <a href="${process.env.FRONTEND_URL}/login" 
+           style="background-color:#ffffff; color:#121212; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">
+            Log In to Your Account
+        </a>
+      </p>
+    `;
+    } else if (status === 'VERIFIED') {
+        subject = 'uKnowly - Your Email Has Been Verified';
+        messageHtml = `
+      <p style="font-size:16px; line-height:1.5;">
+        Your email address has been <b>successfully verified</b>.
+      </p>
+      <p style="font-size:16px; line-height:1.5;">
+        Your account is now fully active. You can log in and start publishing and interacting with the community.
+      </p>
+    `;
+        buttonHtml = `
+      <p style="text-align:center; margin:25px 0;">
+        <a href="${process.env.FRONTEND_URL}/login" 
+           style="background-color:#ffffff; color:#121212; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">
+            Log In to Your Account
+        </a>
+      </p>
+    `;
+    }
+
+    // 2. Build HTML Template
+    const htmlContent = `
+    <div style="background-color:#121212; color:white; padding:20px; font-family:Arial, sans-serif;">
+        <h2 style="color:#ffffff; text-align:center;">Hi ${name},</h2>
+        ${messageHtml}
+        ${reason ? `<p style="font-size:14px; color:#e11d48; margin-top:15px;"><b>Reason:</b> ${reason}</p>` : ''}
+        ${buttonHtml}
+        <p style="font-size:14px; color:#bbbbbb;">
+            If you believe this was done in error, please contact support or an administrator immediately.
+        </p>
+    </div>
+  `;
+
+    // 3. Send Email
+    try {
+        await transport.sendMail({
+            from: `uKnowly <${process.env.MAIL_FROM}>`,
+            to: email,
+            subject,
+            text: `Hi ${name}, ${subject}. ${reason ? `Reason: ${reason}` : ''}`,
+            html: htmlContent,
+        });
+    } catch (error: any) {
+        console.error(`[mail] Failed to send moderator email to ${email}:`, {
+            message: error.message,
+            code: error.code,
+            command: error.command,
+            response: error.response,
+        });
+
+        throw error;
+    }
+};
+
 
 export const emailPaymentSuccess = async (data: any) => {
     const { email, name, plan, amount, currency, interval, expiresAt } = data
@@ -277,116 +449,3 @@ export const emailPaymentFailed = async (data: any) => {
         `
     })
 }
-
-export const emailAddModerator = async (datos: { email: string; name: string; token?: string }) => {
-    const { email, name, token } = datos;
-
-    // INFO EMAIL
-    const info = await transport.sendMail({
-        from: `uKnowly <${process.env.MAIL_FROM}>`,
-        to: email,
-        subject: "uKnowly - You've been assigned as a Moderator",
-        text: `Hi ${name}, an administrator has added you as a moderator. All active sessions have been closed for security reasons. Please re-login to access your new permissions: ${process.env.FRONTEND_URL}/login`,
-        html: `
-            <div style="background-color:#121212; color:white; padding:20px; font-family:Arial, sans-serif;">
-                <h2 style="color:#ffffff; text-align:center;">Hi ${name},</h2>
-                <p style="font-size:16px; line-height:1.5;">
-                    An administrator has promoted your account to <b>Moderator</b> on <b>uKnowly</b>.
-                </p>
-                <p style="font-size:16px; line-height:1.5;">
-                    For security reasons, all of your active sessions have been closed. Please log back in to activate your new permissions:
-                </p>
-                <p style="text-align:center; margin:25px 0;">
-                    <a href="${process.env.FRONTEND_URL}/login" 
-                       style="background-color:#ffffff; color:#121212; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">
-                        Re-login to Your Account
-                    </a>
-                </p>
-                <p style="font-size:14px; color:#bbbbbb;">
-                    If you believe this was done in error, please contact support or an administrator immediately.
-                </p>
-            </div>
-        `
-    });
-
-    return info;
-};
-
-export const emailUserStatusChange = async (datos: IEmailUserStatusData) => {
-    const { email, name, status, reason } = datos;
-
-    // 1. Content Factory for User Actions
-    let subject = 'uKnowly - Account Status Update';
-    let messageHtml = '';
-    let buttonHtml = '';
-
-    if (status === 'BANNED') {
-        subject = 'uKnowly - Your Account Has Been Banned';
-        messageHtml = `
-      <p style="font-size:16px; line-height:1.5;">
-        Your account has been <b>suspended/banned</b> by an administrator due to a violation of our community guidelines.
-      </p>
-      <p style="font-size:16px; line-height:1.5;">
-        For security reasons, all active sessions have been terminated and you will no longer be able to log in.
-      </p>
-    `;
-    } else if (status === 'ACTIVE') {
-        subject = 'uKnowly - Your Account Has Been Restored';
-        messageHtml = `
-      <p style="font-size:16px; line-height:1.5;">
-        Great news! An administrator has restored your account access on <b>uKnowly</b>.
-      </p>
-      <p style="font-size:16px; line-height:1.5;">
-        You can now log back in and continue using your account normally.
-      </p>
-    `;
-        buttonHtml = `
-      <p style="text-align:center; margin:25px 0;">
-        <a href="${process.env.FRONTEND_URL}/login" 
-           style="background-color:#ffffff; color:#121212; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">
-            Log In to Your Account
-        </a>
-      </p>
-    `;
-    } else if (status === 'VERIFIED') {
-        subject = 'uKnowly - Your Email Has Been Verified';
-        messageHtml = `
-      <p style="font-size:16px; line-height:1.5;">
-        Your email address has been <b>successfully verified</b>.
-      </p>
-      <p style="font-size:16px; line-height:1.5;">
-        Your account is now fully active. You can log in and start publishing and interacting with the community.
-      </p>
-    `;
-        buttonHtml = `
-      <p style="text-align:center; margin:25px 0;">
-        <a href="${process.env.FRONTEND_URL}/login" 
-           style="background-color:#ffffff; color:#121212; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">
-            Log In to Your Account
-        </a>
-      </p>
-    `;
-    }
-
-    // 2. Build HTML Template
-    const htmlContent = `
-    <div style="background-color:#121212; color:white; padding:20px; font-family:Arial, sans-serif;">
-        <h2 style="color:#ffffff; text-align:center;">Hi ${name},</h2>
-        ${messageHtml}
-        ${reason ? `<p style="font-size:14px; color:#e11d48; margin-top:15px;"><b>Reason:</b> ${reason}</p>` : ''}
-        ${buttonHtml}
-        <p style="font-size:14px; color:#bbbbbb;">
-            If you believe this was done in error, please contact support or an administrator immediately.
-        </p>
-    </div>
-  `;
-
-    // 3. Send Email
-    await transport.sendMail({
-        from: `uKnowly <${process.env.MAIL_FROM}>`,
-        to: email,
-        subject,
-        text: `Hi ${name}, ${subject}. ${reason ? `Reason: ${reason}` : ''}`,
-        html: htmlContent,
-    });
-};

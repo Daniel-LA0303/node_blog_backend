@@ -289,10 +289,15 @@ const getProfileInfoPage = async (req: any, res: any) => {
 const getCategoriesNewPostPage = async (req: any, res: any) => {
     try {
         // throwError();
-        const categories = await getCategories();
-        res.status(200).json({
-            categories
-        });
+        const page = Math.max(parseInt(req.query.page) || 1, 1)
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 50)
+        const search = String(req.query.search || '').trim()
+
+        const response = await getCategories({ page, limit, search })
+
+        res.status(200).json(
+            new ApiResponse(200, "/api" + req.path, req.method, "Categories", response, false)
+        )
     } catch (error: any) {
         console.error("Error in getCategoriesNewPostPage:", error);
         res.status(404).json({ error: 'Error', message: error.message });
@@ -406,9 +411,9 @@ const getGlobalSearchController = async (req: any, res: any) => {
         const limit = 5;
 
         // get user if search is in auth 
-        const userId = req.user?._id; 
+        const userId = req.user?._id;
 
-        if(userId){
+        if (userId) {
             // we call service to save search 
             await saveHistory(userId, q);
         }

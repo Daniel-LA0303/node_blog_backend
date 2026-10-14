@@ -126,9 +126,31 @@ const sendNotificationUserBannedService = async (userId: string) => {
             message: "You has been banned"
         });
     }
-
-
 }
+
+const sendNotificationNewUserModService = async (userId: string) => {
+
+
+    // 1. check if user is not banned
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new ServiceException("User not found..", 404);
+    }
+
+    // evit send notfiication if user is already banned
+    if (user?.status === 'BANNED') {
+        throw new ServiceException("This users is already banned.", 400);
+    }
+
+    // SEND NOTIFICATION ONLY IF USER IS ONLINE
+    const receiverSocketId = getReceiverSocketId(userId);
+    if (receiverSocketId) {
+        io.to(receiverSocketId).emit("closeSession", {
+            message: "You has been asign as moderator, relogin please"
+        });
+    }
+}
+
 
 const sendNotificationNewActionModerLogService = async (userId: string, newLog: any) => {
 
@@ -145,5 +167,6 @@ export default {
     getNotificationsByUserService,
     changeStateToReadService,
     sendNotificationUserBannedService,
-    sendNotificationNewActionModerLogService
+    sendNotificationNewActionModerLogService,
+    sendNotificationNewUserModService
 }

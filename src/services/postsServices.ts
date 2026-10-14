@@ -152,7 +152,7 @@ const getViewPostInfoService = async (postId: any) => {
 
   // 1. search a post
   const post = await Post.findOne({ _id: postId, status: { $in: ['PUBLISHED', 'HIDDEN'] } })
-    .select('categoriesPost categoriesSelect content date desc likePost linkImage title usersSavedPost createdAt status')
+    .select('categoriesPost categoriesSelect content date desc likePost linkImage title usersSavedPost createdAt status typePost')
     .populate({
       path: 'categories',
       select: '_id name value label color'
